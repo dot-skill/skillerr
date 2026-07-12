@@ -1,6 +1,6 @@
 {
   "name": "@dot-skill/cli",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "skill — Open .skill Protocol CLI (continuity and release workflows)",
   "license": "MIT",
   "author": {
@@ -32,11 +32,11 @@
     "test": "node --test dist/conformance.test.js"
   },
   "dependencies": {
-    "@dot-skill/core": "^0.4.1",
-    "@dot-skill/protocol": "^0.4.1",
-    "@dot-skill/registry": "^0.4.1",
-    "@dot-skill/runtime": "^0.4.1",
-    "@dot-skill/workspace": "^0.4.1"
+    "@dot-skill/core": "^0.4.2",
+    "@dot-skill/protocol": "^0.4.2",
+    "@dot-skill/registry": "^0.4.2",
+    "@dot-skill/runtime": "^0.4.2",
+    "@dot-skill/workspace": "^0.4.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

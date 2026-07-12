@@ -1,6 +1,6 @@
 {
   "name": "@dot-skill/runtime",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Open .skill Protocol — reference workflow runtime",
   "license": "MIT",
   "author": {
@@ -33,8 +33,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@dot-skill/core": "^0.4.1",
-    "@dot-skill/protocol": "^0.4.1"
+    "@dot-skill/core": "^0.4.2",
+    "@dot-skill/protocol": "^0.4.2"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

@@ -1,6 +1,6 @@
 {
   "name": "@dot-skill/workspace",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Git-like local .skill workspace — sections, stage, compile, checkpoint, mint",
   "license": "MIT",
   "author": {
@@ -32,8 +32,8 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@dot-skill/core": "^0.4.1",
-    "@dot-skill/protocol": "^0.4.1"
+    "@dot-skill/core": "^0.4.2",
+    "@dot-skill/protocol": "^0.4.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

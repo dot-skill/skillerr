@@ -1,6 +1,6 @@
 {
   "name": "@dot-skill/core",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Open .skill Protocol — pack, validate, compile, mint",
   "license": "MIT",
   "author": {
@@ -33,7 +33,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@dot-skill/protocol": "^0.4.1",
+    "@dot-skill/protocol": "^0.4.2",
     "fflate": "^0.8.2"
   },
   "devDependencies": {
