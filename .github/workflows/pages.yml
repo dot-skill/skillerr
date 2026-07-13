@@ -1,11 +1,13 @@
-name: Deploy site (GitHub Pages)
+name: Deploy docs (GitHub Pages)
 
 on:
   push:
     branches: [main]
     paths:
-      - 'site/**'
-      - '.github/workflows/pages.yml'
+      - "website/**"
+      - "examples/**"
+      - "packages/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -15,29 +17,39 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "20"
           cache: npm
-          cache-dependency-path: site/package-lock.json
-      - name: Install
-        working-directory: site
-        run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
-      - name: Build
-        working-directory: site
+          cache-dependency-path: |
+            package-lock.json
+            website/package-lock.json
+
+      - name: Build reference CLI
+        run: npm ci && npm run build
+
+      - name: Install website deps
+        working-directory: website
+        run: npm ci
+
+      - name: Build fixtures and site
+        working-directory: website
+        env:
+          DOT_SKILL_ROOT: ${{ github.workspace }}
         run: npm run build
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site/dist
+          path: website/docs/.vitepress/dist
 
   deploy:
     needs: build
