@@ -29,13 +29,13 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref || github.ref }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: https://registry.npmjs.org
           cache: npm
 
@@ -64,11 +64,17 @@ jobs:
             unset NODE_AUTH_TOKEN || true
           fi
 
+          ws_pkg_field() {
+            local ws="$1"
+            local field="$2"
+            npm pkg get "${field}" -w "${ws}" --json | jq -r --arg ws "${ws}" '.[$ws]'
+          }
+
           publish_one() {
             local ws="$1"
             local name ver
-            name="$(npm pkg get name -w "${ws}" | tr -d '"')"
-            ver="$(npm pkg get version -w "${ws}" | tr -d '"')"
+            name="$(ws_pkg_field "${ws}" name)"
+            ver="$(ws_pkg_field "${ws}" version)"
             echo "::group::npm publish -w ${ws} (${name}@${ver})"
             if npm view "${name}@${ver}" version >/dev/null 2>&1; then
               echo "Skip ${name}@${ver} — already on npm"
