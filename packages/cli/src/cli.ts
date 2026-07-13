@@ -35,7 +35,7 @@ import {
 } from "@skillerr/core";
 import { runSkillArchive } from "@skillerr/runtime";
 import { lookup, list, verify as registryVerify, publish as registryPublish } from "@skillerr/registry";
-import type { Recipe, SectionType, Skill, SkillSource } from "@skillerr/protocol";
+import type { Recipe, SectionType, Skill, SkillContract, SkillSource } from "@skillerr/protocol";
 import {
   agentCreateGuide,
   assessSkillContract,
@@ -58,6 +58,8 @@ import {
   discardSection,
   loadHead,
   loadSkillHandoff,
+  loadWorkspaceContract,
+  saveWorkspaceContract,
   setJourney,
   requireAgentHost,
 } from "@skillerr/workspace";
@@ -83,6 +85,7 @@ Agents create; humans approve releases.
 Create:
   skill init [--title name]
   skill status                         Completeness + staged sections
+  skill contract-init [--force]        Scaffold .skill/contract.json to author
   skill propose --title T --body B     Requires SKILL_HOST
   skill propose --json '[...]'
   skill journey --summary "…"          Redacted human+AI journey (no secrets)
@@ -224,6 +227,33 @@ async function main() {
     }
     case "contract-template": {
       console.log(JSON.stringify(scaffoldSkillContract(), null, 2));
+      break;
+    }
+    case "contract-init": {
+      const root = requireWorkspace();
+      const existing = await loadWorkspaceContract(root);
+      if ((existing.contract || existing.error) && !flag(rest, "--force")) {
+        console.error(
+          existing.error
+            ? `.skill/contract.json exists but is unusable: ${existing.error}\nRe-run with --force to overwrite.`
+            : ".skill/contract.json already exists. Re-run with --force to overwrite.",
+        );
+        process.exit(2);
+      }
+      // Scaffold is deliberately incomplete (placeholder values fail assessment
+      // on purpose) — written as-is so the agent fills it in, then contract-check.
+      await saveWorkspaceContract(root, scaffoldSkillContract() as unknown as SkillContract);
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            path: ".skill/contract.json",
+            hint: "Fill in every declaration, then `skill contract-check .skill/contract.json` before compiling.",
+          },
+          null,
+          2,
+        ),
+      );
       break;
     }
     case "contract-check": {

@@ -62,7 +62,11 @@ the work — especially local LLMs.
 
 ## Local workspace
 
-`.skill/` working tree: `sections/`, stage index, compile → package. See [WORKSPACE.md](./WORKSPACE.md).
+`.skill/` working tree: `sections/`, stage index, optional authored
+`contract.json`, compile → package. A workspace without an authored contract
+compiles continuity-only (lossy, loud `contract_missing`/`contract_unparsable`
+report entries); release always refuses without one. See
+[WORKSPACE.md](./WORKSPACE.md).
 
 ## Container
 

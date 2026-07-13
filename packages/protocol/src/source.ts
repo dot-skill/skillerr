@@ -128,6 +128,13 @@ export interface SkillSource {
    * a 0.4-compatible text source and is release-lossy.
    */
   contract?: SkillContract;
+  /**
+   * Set by an adapter (e.g. workspace) when a contract was found on disk but
+   * could not be parsed/used, so `!contract` never silently means "not
+   * authored" when it actually means "authored but broken". Compilers must
+   * surface this distinctly (contract_unparsable vs contract_missing).
+   */
+  contract_load_error?: string;
   /** Optional extraction candidates. Segmentation belongs to an adapter/AI, not the compiler. */
   candidates?: SkillCandidate[];
   sections: SkillSection[];

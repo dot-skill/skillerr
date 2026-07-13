@@ -19,6 +19,7 @@ import type {
   GenerationUsage,
   SectionType,
   SkillCompileProfile,
+  SkillContract,
   SkillSource,
   SkillSection,
 } from "@skillerr/protocol";
@@ -115,7 +116,52 @@ function paths(root: string) {
     /** @deprecated migrated from ingredients/ */
     ingredientsLegacy: join(base, "ingredients"),
     objects: join(base, "objects"),
+    contract: join(base, "contract.json"),
   };
+}
+
+export interface ContractLoadResult {
+  contract?: SkillContract;
+  error?: string;
+}
+
+/**
+ * Load the workspace's authored `.skill/contract.json`, if any.
+ *
+ * Absence is a normal, silent state (no contract authored yet). A present
+ * but broken file is never silently dropped — callers get `error` and must
+ * surface it (compile refusal on release, a loud report entry on
+ * continuity) instead of quietly falling back to the legacy text path.
+ */
+export async function loadWorkspaceContract(root: string): Promise<ContractLoadResult> {
+  const file = paths(root).contract;
+  if (!existsSync(file)) return {};
+  let raw: string;
+  try {
+    raw = await readFile(file, "utf8");
+  } catch (e) {
+    return { error: `.skill/contract.json could not be read: ${(e as Error).message}` };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return { error: `.skill/contract.json is not valid JSON: ${(e as Error).message}` };
+  }
+  const candidate = parsed as { kind?: unknown; contract_version?: unknown };
+  if (candidate.kind !== "skill_contract" || candidate.contract_version !== "0.5") {
+    return {
+      error:
+        '.skill/contract.json does not look like a SkillContract (expected kind="skill_contract", contract_version="0.5")',
+    };
+  }
+  return { contract: parsed as SkillContract };
+}
+
+/** Write an authored contract to `.skill/contract.json` (the authoring path for BUG-1). */
+export async function saveWorkspaceContract(root: string, contract: SkillContract): Promise<void> {
+  await mkdir(paths(root).base, { recursive: true });
+  await writeFile(paths(root).contract, JSON.stringify(contract, null, 2) + "\n");
 }
 
 export async function initWorkspace(
@@ -357,6 +403,7 @@ async function toSkillSource(
 ): Promise<SkillSource> {
   const host = requireAgentHost(hostOverride);
   const config = await loadConfig(root);
+  const contractResult = await loadWorkspaceContract(root);
   const sections: SkillSection[] = staged.map((i) => ({
     id: i.id,
     revision: 1,
@@ -381,6 +428,8 @@ async function toSkillSource(
     title,
     summary: config.journey_summary ?? title,
     intent: config.title ?? title,
+    contract: contractResult.contract,
+    contract_load_error: contractResult.error,
     sections,
     steering: [],
     prompts: [],

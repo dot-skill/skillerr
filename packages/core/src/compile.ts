@@ -643,7 +643,9 @@ export function compileSkillSource(
       present: [],
       missing: ["semantic_contract"],
       hints: [
-        "Legacy 0.4 SkillSource/Recipe text is a lossy adapter. Add a protocol 0.5 SkillContract and assess it before release compile; use continuity only for migration.",
+        source.contract_load_error
+          ? `A contract was found but could not be used, so release refuses rather than silently falling back: ${source.contract_load_error}`
+          : "Legacy 0.4 SkillSource/Recipe text is a lossy adapter. Add a protocol 0.5 SkillContract and assess it before release compile; use continuity only for migration.",
       ],
     });
   }
@@ -905,9 +907,16 @@ export function compileSkillSource(
     if (!completeness.missing.includes("semantic_contract")) {
       completeness.missing.push("semantic_contract");
     }
+    const code = source.contract_load_error ? "contract_unparsable" : "contract_missing";
+    const message = source.contract_load_error
+      ? `.skill/contract.json could not be used: ${source.contract_load_error}`
+      : "No .skill contract was authored; compiling from legacy text sections only.";
     completeness.hints.push(
-      "Add a 0.5 SkillContract. Legacy text was retained for continuity but structured semantics are unknown.",
+      source.contract_load_error
+        ? message
+        : "Add a 0.5 SkillContract. Legacy text was retained for continuity but structured semantics are unknown.",
     );
+    issues.push({ severity: "warning", code, message });
   }
 
   if (!completeness.complete && profile === "continuity") {

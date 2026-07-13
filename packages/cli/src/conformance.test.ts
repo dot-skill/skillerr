@@ -1129,6 +1129,167 @@ test("propose without agent provenance is rejected", async () => {
   }
 });
 
+test("BUG-1: workspace-authored .skill/contract.json survives into a release compile", async () => {
+  const { mkdtempSync } = await import("node:fs");
+  const dir = mkdtempSync(join(tmpdir(), "skill-ws-contract-"));
+  const prev = process.cwd();
+  const prevHost = process.env.SKILL_HOST;
+  process.chdir(dir);
+  process.env.SKILL_HOST = "cursor";
+  try {
+    const { initWorkspace, proposeSection, setJourney, saveWorkspaceContract, compileWorkspace } =
+      await import("@skillerr/workspace");
+    await initWorkspace(dir, { title: "Contract WS" });
+    await setJourney(dir, { summary: "Agent authored a reviewed contract for this workspace." });
+    await saveWorkspaceContract(dir, demoContract());
+    await proposeSection(dir, {
+      id: "ing_1",
+      title: "Design note",
+      body: "Retry twice on 429 against the configured base_url.",
+      type: "implementation_note",
+    });
+
+    // Release must no longer refuse now that a contract is attached — this is
+    // the core regression: before the fix, compileWorkspace() never set
+    // source.contract, so release ALWAYS threw compile_refused.
+    const result = await compileWorkspace(dir, {
+      message: "Contract WS",
+      profile: "release",
+      approve: true,
+    });
+    assert.equal(result.profile, "release");
+    assert.deepEqual(result.compile.files.manifest.contract, demoContract());
+    assert.equal(result.compile.completeness.complete, true);
+  } finally {
+    process.chdir(prev);
+    if (prevHost === undefined) delete process.env.SKILL_HOST;
+    else process.env.SKILL_HOST = prevHost;
+  }
+});
+
+test("BUG-1: absent .skill contract is a loud contract_missing entry on continuity, not silent", async () => {
+  const { mkdtempSync } = await import("node:fs");
+  const dir = mkdtempSync(join(tmpdir(), "skill-ws-nocontract-"));
+  const prev = process.cwd();
+  const prevHost = process.env.SKILL_HOST;
+  process.chdir(dir);
+  process.env.SKILL_HOST = "cursor";
+  try {
+    const { initWorkspace, proposeSection, setJourney, checkpoint } = await import(
+      "@skillerr/workspace"
+    );
+    await initWorkspace(dir, { title: "No Contract WS" });
+    await setJourney(dir, { summary: "Agent captured notes; no contract authored yet." });
+    await proposeSection(dir, { title: "Note", body: "Plain legacy text.", type: "doc" });
+
+    const cont = await checkpoint(dir, { message: "WIP" });
+    const issues = cont.compile.files.provenance?.compilation_report?.issues ?? [];
+    assert.ok(
+      issues.some((i) => i.code === "contract_missing"),
+      `expected a contract_missing issue, got: ${JSON.stringify(issues)}`,
+    );
+  } finally {
+    process.chdir(prev);
+    if (prevHost === undefined) delete process.env.SKILL_HOST;
+    else process.env.SKILL_HOST = prevHost;
+  }
+});
+
+test("BUG-1: unparsable .skill/contract.json refuses release and flags contract_unparsable on continuity", async () => {
+  const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
+  const dir = mkdtempSync(join(tmpdir(), "skill-ws-badcontract-"));
+  const prev = process.cwd();
+  const prevHost = process.env.SKILL_HOST;
+  process.chdir(dir);
+  process.env.SKILL_HOST = "cursor";
+  try {
+    const { initWorkspace, proposeSection, setJourney, checkpoint, compileWorkspace } =
+      await import("@skillerr/workspace");
+    await initWorkspace(dir, { title: "Bad Contract WS" });
+    await setJourney(dir, { summary: "Agent wrote a broken contract file by mistake." });
+    await proposeSection(dir, { title: "Note", body: "Plain legacy text.", type: "doc" });
+    mkdirSync(join(dir, ".skill"), { recursive: true });
+    writeFileSync(join(dir, ".skill", "contract.json"), JSON.stringify({ not: "a contract" }));
+
+    const cont = await checkpoint(dir, { message: "WIP" });
+    const issues = cont.compile.files.provenance?.compilation_report?.issues ?? [];
+    assert.ok(
+      issues.some(
+        (i) => i.code === "contract_unparsable" && i.message.includes("does not look like a SkillContract"),
+      ),
+      `expected a contract_unparsable issue, got: ${JSON.stringify(issues)}`,
+    );
+
+    await assert.rejects(
+      () => compileWorkspace(dir, { message: "Bad Contract WS", profile: "release", approve: true }),
+      (error: unknown) =>
+        error instanceof CompileRefusalError &&
+        error.missing.includes("semantic_contract") &&
+        error.hints.some((h) => h.includes("could not be used")),
+    );
+  } finally {
+    process.chdir(prev);
+    if (prevHost === undefined) delete process.env.SKILL_HOST;
+    else process.env.SKILL_HOST = prevHost;
+  }
+});
+
+test("BUG-1 parity: skill pack <source.json> and workspace compile agree on manifest.contract for the same contract", async () => {
+  const { mkdtempSync } = await import("node:fs");
+  const dir = mkdtempSync(join(tmpdir(), "skill-ws-parity-"));
+  const prev = process.cwd();
+  const prevHost = process.env.SKILL_HOST;
+  process.chdir(dir);
+  process.env.SKILL_HOST = "cursor";
+  try {
+    const contract = demoContract();
+
+    const directSource: SkillSource = {
+      kind: "skill_source",
+      id: "src_parity",
+      hash: "sha256:" + "b".repeat(64),
+      title: contract.title,
+      contract,
+      sections: [],
+      steering: [],
+      prompts: [],
+      code_refs: [],
+      parents: [],
+      agent: { host: "cursor" },
+      journey: { summary: "Direct source parity fixture.", redacted: true, sensitivity: "private" },
+      inputs_declared: "none",
+      sensitivity: "private",
+      created_at: "2026-07-13T00:00:00.000Z",
+      actor: { id: "test-agent" },
+      source_protocol_version: PROTOCOL_VERSION,
+    };
+    const direct = compileSkillSource(directSource, { profile: "release", approve_inferred_inputs: true, approve_permissions: true });
+
+    const { initWorkspace, proposeSection, setJourney, saveWorkspaceContract, compileWorkspace } =
+      await import("@skillerr/workspace");
+    await initWorkspace(dir, { title: contract.title });
+    await setJourney(dir, { summary: "Workspace parity fixture." });
+    await saveWorkspaceContract(dir, contract);
+    await proposeSection(dir, { title: "Note", body: "unused for a contract-driven compile", type: "doc" });
+    const viaWorkspace = await compileWorkspace(dir, {
+      message: contract.title,
+      profile: "release",
+      approve: true,
+    });
+
+    // Full package byte-equivalence needs deterministic packing (SEC-J) and
+    // content-addressed ids (PROTO-1), which land separately. What BUG-1
+    // guarantees today: the authored contract itself is carried through
+    // either path with zero loss.
+    assert.deepEqual(direct.files.manifest.contract, viaWorkspace.compile.files.manifest.contract);
+    assert.deepEqual(direct.files.manifest.contract, contract);
+  } finally {
+    process.chdir(prev);
+    if (prevHost === undefined) delete process.env.SKILL_HOST;
+    else process.env.SKILL_HOST = prevHost;
+  }
+});
+
 test("P0: human-fake SKILL_HOST cannot mint as trusted", () => {
   let compiled = compileRecipeToSkill(demoRecipe(), {
     approve_inferred_inputs: true,
