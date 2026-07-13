@@ -64,34 +64,34 @@ jobs:
             unset NODE_AUTH_TOKEN || true
           fi
 
-          ws_pkg_field() {
-            local ws="$1"
-            local field="$2"
-            npm pkg get "${field}" -w "${ws}" --json | jq -r --arg ws "${ws}" '.[$ws]'
-          }
-
+          # Read name/version from package.json — do not use `npm pkg get | tr`
+          # (workspace JSON + quote stripping mangles the query and skip never matches).
           publish_one() {
-            local ws="$1"
+            local dir="$1"
             local name ver
-            name="$(ws_pkg_field "${ws}" name)"
-            ver="$(ws_pkg_field "${ws}" version)"
-            echo "::group::npm publish -w ${ws} (${name}@${ver})"
+            name="$(node -p "require('./${dir}/package.json').name")"
+            ver="$(node -p "require('./${dir}/package.json').version")"
+            if [[ -z "${name}" || -z "${ver}" || "${name}" == *[{}]* || "${ver}" == *[{}]* ]]; then
+              echo "::error::Failed to parse name/version from ${dir}/package.json (got name=${name@Q} ver=${ver@Q})"
+              return 1
+            fi
+            echo "::group::npm publish -w ${name} (${name}@${ver})"
             if npm view "${name}@${ver}" version >/dev/null 2>&1; then
               echo "Skip ${name}@${ver} — already on npm"
               echo "::endgroup::"
               return 0
             fi
             if [[ "${name}" == @* ]]; then
-              npm publish -w "${ws}" --access public --provenance
+              npm publish -w "${name}" --access public --provenance
             else
-              npm publish -w "${ws}" --provenance
+              npm publish -w "${name}" --provenance
             fi
             echo "::endgroup::"
           }
-          publish_one @skillerr/protocol
-          publish_one @skillerr/core
-          publish_one @skillerr/runtime
-          publish_one @skillerr/registry
-          publish_one @skillerr/workspace
-          publish_one @skillerr/cli
-          publish_one skillerr
+          publish_one packages/protocol
+          publish_one packages/core
+          publish_one packages/runtime
+          publish_one packages/registry
+          publish_one packages/workspace
+          publish_one packages/cli
+          publish_one packages/skillerr
