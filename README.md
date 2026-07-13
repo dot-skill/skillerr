@@ -29,7 +29,7 @@ Plain markdown “skills” and chat exports break down fast:
 - Workflows stay trapped in one product’s format
 - There is no integrity story before something runs
 
-**`.skill`** is a sealed, inspectable package: typed I/O, workflow, pinned knowledge, redacted provenance, digests, and optional mint. **Skillerr** is the open protocol; **`skillerr`** is the reference CLI your agent uses.
+**`.skill`** is a sealed, inspectable package: typed I/O, workflow, pinned knowledge, redacted provenance, digests, and optional mint. **Skillerr** is the project and docs behind it; install **`skillerr`** once (`npm i -g skillerr`) and point your agent at the work.
 
 Markdown remains a **lossy adapter only** — not the protocol. See [docs/WHY.md](./docs/WHY.md).
 
