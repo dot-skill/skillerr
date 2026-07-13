@@ -54,6 +54,12 @@ Share the `.skill` file directly. An optional local transparency log is included
 
 Yes — public install is unscoped `skillerr` (no org required). Install: `npm i -g skillerr`.
 
+## Claude Desktop claims `.skill` on macOS — is that Skillerr?
+
+**No.** On macOS, Claude Desktop may register the `.skill` extension for its own **Agent Skills** format (a zip with `SKILL.md` inside). Skillerr `.skill` files are a **different** sealed package (typed contract, digests, mint, assets) — same extension, different format.
+
+**What to do:** Use the CLI (`skill inspect ./file.skill`) or your AI agent to identify the file. In Finder, use **Open With** → your editor or terminal instead of double-clicking if the wrong app opens. Do not assume every `.skill` file is Claude-native or Skillerr-native without inspecting.
+
 ## Is this production-final?
 
 Public **draft** (0.5.0). Reference mint HMAC is **development-only** — replace with real keys in production issuers. Digests and inspect-before-run are real; do not treat the bundled signer as production identity proof.
