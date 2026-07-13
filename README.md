@@ -55,6 +55,11 @@ handoff or compile --approve --mint when release-complete. Do not invent filler.
 Show me status and the output path.
 ```
 
+Starting from a blank page instead of a chat you want to seal? Point your
+agent at [examples/skillerr-authoring/SKILL.md](./examples/skillerr-authoring/SKILL.md)
+— it's the interview → contract → review → mint front door, written so an
+agent can follow it without hand-writing the contract JSON.
+
 ### Convert an existing skill
 
 Already have a `SKILL.md` or a skill-creator folder? `.skill` isn't a
