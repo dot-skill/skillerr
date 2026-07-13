@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.3 — 2026-07-13
+
+- Replace Arcane Shimmer banner with a plain diagrammatic `.skill` insides README banner (identity, instructions, capabilities, seal, assets).
+- Update square mark to a clean `.skill` glyph; remove Shimmer from README hero copy.
+
 ## 0.6.2 — 2026-07-13
 
 - Ship Arcane Shimmer brand identity (cinematic banner + pixel skill-core mark) for Skillerr / `.skill`.
