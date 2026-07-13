@@ -110,7 +110,7 @@ self-reported fields.
 | `SKILL_HOST=cursor` env var alone claimed as strong provenance | denylisted mint hosts (`human`, `cli`, `shell`, ...) refuse mint; env markers alone never produce `verified_issuer` | `docs/MINT.md`, `docs/SECURITY.md` "SKILL_HOST / anti-spoof" |
 | Public-dev HMAC (`dot-skill-dev-mint-key`, world-known) presented as production trust | `execute` refuses `trust_state=development` packages unless `--allow-untrusted` is explicit | `adversarial.test.ts`: "dev-HMAC-minted package still refuses execute" |
 | `sig_alg`/seal-version confusion (a downgrade or cross-algorithm replay) | `verifyMintTrust` checks `sig_alg` before comparing the signature; unknown/mismatched version → `unsupported_seal_version` (SEC-G) | `core.test.ts` mint/verify coverage |
-| Symmetric (HMAC) trust cannot scale beyond one org — anyone who can verify can also forge, so "verified_issuer" over HMAC only ever means "shares my secret," not "signed by a key I trust without being able to impersonate it" | **not yet mitigated** — asymmetric signing is spec-only | RFC 0001 (`configured_ed25519`, trust store) |
+| Symmetric (HMAC) trust cannot scale beyond one org — anyone who can verify can also forge, so "verified_issuer" over HMAC only ever means "shares my secret," not "signed by a key I trust without being able to impersonate it" | **Mitigated (Phase 10)** — `issuer_class=configured_ed25519`, verified against a local pinned trust store; a missing/expired/host-mismatched pin refuses (`trust_store_key_not_found`/`_expired`/`_host_not_allowed`), never a silent downgrade | `core.test.ts` PROTO-2 tests, [KEY-CEREMONY.md](./KEY-CEREMONY.md), RFC 0001 |
 | A single attestation conflates "an agent authored this" and "a human reviewed this" under one signer — a compromised issuer key forges both claims at once | **not yet mitigated** | RFC 0002 (independent review countersignature) |
 | A compromised or since-revoked key's packages remain fully trusted forever after distribution | **not yet mitigated** — no revocation channel exists | RFC 0003 (revocation records, `expires_at`) |
 | `inspectSkill`'s summary conflated an unverified self-reported "sealed" claim with an actually-verified one, making a hand-edited `mint_status: "minted"` field read as trustworthy at a glance | `claimsSealed` logic fixed, relabeled `CLAIMS SEALED (unverified — run \`skill inspect --trust\`)` | `docs/SECURITY.md` "Inspect before run"; `core.test.ts` |
@@ -203,7 +203,7 @@ than a silently-dropped gap:
 
 | Threat | RFC |
 |---|---|
-| Symmetric-trust ceiling (T3) | [RFC 0001](./rfcs/0001-asymmetric-signatures-trust-store.md) |
+| Symmetric-trust ceiling (T3) | **Implemented** — [RFC 0001](./rfcs/0001-asymmetric-signatures-trust-store.md) (see status note in that doc) |
 | Single-signer conflation of authorship + review (T3) | [RFC 0002](./rfcs/0002-human-review-countersignature.md) |
 | No revocation channel (T3) | [RFC 0003](./rfcs/0003-revocation-expiry.md) |
 | Dangling `subskill`/`delegate` step kinds (T4) | [RFC 0004](./rfcs/0004-dangling-step-kinds.md) |

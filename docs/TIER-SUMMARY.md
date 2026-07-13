@@ -55,7 +55,7 @@ SEC-tier fixes depend on those staying fixed; RFC for the rest).
 | SEC-K: RFC 8785 canonicalization pinned + cross-impl vectors | Code | `fixtures/canonicalization/vectors.json`, `docs/CANONICALIZATION.md` |
 | SEC-L: consolidated adversarial fixture corpus | Code | `packages/cli/src/adversarial.test.ts` (9 cases, run in CI on all 3 OSes) |
 | PROTO-1: content-addressed `skill_id` | Code | `core.test.ts`, `packages/core/src/compile.ts` `contentAddressedSkillId` |
-| PROTO-2: asymmetric Ed25519 signatures + trust store | RFC | `docs/rfcs/0001-asymmetric-signatures-trust-store.md` |
+| PROTO-2: asymmetric Ed25519 signatures + trust store | Code (Phase 10) | `packages/core/src/signer.ts`, `trust-store.ts`, `core.test.ts` PROTO-2 tests, `docs/KEY-CEREMONY.md`, `docs/rfcs/0001-asymmetric-signatures-trust-store.md` |
 | PROTO-3: independent human-review countersignature | RFC | `docs/rfcs/0002-human-review-countersignature.md` |
 | PROTO-4: revocation + expiry | RFC | `docs/rfcs/0003-revocation-expiry.md` |
 | PROTO-5: permission grammar (hosts/paths) | Code | `protocol.test.ts` grammar tests, `packages/protocol/src/grammar.ts` |

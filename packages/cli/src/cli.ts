@@ -15,6 +15,7 @@
  *   skill load ./file.skill          # resume handoff in another AI
  */
 
+import { generateKeyPairSync } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -32,6 +33,9 @@ import {
   approveCompilation,
   redactSecrets,
   CompileRefusalError,
+  createEd25519Signer,
+  loadTrustStore,
+  defaultTrustStorePath,
 } from "@skillerr/core";
 import { runSkillArchive } from "@skillerr/runtime";
 import { lookup, list, verify as registryVerify, publish as registryPublish } from "@skillerr/registry";
@@ -95,7 +99,14 @@ Create:
   skill compile -m "msg" [--approve] [--mint] [--profile release|continuity]
                                        Release refuses if incomplete
   skill load <file.skill>              Resume continuity in another AI
-  skill mint [--host name]             Seal release (host required)
+  skill mint [--host name] [--signer-key <pem>] [--key-id id]
+                                       Seal release (host required). Default seal is
+                                       public-dev HMAC (development trust only). Pass
+                                       --signer-key for a configured Ed25519 issuer
+                                       seal (verified_issuer-eligible) — see
+                                       skill keygen and docs/KEY-CEREMONY.md
+  skill keygen [-o dir] [--key-id id]  Generate an Ed25519 issuer keypair for
+                                       production signing (docs/KEY-CEREMONY.md)
 
 Multi-skill identify:
   skill agent-guide [--json]           Exact create/identify protocol steps
@@ -104,10 +115,13 @@ Multi-skill identify:
   skill segment …                      Alias of extract
 
 Ingest / run:
-  skill inspect <file.skill> [--trust] TrustView (no compile / no model body)
+  skill inspect <file.skill> [--trust] [--trust-store <path>]
+                                       TrustView (no compile / no model body)
   skill validate <file.skill>          Structure + hash integrity
   skill unpack <file.skill>
   skill verify-trust <file.skill> [--profile minted] [--allow-development-issuer]
+                     [--allow-self-reported] [--trust-store <path>]
+                                       Default trust store: ~/.skillerr/trust-store.json
   skill run <file.skill> [--mode execute] [--allow-untrusted]
                                        Dry-run by default; execute refuses
                                        unsigned/dev seals without --allow-untrusted
@@ -565,6 +579,13 @@ async function main() {
       if (unpacked.raw.manifest.compile_profile === "continuity") {
         throw new Error("Cannot mint continuity draft. Recompile with --profile release first.");
       }
+      const signerKeyPath = opt(rest, "--signer-key");
+      const signer = signerKeyPath
+        ? createEd25519Signer(
+            await readFile(resolve(signerKeyPath), "utf8"),
+            opt(rest, "--key-id") ?? "configured-issuer",
+          )
+        : undefined;
       const { packageBytes, files, attestation } = mintSkillPackage(unpacked.raw, {
         host: requireAgentHost(opt(rest, "--host")),
         provider: process.env.SKILL_PROVIDER,
@@ -582,6 +603,16 @@ async function main() {
         agent_version:
           process.env.SKILL_AGENT_VERSION ??
           (process.env.SKILL_AGENT_RUNTIME ? "unknown" : VERSION),
+        signer,
+        // A configured signer only ever earns verified_issuer trust when the
+        // mint call also carries real agent-runtime evidence (session id /
+        // markers) — see resolveHostClaimBinding in @skillerr/core/mint.
+        // Without evidence this throws a clear, actionable error rather than
+        // silently minting as self_reported.
+        host_claim_binding: signer ? "verified_issuer" : undefined,
+        agent_runtime_evidence: signer
+          ? { session_id: process.env.SKILL_SESSION_ID }
+          : undefined,
       });
       const out = opt(rest, "-o") ?? file;
       await writeFile(resolve(out!), packageBytes);
@@ -617,7 +648,8 @@ async function main() {
       if (!file) usage();
       const bytes = new Uint8Array(await readFile(resolve(file!)));
       if (flag(rest, "--trust")) {
-        console.log(JSON.stringify(inspectTrustView(bytes), null, 2));
+        const trust_store = loadTrustStore(opt(rest, "--trust-store") ?? defaultTrustStorePath());
+        console.log(JSON.stringify(inspectTrustView(bytes, { trust_store }), null, 2));
       } else {
         console.log(JSON.stringify(inspectSkill(bytes), null, 2));
       }
@@ -740,12 +772,54 @@ async function main() {
       const file = rest[0];
       if (!file) usage();
       const profile = (opt(rest, "--profile") ?? "minted") as "open" | "minted" | "anchored";
+      const trust_store = loadTrustStore(opt(rest, "--trust-store") ?? defaultTrustStorePath());
       console.log(
         JSON.stringify(
           verifyMintTrust(new Uint8Array(await readFile(resolve(file!))), profile, {
             allow_development_issuer: flag(rest, "--allow-development-issuer"),
             allow_self_reported: flag(rest, "--allow-self-reported"),
+            trust_store,
           }),
+          null,
+          2,
+        ),
+      );
+      break;
+    }
+    case "keygen": {
+      const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+        privateKeyEncoding: { type: "pkcs8", format: "pem" },
+        publicKeyEncoding: { type: "spki", format: "pem" },
+      });
+      const outDir = opt(rest, "-o") ?? ".";
+      const keyId = opt(rest, "--key-id") ?? `issuer-${new Date().toISOString().slice(0, 10)}`;
+      await mkdir(resolve(outDir), { recursive: true });
+      const privPath = resolve(outDir, `${keyId}.pem`);
+      const pubPath = resolve(outDir, `${keyId}.pub.pem`);
+      await writeFile(privPath, privateKey as unknown as string, { mode: 0o600 });
+      await writeFile(pubPath, publicKey as unknown as string);
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            key_id: keyId,
+            private_key: privPath,
+            public_key: pubPath,
+            next_steps: [
+              `Keep ${privPath} offline/secret — see docs/KEY-CEREMONY.md.`,
+              `Mint with it: skill mint --host <agent-host> --signer-key ${privPath} --key-id ${keyId}`,
+              `Pin the public key for verifiers — add an entry to ~/.skillerr/trust-store.json (or --trust-store <path>):`,
+              JSON.stringify(
+                {
+                  key_id: keyId,
+                  public_key_pem: "<paste contents of " + pubPath + ">",
+                  algorithm: "ed25519",
+                },
+                null,
+                2,
+              ),
+            ],
+          },
           null,
           2,
         ),

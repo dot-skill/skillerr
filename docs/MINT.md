@@ -13,7 +13,7 @@ Required for minted skills. Includes:
 - `package_digest` and **`sealed_manifest_digest`** (identity + permissions/policy/capabilities + content claims)
 - agent host / provider / model (self-reported unless issuer-verified)
 - `host_claim_binding`: `self_reported` | `verified_issuer`
-- `issuer_class`: `public_dev_hmac` | `configured_hmac` | `verified_issuer`. Required on
+- `issuer_class`: `public_dev_hmac` | `configured_hmac` | `configured_ed25519`. Required on
   verify — a stripped/absent `issuer_class` is `missing_issuer_class` and refuses; it is
   never reconstructed from `key_id` (an attacker-controlled field just like `issuer_class`
   itself, so reconstruction could launder a `public_dev_hmac` seal into a
@@ -33,17 +33,34 @@ Required for minted skills. Includes:
 |------|-----------------|--------------------|
 | Unsigned / open | `untrusted` | Refuse unless `--allow-untrusted` |
 | Public-dev HMAC | `development` | Refuse (forgeable) |
-| Configured key + self-reported host | `self_reported` | Refuse unless opted in |
-| Configured key + verified host binding | `verified_issuer` | Allowed |
+| Configured HMAC/Ed25519 + self-reported host | `self_reported` | Refuse unless opted in |
+| Configured Ed25519 key + verified host binding | `verified_issuer` | Allowed |
 
 Reference HMAC in this repo is **dev-only** — not production PKI. Humans exporting `SKILL_HOST` alone never get `verified_issuer`.
 
-The seal itself is real HMAC-SHA256 (`crypto.createHmac`), not a naive
-`sha256(secret + ":" + payloadDigest)` concatenation. The DSSE envelope
-carries an explicit `sig_alg` (currently `"hmac-sha256-v1"`); a seal missing
-it or carrying an unrecognized value is `unsupported_seal_version` on
-verify — a clear "old/foreign algorithm" refusal, not a generic signature
-mismatch that reads like ordinary tampering.
+The default (no `--signer-key`) seal is real HMAC-SHA256
+(`crypto.createHmac`), not a naive `sha256(secret + ":" + payloadDigest)`
+concatenation. The DSSE envelope carries an explicit `sig_alg`
+(`"hmac-sha256-v1"` for HMAC); a seal missing it or carrying an
+unrecognized value is `unsupported_seal_version` on verify — a clear
+"old/foreign algorithm" refusal, not a generic signature mismatch that
+reads like ordinary tampering.
+
+### Asymmetric signing (PROTO-2 / RFC 0001, implemented)
+
+`skill mint --signer-key <pem>` uses a real Ed25519 keypair
+(`issuer_class=configured_ed25519`, `sig_alg="ed25519-v1"`) instead of
+HMAC. Unlike HMAC, verification never requires the private key — a
+verifier holds only a **trust store** of pinned public keys
+(`~/.skillerr/trust-store.json`, `skill verify-trust --trust-store`).
+`verified_issuer` for a `configured_ed25519` attestation additionally
+requires the signing key to actually be present, live (`not_before`/
+`not_after`), and authorized for that `host` in the verifier's trust
+store — a missing pin refuses (`trust_store_key_not_found` and friends),
+it never silently downgrades to a lesser-but-still-passing label. See
+[KEY-CEREMONY.md](./KEY-CEREMONY.md) for the full generate → mint → pin
+walkthrough, and [THREAT-MODEL.md](./THREAT-MODEL.md) T3 for why HMAC
+alone could never make `verified_issuer` mean what it says.
 
 ## Anti-spoof
 

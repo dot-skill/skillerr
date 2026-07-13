@@ -154,6 +154,9 @@ each having to re-derive "is this well-formed" independently.
 - **Valid** = package structure + digests
 - **Minted** = signed creation attestation; TrustView states: `untrusted` | `development` | `self_reported` | `verified_issuer`
 - The bundled development HMAC signer is **never** production trust (`issuer_class=public_dev_hmac`)
+- Production signing uses `issuer_class=configured_ed25519` (PROTO-2 / RFC 0001), a real
+  asymmetric keypair verified against a local pinned trust store, not a shared secret —
+  see [MINT.md](./MINT.md) and [KEY-CEREMONY.md](./KEY-CEREMONY.md)
 - `SKILL_HOST` alone is self-reported provenance — not proof of authorship (especially for local LLMs)
 - Digests and seals are **inspectable without executing** (`skill inspect --trust`)
 - Runtime **deny-by-default** for undeclared network / filesystem / secrets; execute refuses untrusted seals without explicit opt-in

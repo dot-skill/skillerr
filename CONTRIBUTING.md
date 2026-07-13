@@ -22,8 +22,40 @@ change under the MIT License.
 | **Tests** | Conformance cases, adversarial packages | Medium |
 | **Adapters** | Host loaders, MCP bridge, `SKILL.md` export | Medium |
 | **Runtime** | Additive step kinds, verify language | Medium |
-| **Security** | Real signing (replace dev HMAC) | Hard |
 | **Spec RFCs** | Additive fields, version bumps | Hard |
+| **Second runtime** ⭐ | A Go/Rust/… implementation that passes the adversarial + canonicalization corpus | Hard, highest-leverage |
+
+## Wanted: a second independent runtime
+
+The protocol cannot be marked **Stable** (see [ROADMAP.md](./docs/ROADMAP.md))
+on the strength of one implementation agreeing with itself. The single
+highest-leverage contribution right now is a second, independent runtime —
+Go or Rust are natural choices — that reproduces, byte-for-byte:
+
+- [`packages/cli/src/adversarial.test.ts`](./packages/cli/src/adversarial.test.ts)'s
+  hostile-input corpus (path traversal, zip bombs, duplicate entries,
+  tampered digests, stripped `issuer_class`, dev-HMAC-vs-untrusted) — every
+  case must refuse with an equivalent distinct code, never a crash, never a
+  silent accept.
+- [`fixtures/canonicalization/vectors.json`](./fixtures/canonicalization/)'s
+  RFC 8785 (JCS) test vectors, including the UTF-16-vs-code-point
+  surrogate-pair case documented in
+  [docs/CANONICALIZATION.md](./docs/CANONICALIZATION.md) — this is the
+  gotcha most re-implementations get wrong first.
+- The determinism property: compiling the same `SkillSource` twice yields a
+  byte-identical `package_digest` (see the pack/unpack tests in
+  [`packages/core/src/core.test.ts`](./packages/core/src/core.test.ts)).
+
+Ed25519 signature verification (`docs/rfcs/0001-asymmetric-signatures-trust-store.md`,
+now implemented — see [docs/KEY-CEREMONY.md](./docs/KEY-CEREMONY.md)) uses
+standard PKCS8/SPKI PEM and raw Ed25519 signing with no protocol-specific
+framing beyond the DSSE envelope shape in
+[docs/PROTOCOL.md](./docs/PROTOCOL.md) — any language with an Ed25519
+library and a canonical-JSON implementation can reproduce it.
+
+Open an issue labeled `second-runtime` before starting, so effort isn't
+duplicated — this is exactly the kind of `good_first_issue`-adjacent,
+high-impact seed this project needs before calling itself Stable.
 
 ## Dev setup
 

@@ -56,8 +56,13 @@ export type HostClaimBinding = "self_reported" | "verified_issuer";
 /**
  * Class of mint issuer key material.
  * public_dev_hmac MUST NOT be treated as production trust.
+ * (Previously this union incorrectly included "verified_issuer" — a
+ * HostClaimBinding/TrustState value, not an issuer-key class. Nothing ever
+ * assigned issuer_class="verified_issuer"; the real values were always
+ * public_dev_hmac/configured_hmac. Fixed alongside adding
+ * configured_ed25519 — PROTO-2/RFC 0001.)
  */
-export type IssuerClass = "public_dev_hmac" | "configured_hmac" | "verified_issuer";
+export type IssuerClass = "public_dev_hmac" | "configured_hmac" | "configured_ed25519";
 export type InputSource = "human" | "environment" | "secret" | "artifact" | "derived";
 export type SensitivityLevel = "public" | "private" | "secret";
 export type AskWhen = "always" | "if_missing" | "never";

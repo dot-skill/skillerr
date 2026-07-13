@@ -23,6 +23,9 @@ import {
   sha256Digest,
 } from "./hash.js";
 import { packSkill, unpackSkill } from "./pack.js";
+import type { IssuerSigner } from "./signer.js";
+import { verifyEd25519Signature } from "./signer.js";
+import type { TrustStore } from "./trust-store.js";
 import { validatePackageBytes, type ValidationIssue } from "./validate.js";
 
 /**
@@ -54,8 +57,17 @@ export interface MintOptions {
   /**
    * HMAC-style digest seal.
    * Omit / use the public constant only for local development — never production trust.
+   * Ignored when `signer` is supplied.
    */
   issuer_secret?: string;
+  /**
+   * PROTO-2 / RFC 0001: an asymmetric (Ed25519) issuer signer — see
+   * `createEd25519Signer` in `./signer.js`. When supplied, this takes
+   * priority over `issuer_secret`/the public-dev HMAC entirely; the
+   * resulting attestation gets `issuer_class="configured_ed25519"` and
+   * `sig_alg="ed25519-v1"`. Omit for the unchanged zero-config HMAC default.
+   */
+  signer?: IssuerSigner;
   policy_profile?: TrustProfile;
   /**
    * Evidence that mint was invoked from an agent runtime path (not a bare human shell
@@ -84,6 +96,13 @@ export interface VerifyMintTrustOptions {
   allow_development_issuer?: boolean;
   /** Accept self_reported host binding as ok for the requested profile. Default false for minted+. */
   allow_self_reported?: boolean;
+  /**
+   * PROTO-2 / RFC 0001: pinned issuer public keys, required to verify a
+   * configured_ed25519 attestation. Not auto-loaded — pass
+   * `loadTrustStore()`'s result explicitly (core does no implicit
+   * filesystem I/O beyond what callers opt into).
+   */
+  trust_store?: TrustStore;
 }
 
 function loadCoreIdentity(): { name: string; version: string } {
@@ -190,9 +209,19 @@ export function mintSkillPackage(
   const agentVersion =
     opts.agent_version ?? (agentRuntime === CORE_IDENTITY.name ? CORE_IDENTITY.version : "unknown");
 
-  const secret = opts.issuer_secret ?? PUBLIC_DEV_MINT_KEY;
-  const keyId = opts.key_id ?? (secret === PUBLIC_DEV_MINT_KEY ? PUBLIC_DEV_MINT_KEY_ID : "configured-issuer");
-  const issuer_class = resolveIssuerClass(secret, keyId);
+  // PROTO-2 / RFC 0001: a configured signer (Ed25519) takes priority over
+  // the HMAC path entirely. `secret` stays undefined on that branch — it's
+  // only read below when signer is absent.
+  const secret = opts.signer ? undefined : (opts.issuer_secret ?? PUBLIC_DEV_MINT_KEY);
+  const keyId =
+    opts.key_id ??
+    (opts.signer
+      ? opts.signer.key_id
+      : secret === PUBLIC_DEV_MINT_KEY
+        ? PUBLIC_DEV_MINT_KEY_ID
+        : "configured-issuer");
+  const issuer_class = opts.signer ? opts.signer.issuer_class : resolveIssuerClass(secret!, keyId);
+  const sigAlg = opts.signer ? opts.signer.sig_alg : SEAL_ALGORITHM;
   const markers = [
     ...detectAgentRuntimeMarkers(opts.env),
     ...(opts.agent_runtime_evidence?.markers ?? []),
@@ -276,12 +305,12 @@ export function mintSkillPackage(
 
   const payload = canonicalize(attestation);
   const payloadDigest = sha256Digest(payload);
-  const sig = computeSeal(secret, payloadDigest);
+  const sig = opts.signer ? opts.signer.sign(payloadDigest) : computeSeal(secret!, payloadDigest);
 
   const dsse = {
     payloadType: "application/vnd.dot-skill.creation-attestation+json",
     payload_digest: payloadDigest,
-    sig_alg: SEAL_ALGORITHM,
+    sig_alg: sigAlg,
     signatures: [{ keyid: attestation.agent.key_id, sig }],
     attestation,
   };
@@ -506,35 +535,105 @@ export function verifyMintTrust(
         });
       }
 
-      const secret =
-        opts.issuer_secret ??
-        (issuerClass === "public_dev_hmac" ? PUBLIC_DEV_MINT_KEY : undefined);
-      if (!secret) {
-        issues.push({
-          severity: "error",
-          code: "issuer_secret_required",
-          message: "Configured issuer seal requires a matching issuer_secret in the trust store",
-        });
-      } else if (envelope?.sig_alg !== SEAL_ALGORITHM) {
-        // A seal from an older core version (pre real-HMAC) or a
-        // forged/unknown algorithm marker — fail with a clear, distinct
-        // reason rather than falling through to a generic sig mismatch.
-        issues.push({
-          severity: "error",
-          code: "unsupported_seal_version",
-          message: `Seal envelope sig_alg "${envelope?.sig_alg ?? "(none)"}" is not supported (expected "${SEAL_ALGORITHM}"). Re-mint with a current @skillerr/core version.`,
-        });
-      } else {
-        const expected = computeSeal(secret, payloadDigest);
-        const sig = envelope?.signatures?.[0]?.sig;
-        if (sig !== expected) {
+      if (issuerClass === "configured_ed25519") {
+        // PROTO-2 / RFC 0001: asymmetric verification — the verifier never
+        // needs (and never sees) a private key, only a pinned public key
+        // from its own trust store. Unlike the HMAC path below, a missing
+        // pin is a hard failure (never a soft downgrade to self_reported):
+        // without the public key this verifier cannot even check the
+        // signature, so it cannot honestly report anything better than
+        // untrusted — consistent with this codebase's fail-closed rule
+        // that an unverifiable claim is never silently accepted at a
+        // lesser-but-still-passing trust level.
+        if (envelope?.sig_alg !== "ed25519-v1") {
           issues.push({
             severity: "error",
-            code: "attestation_sig_invalid",
-            message: "CreationAttestation signature failed verification",
+            code: "unsupported_seal_version",
+            message: `Seal envelope sig_alg "${envelope?.sig_alg ?? "(none)"}" is not supported for issuer_class=configured_ed25519 (expected "ed25519-v1").`,
           });
         } else {
-          signedOk = true;
+          const keyId = attestation.agent.key_id;
+          const entry = opts.trust_store?.keys.find((k) => k.key_id === keyId);
+          if (!opts.trust_store) {
+            issues.push({
+              severity: "error",
+              code: "trust_store_not_configured",
+              message:
+                "issuer_class=configured_ed25519 requires a trust_store to verify. " +
+                "Pass VerifyMintTrustOptions.trust_store (see loadTrustStore()).",
+            });
+          } else if (!entry) {
+            issues.push({
+              severity: "error",
+              code: "trust_store_key_not_found",
+              message: `No trust-store entry for key_id "${keyId}".`,
+            });
+          } else {
+            const at = new Date(attestation.minted_at);
+            const expired =
+              (entry.not_before && at < new Date(entry.not_before)) ||
+              (entry.not_after && at > new Date(entry.not_after));
+            const hostAllowed =
+              !entry.allowed_hosts ||
+              entry.allowed_hosts.length === 0 ||
+              entry.allowed_hosts.includes(attestation.host);
+            if (expired) {
+              issues.push({
+                severity: "error",
+                code: "trust_store_key_expired",
+                message: `Trust-store key "${keyId}" is outside its valid window (not_before=${entry.not_before ?? "-"}, not_after=${entry.not_after ?? "-"}, minted_at=${attestation.minted_at}).`,
+              });
+            } else if (!hostAllowed) {
+              issues.push({
+                severity: "error",
+                code: "trust_store_host_not_allowed",
+                message: `Trust-store key "${keyId}" is not authorized for host "${attestation.host}" (allowed_hosts=${JSON.stringify(entry.allowed_hosts)}).`,
+              });
+            } else {
+              const sig = envelope?.signatures?.[0]?.sig;
+              if (!sig || !verifyEd25519Signature(entry.public_key_pem, payloadDigest, sig)) {
+                issues.push({
+                  severity: "error",
+                  code: "attestation_sig_invalid",
+                  message: "CreationAttestation signature failed verification",
+                });
+              } else {
+                signedOk = true;
+              }
+            }
+          }
+        }
+      } else {
+        const secret =
+          opts.issuer_secret ??
+          (issuerClass === "public_dev_hmac" ? PUBLIC_DEV_MINT_KEY : undefined);
+        if (!secret) {
+          issues.push({
+            severity: "error",
+            code: "issuer_secret_required",
+            message: "Configured issuer seal requires a matching issuer_secret in the trust store",
+          });
+        } else if (envelope?.sig_alg !== SEAL_ALGORITHM) {
+          // A seal from an older core version (pre real-HMAC) or a
+          // forged/unknown algorithm marker — fail with a clear, distinct
+          // reason rather than falling through to a generic sig mismatch.
+          issues.push({
+            severity: "error",
+            code: "unsupported_seal_version",
+            message: `Seal envelope sig_alg "${envelope?.sig_alg ?? "(none)"}" is not supported (expected "${SEAL_ALGORITHM}"). Re-mint with a current @skillerr/core version.`,
+          });
+        } else {
+          const expected = computeSeal(secret, payloadDigest);
+          const sig = envelope?.signatures?.[0]?.sig;
+          if (sig !== expected) {
+            issues.push({
+              severity: "error",
+              code: "attestation_sig_invalid",
+              message: "CreationAttestation signature failed verification",
+            });
+          } else {
+            signedOk = true;
+          }
         }
       }
 
@@ -550,10 +649,18 @@ export function verifyMintTrust(
   } else if (attestation && envelope?.signatures?.[0]?.sig) {
     // open profile: still classify if a seal is present
     const payloadDigest = sha256Digest(canonicalize(attestation));
-    const secret = opts.issuer_secret ?? PUBLIC_DEV_MINT_KEY;
-    signedOk =
-      envelope.sig_alg === SEAL_ALGORITHM &&
-      envelope.signatures[0].sig === computeSeal(secret, payloadDigest);
+    if (attestation.issuer_class === "configured_ed25519") {
+      const entry = opts.trust_store?.keys.find((k) => k.key_id === attestation.agent.key_id);
+      signedOk =
+        envelope.sig_alg === "ed25519-v1" &&
+        Boolean(entry) &&
+        verifyEd25519Signature(entry!.public_key_pem, payloadDigest, envelope.signatures[0].sig);
+    } else {
+      const secret = opts.issuer_secret ?? PUBLIC_DEV_MINT_KEY;
+      signedOk =
+        envelope.sig_alg === SEAL_ALGORITHM &&
+        envelope.signatures[0].sig === computeSeal(secret, payloadDigest);
+    }
   }
 
   if (profile === "anchored") {
@@ -590,7 +697,7 @@ export function verifyMintTrust(
 /**
  * TrustView from skill.json + signatures + digests only — no compile, no model body ingest.
  */
-export function inspectTrustView(archive: Uint8Array): TrustView {
+export function inspectTrustView(archive: Uint8Array, opts?: { trust_store?: TrustStore }): TrustView {
   const base = validatePackageBytes(archive);
   const warnings: string[] = [];
   if (!base.manifest) {
@@ -622,6 +729,7 @@ export function inspectTrustView(archive: Uint8Array): TrustView {
     const verify = verifyMintTrust(archive, "minted", {
       allow_development_issuer: true,
       allow_self_reported: true,
+      trust_store: opts?.trust_store,
     });
     trust_state = verify.trust_state;
     if (trust_state === "development") {

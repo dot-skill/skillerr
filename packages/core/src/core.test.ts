@@ -7,10 +7,12 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { generateKeyPairSync } from "node:crypto";
 import { canonicalize, sha256Digest, sha256Hex, packageDigestFromContent } from "./hash.js";
 import { normalizePath, assertSafePaths, UnsafePathError } from "./paths.js";
 import { packSkill, unpackSkill } from "./pack.js";
 import { mintSkillPackage, verifyMintTrust } from "./mint.js";
+import { createEd25519Signer } from "./signer.js";
 import { validatePackageBytes } from "./validate.js";
 import { compileSkillSource, approveCompilation } from "./compile.js";
 import {
@@ -267,4 +269,125 @@ test("mint/verify: a package minted with the public dev key verifies as developm
   // Without explicit opt-in, the public dev key must never pass as trusted.
   const strict = verifyMintTrust(sealed.packageBytes, "minted");
   assert.equal(strict.ok, false);
+});
+
+function mintedEd25519Fixture(overrides?: { host?: string }) {
+  const contract = validContract();
+  const source: SkillSource = {
+    kind: "skill_source",
+    id: "src_ed25519_unit",
+    hash: "sha256:" + "c".repeat(64),
+    title: contract.title,
+    contract,
+    sections: [],
+    steering: [],
+    prompts: [],
+    code_refs: [],
+    parents: [],
+    agent: { host: "cursor" },
+    journey: { summary: "Ed25519 signer unit fixture.", redacted: true, sensitivity: "private" },
+    inputs_declared: "none",
+    sensitivity: "private",
+    created_at: "2026-07-13T00:00:00.000Z",
+    actor: { id: "test-agent" },
+    source_protocol_version: PROTOCOL_VERSION,
+  };
+  const compiled = compileSkillSource(source, {
+    profile: "release",
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+  });
+  const approved = approveCompilation(compiled, { inputs: ["*"], permissions: true });
+  approved.files.manifest.needs_human_review = false;
+
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const signer = createEd25519Signer(privateKey as unknown as string, "issuer-2026");
+
+  const sealed = mintSkillPackage(approved.files, {
+    host: overrides?.host ?? "cursor",
+    signer,
+    host_claim_binding: "verified_issuer",
+    agent_runtime_evidence: { session_id: "ses_test", markers: ["SKILL_AGENT_INVOCATION"] },
+  });
+  return { sealed, publicKeyPem: publicKey as unknown as string, keyId: "issuer-2026" };
+}
+
+test("PROTO-2: mint with a configured Ed25519 signer, verified against a matching trust-store key, is verified_issuer", () => {
+  const { sealed, publicKeyPem, keyId } = mintedEd25519Fixture();
+  assert.equal(sealed.attestation.issuer_class, "configured_ed25519");
+
+  const trustStore = { version: 1 as const, keys: [{ key_id: keyId, public_key_pem: publicKeyPem, algorithm: "ed25519" as const }] };
+  const trust = verifyMintTrust(sealed.packageBytes, "minted", { trust_store: trustStore });
+  assert.equal(trust.ok, true, JSON.stringify(trust.issues));
+  assert.equal(trust.trust_state, "verified_issuer");
+});
+
+test("PROTO-2: the same Ed25519-sealed package verified without that key in the trust store is untrusted, not silently downgraded-but-passing", () => {
+  const { sealed } = mintedEd25519Fixture();
+  const emptyStore = { version: 1 as const, keys: [] };
+  const trust = verifyMintTrust(sealed.packageBytes, "minted", { trust_store: emptyStore });
+  assert.equal(trust.ok, false);
+  assert.equal(trust.trust_state, "untrusted");
+  assert.ok(trust.issues.some((i) => i.code === "trust_store_key_not_found"));
+});
+
+test("PROTO-2: no trust_store passed at all refuses with trust_store_not_configured", () => {
+  const { sealed } = mintedEd25519Fixture();
+  const trust = verifyMintTrust(sealed.packageBytes, "minted", {});
+  assert.equal(trust.ok, false);
+  assert.ok(trust.issues.some((i) => i.code === "trust_store_not_configured"));
+});
+
+test("PROTO-2: an expired trust-store key refuses with trust_store_key_expired", () => {
+  const { sealed, publicKeyPem, keyId } = mintedEd25519Fixture();
+  const expiredStore = {
+    version: 1 as const,
+    keys: [
+      {
+        key_id: keyId,
+        public_key_pem: publicKeyPem,
+        algorithm: "ed25519" as const,
+        not_after: "2020-01-01T00:00:00.000Z",
+      },
+    ],
+  };
+  const trust = verifyMintTrust(sealed.packageBytes, "minted", { trust_store: expiredStore });
+  assert.equal(trust.ok, false);
+  assert.ok(trust.issues.some((i) => i.code === "trust_store_key_expired"));
+});
+
+test("PROTO-2: a trust-store key not authorized for the attestation's host refuses with trust_store_host_not_allowed", () => {
+  const { sealed, publicKeyPem, keyId } = mintedEd25519Fixture();
+  const scopedStore = {
+    version: 1 as const,
+    keys: [
+      { key_id: keyId, public_key_pem: publicKeyPem, algorithm: "ed25519" as const, allowed_hosts: ["claude-code"] },
+    ],
+  };
+  const trust = verifyMintTrust(sealed.packageBytes, "minted", { trust_store: scopedStore });
+  assert.equal(trust.ok, false);
+  assert.ok(trust.issues.some((i) => i.code === "trust_store_host_not_allowed"));
+});
+
+test("PROTO-2: a corrupted Ed25519 signature byte refuses with attestation_sig_invalid, never crashes", () => {
+  const { sealed, publicKeyPem, keyId } = mintedEd25519Fixture();
+  const unpacked = unpackSkill(sealed.packageBytes);
+  const dsse = unpacked.raw.signatures!["creation.dsse.json"] as { signatures: Array<{ sig: string; keyid?: string }> };
+  const sig = dsse.signatures[0]!.sig;
+  dsse.signatures[0]!.sig = sig.slice(0, -4) + (sig.slice(-4) === "AAAA" ? "BBBB" : "AAAA");
+  const tampered = packSkill({ ...unpacked.raw, signatures: unpacked.raw.signatures });
+
+  const trustStore = { version: 1 as const, keys: [{ key_id: keyId, public_key_pem: publicKeyPem, algorithm: "ed25519" as const }] };
+  const trust = verifyMintTrust(tampered, "minted", { trust_store: trustStore });
+  assert.equal(trust.ok, false);
+  assert.ok(trust.issues.some((i) => i.code === "attestation_sig_invalid"));
+});
+
+test("PROTO-2: an Ed25519-configured signer key_id that isn't actually an Ed25519 key is rejected at signer construction, not silently accepted", () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+  assert.throws(() => createEd25519Signer(pem, "bad-key"), /not an Ed25519 private key/);
 });

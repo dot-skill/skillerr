@@ -1,6 +1,29 @@
 # RFC 0001 — Real asymmetric signatures + trust store (PROTO-2)
 
-Status: **Draft — spec only, not implemented**
+Status: **Implemented** (Phase 10) — `packages/core/src/signer.ts`,
+`packages/core/src/trust-store.ts`, `skill keygen`/`skill mint --signer-key`/
+`skill verify-trust --trust-store`. See [KEY-CEREMONY.md](../KEY-CEREMONY.md)
+for the operational walkthrough. This document is retained as the original
+design rationale; two deltas from what shipped, both improvements over the
+original sketch below:
+
+- **Key encoding**: shipped as standard PKCS8/SPKI **PEM**, not the
+  base64-raw-key sketch in "Trust store file format" below — PEM has native
+  `node:crypto` support (`createPrivateKey`/`createPublicKey`) and matches
+  `openssl genpkey`/`pkey` output directly, so no hand-rolled ASN.1/DER
+  wrapping was needed. The trust-store JSON shape is otherwise unchanged
+  (`public_key_pem` replaces `public_key`).
+- **Missing-pin behavior**: this RFC's prose said an unpinned/expired/
+  wrong-host key "falls back to `self_reported` at best." The shipped
+  behavior is stricter — a `configured_ed25519` attestation the verifier
+  cannot check against a trust-store entry is a hard refusal
+  (`trust_store_key_not_found` / `_expired` / `_host_not_allowed`,
+  `trust_state=untrusted`), not a soft downgrade. Rationale: without the
+  public key the verifier cannot even check the signature, so it cannot
+  honestly report anything better than untrusted — matching this
+  codebase's established fail-closed rule (see
+  [THREAT-MODEL.md](../THREAT-MODEL.md)) that an unverifiable claim is
+  never silently accepted at a lesser-but-still-passing level.
 
 ## Motivation
 

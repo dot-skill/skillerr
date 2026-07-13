@@ -42,6 +42,10 @@ export {
   SEAL_ALGORITHM,
 } from "./mint.js";
 export type { MintOptions, VerifyMintTrustOptions } from "./mint.js";
+export { createEd25519Signer, verifyEd25519Signature } from "./signer.js";
+export type { IssuerSigner } from "./signer.js";
+export { loadTrustStore, defaultTrustStorePath } from "./trust-store.js";
+export type { TrustStore, TrustStoreKey } from "./trust-store.js";
 export {
   compileSkillSource,
   compileRecipeToSkill,

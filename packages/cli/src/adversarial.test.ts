@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { strToU8, zipSync } from "fflate";
+import { generateKeyPairSync } from "node:crypto";
 import {
   approveCompilation,
   compileSkillSource,
@@ -19,6 +20,7 @@ import {
   UnsafePathError,
   UnsafeZipError,
   validatePackageBytes,
+  createEd25519Signer,
 } from "@skillerr/core";
 import { inspectTrustView, verifyMintTrust } from "@skillerr/core";
 import { runSkillArchive } from "@skillerr/runtime";
@@ -315,4 +317,40 @@ test("adversarial: dev-HMAC-minted package (trust_state=development) still refus
     { mode: "execute", allow_untrusted: true },
   );
   assert.doesNotMatch(allowed.error ?? "", /Refusing execute/);
+});
+
+test("adversarial: Ed25519-sealed package (issuer_class=configured_ed25519) presenting to a verifier with no matching trust-store pin is untrusted, not silently accepted", () => {
+  // Complements the HMAC dev-key case above: a *correctly formed, real*
+  // asymmetric seal is still worthless to a verifier who never pinned that
+  // specific key — see PROTO-2 / RFC 0001 and docs/KEY-CEREMONY.md. This is
+  // a distinct threat from a forged signature (attestation_sig_invalid,
+  // covered in packages/core/src/core.test.ts): here the signature is
+  // perfectly valid, the verifier just has no reason to trust it yet.
+  const compiled = compileSkillSource(validSource(), {
+    profile: "release",
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+  });
+  const approved = approveCompilation(compiled, { inputs: ["*"], permissions: true });
+  approved.files.manifest.needs_human_review = false;
+
+  const { privateKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const signer = createEd25519Signer(privateKey as unknown as string, "untrusted-key-2026");
+  const { packageBytes } = mintSkillPackage(approved.files, {
+    host: "cursor",
+    signer,
+    host_claim_binding: "verified_issuer",
+    agent_runtime_evidence: { session_id: "ses_adversarial" },
+  });
+
+  const noPin = verifyMintTrust(packageBytes, "minted", { trust_store: { version: 1, keys: [] } });
+  assert.equal(noPin.ok, false);
+  assert.equal(noPin.trust_state, "untrusted");
+  assert.ok(noPin.issues.some((i) => i.code === "trust_store_key_not_found"));
+
+  const inspected = inspectTrustView(packageBytes, { trust_store: { version: 1, keys: [] } });
+  assert.equal(inspected.trust_state, "untrusted");
 });

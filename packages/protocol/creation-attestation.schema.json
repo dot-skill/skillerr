@@ -61,7 +61,7 @@
         "deployment": { "enum": ["local", "hosted", "hybrid", "unknown"] },
         "endpoint": { "type": "string" },
         "host_claim_binding": { "enum": ["self_reported", "verified_issuer"] },
-        "issuer_class": { "enum": ["public_dev_hmac", "configured_hmac", "verified_issuer"] },
+        "issuer_class": { "enum": ["public_dev_hmac", "configured_hmac", "configured_ed25519"] },
         "agent_runtime_markers": { "type": "array", "items": { "type": "string" } },
         "journey": {
           "type": "object",
