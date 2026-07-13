@@ -1,9 +1,16 @@
 name: CI
 
+# Test and build only. No npm publish.
+# Releases: tag v* → publish.yml (see docs/PUBLISHING.md).
+# Docs site: dot-skill/skillerr-com (not this repo).
+
 on:
   push:
     branches: [main]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   test:

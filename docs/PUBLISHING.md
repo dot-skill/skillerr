@@ -10,6 +10,44 @@ npm i -g skillerr
 
 Bin: `skill` (also `skillerr`). One-shot: `npx -y skillerr --help`.
 
+## How releases work
+
+This repo has **two** GitHub Actions workflows — nothing else:
+
+| Workflow | Triggers | What it does |
+|----------|----------|--------------|
+| **CI** (`ci.yml`) | PR + push to `main` | Install, test, build, `pack:check`. **No npm publish.** |
+| **Publish** (`publish.yml`) | `v*` tag push or manual dispatch | Same checks, then publish all seven packages to npm with OIDC provenance. |
+
+Public docs and GitHub Pages live in **[dot-skill/skillerr-com](https://github.com/dot-skill/skillerr-com)** — not here. This OSS repo is protocol + packages only.
+
+### Release steps
+
+1. **Merge to `main`** — CI must pass (Node 20 and 22).
+2. **Bump versions** in workspace `package.json` files and update `CHANGELOG.md`.
+3. **Tag and push** — the tag is the release marker; publish reads each package’s `package.json` version:
+
+```bash
+git tag v0.6.3
+git push origin v0.6.3
+```
+
+4. **Publish workflow runs** — checkout → install → test → publish in dependency order. Versions already on npm are skipped.
+5. **Or** after configuring Trusted Publisher: **Actions → Publish → Run workflow** on the tag ref (no need to re-tag if publish failed once).
+
+### Why tags, not “merge to main = publish”
+
+We **do not** publish on every merge to `main`. Tag-based releases are the standard OSS pattern because they:
+
+- Prevent accidental publishes from routine merges
+- Tie npm versions to an explicit, immutable git ref
+- Work cleanly with npm Trusted Publisher (OIDC) and provenance
+- Let you merge docs/fixes without shipping a new npm version
+
+`workflow_run` after CI on `main` is intentionally **not** used — it is easy to publish the wrong commit or forget a version bump.
+
+---
+
 ## Packages (all seven)
 
 | # | npm package | Role |
@@ -77,23 +115,19 @@ Official reference: [npm Trusted publishing](https://docs.npmjs.com/trusted-publ
 
 ---
 
-## Publish a release
+## Publish a release (quick reference)
 
 **Prerequisite:** Trusted Publisher saved on all seven packages (Repository = `skillerr`).
 
-1. Bump versions in workspace `package.json` files as needed (they need not all match; the workflow **skips** any `name@version` already on npm).
-2. Commit and push to `main`. Confirm CI is green.
-3. Tag and push (tag is a release marker; publish uses each package’s `package.json` version):
+See [How releases work](#how-releases-work) for the full pipeline. Short version:
 
 ```bash
-git tag v0.6.2
-git push origin v0.6.2
+# after versions bumped and merged to main with green CI
+git tag v0.6.3
+git push origin v0.6.3
 ```
 
-4. The **Publish** workflow runs on tag `v*`: install, test, then publish in order with provenance (OIDC).
-5. **Or** use **Actions → Publish → Run workflow** (`workflow_dispatch`) from the desired ref after versions are bumped — same path, useful right after configuring TP.
-
-`v0.6.1` and `v0.6.2` tags may already exist; if `v0.6.2` Publish failed with `ENEEDAUTH`, fix TP then **Actions → Publish → Run workflow** (no need to re-tag).
+`v0.6.3` Publish failed with `ENEEDAUTH` until Trusted Publisher is configured. After TP: **Actions → Publish → Run workflow** on ref `v0.6.3` (no need to re-tag).
 
 ---
 
@@ -151,7 +185,11 @@ npm deprecate @dot-skill/workspace@"*" "Moved to @skillerr/workspace — npm i @
 npm deprecate @dot-skill/cli@"*" "Moved to @skillerr/cli; end users: npm i -g skillerr"
 ```
 
-## CI
+## GitHub Actions
 
-- `.github/workflows/ci.yml` — tests on push/PR for Node 20 and 22.
-- `.github/workflows/publish.yml` — same checks, then publish on `v*` tags or manual dispatch.
+| File | Purpose |
+|------|---------|
+| `.github/workflows/ci.yml` | Test/build on PR + `main` push. No publish. |
+| `.github/workflows/publish.yml` | Test/build + npm publish on `v*` tags or `workflow_dispatch`. |
+
+There is **no** Pages / docs deploy workflow in this repo. Site deploy is `dot-skill/skillerr-com`.

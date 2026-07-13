@@ -1,10 +1,21 @@
 name: Publish
 
+# Tag-based releases only. Merge to main runs CI, not publish.
+# Docs site deploys from dot-skill/skillerr-com — not this repo.
+#
+# Flow: merge → CI green → git tag vX.Y.Z → this workflow (test + publish).
+# We do not publish on every push to main — tags prevent accidental releases.
+
 on:
   push:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag, or SHA to publish from (defaults to the workflow ref)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -19,6 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -36,13 +49,21 @@ jobs:
 
       # Order: protocol → core → runtime → registry → workspace → cli → skillerr
       # Auth: npm Trusted Publishing (OIDC). Optional fallback: NPM_TOKEN secret.
-      # Skip versions already on the registry so a partial bump (e.g. skillerr@0.6.1)
+      # Skip versions already on the registry so a partial bump (e.g. skillerr@0.6.3)
       # can publish without failing on unchanged @skillerr/*@0.6.0 packages.
       - name: Publish packages
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN_FALLBACK: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
+
+          # Empty NODE_AUTH_TOKEN blocks OIDC; only set it when NPM_TOKEN exists.
+          if [[ -n "${NPM_TOKEN_FALLBACK:-}" ]]; then
+            export NODE_AUTH_TOKEN="${NPM_TOKEN_FALLBACK}"
+          else
+            unset NODE_AUTH_TOKEN || true
+          fi
+
           publish_one() {
             local ws="$1"
             local name ver
@@ -55,9 +76,9 @@ jobs:
               return 0
             fi
             if [[ "${name}" == @* ]]; then
-              npm publish -w "${ws}" --access public
+              npm publish -w "${ws}" --access public --provenance
             else
-              npm publish -w "${ws}"
+              npm publish -w "${ws}" --provenance
             fi
             echo "::endgroup::"
           }
