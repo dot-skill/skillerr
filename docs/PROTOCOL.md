@@ -136,3 +136,21 @@ through adapters. Legacy text-only sources remain continuity-only and lossy.
 See [ADAPTERS.md](./ADAPTERS.md).
 
 Distribute the compiled `.skill` file directly or through a compatible registry.
+
+## Protocol/CLI compatibility
+
+Every package's `skill.json` carries `protocol_version`. `skill validate`
+(and `skill inspect`) compares it against the running CLI's
+`PROTOCOL_VERSION` **exactly** — not a semver range, not best-effort. A
+mismatch is a hard, explicit `protocol_version` validation error; a package
+is never read leniently against a protocol version the running CLI wasn't
+built for.
+
+| `skillerr` npm version | Reads/writes `protocol_version` |
+|---|---|
+| 0.6.x | `0.5.0` |
+
+Update this table on every protocol version bump. If you're implementing a
+second runtime (see [ROADMAP.md](./ROADMAP.md)), match this policy exactly:
+refuse on any `protocol_version` you don't implement rather than guessing
+forward/backward compatibility.

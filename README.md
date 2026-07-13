@@ -130,9 +130,14 @@ example.skill
 ├── skill.json           # manifest, digests, profile, completeness
 ├── workflow.json        # runnable steps
 ├── knowledge/           # pinned decisions / rules
+├── prompts/             # versioned prompt templates
+├── resources/           # supporting files (e.g. references, data)
+├── artifacts/           # generated outputs
 ├── provenance/          # redacted journey + generation_usage (tokens)
 └── signatures/          # mint attestation (release)
 ```
+
+Full container spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 
 ---
 
