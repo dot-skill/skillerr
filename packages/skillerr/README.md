@@ -11,7 +11,7 @@
 <p align="center"><strong>Skillerr</strong></p>
 <p align="center"><em>Sealed <code>.skill</code> packages for AI agents</em></p>
 
-Reference CLI for **Skillerr** — portable `.skill` packages for AI agents.
+**The integrity + evaluation layer for AI skills.** Your `SKILL.md` still works — `.skill` seals it, scores it, and makes it portable and inspectable before anyone runs it.
 
 You install once. Then you **point your AI** at Skillerr. The agent creates, inspects, hands off, and dry-runs skills; you review and approve releases.
 
@@ -21,9 +21,11 @@ You install once. Then you **point your AI** at Skillerr. The agent creates, ins
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../../LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 
-A `.skill` is a sealed ZIP: typed inputs, workflow, pinned knowledge, redacted provenance, integrity digests, and optional mint. Inspect TrustView before anything runs.
+A `.skill` is a sealed ZIP: typed inputs, workflow, pinned knowledge, redacted provenance, integrity digests, and optional mint + eval/score. Inspect TrustView before anything runs.
 
-Plain markdown skills lose structure, integrity, and portability across hosts. Skillerr fixes that with one inspectable artifact. See [WHY.md](../../docs/WHY.md).
+Plain markdown skills lose structure, integrity, and portability across hosts. Skillerr fixes that with one inspectable artifact, without asking you to abandon `SKILL.md` — see [WHY.md](../../docs/WHY.md).
+
+Already have a `SKILL.md`? `skill ingest ./your-skill` upgrades it in one command — see [FAQ.md](../../docs/FAQ.md#how-do-i-convert-an-existing-skillmd).
 
 ---
 
@@ -91,7 +93,8 @@ Digests and seals are visible without execution. Prefer inspect → validate →
 ## Documentation
 
 - [Protocol](../../docs/PROTOCOL.md) · [Agent](../../docs/AGENT.md) · [Prompts](../../examples/prompts.md)
-- [Security](../../docs/SECURITY.md) · [skillerr.com](https://dot-skill.github.io/skillerr-com/)
+- [Eval / benchmark](../../docs/EVAL.md) · [Bundled scripts](../../docs/RESOURCES.md) · [FAQ](../../docs/FAQ.md)
+- [Security](../../docs/SECURITY.md) · [Threat model](../../docs/THREAT-MODEL.md) · [skillerr.com](https://dot-skill.github.io/skillerr-com/)
 
 End users install **`skillerr`**. Host authors integrate `@skillerr/*` libraries or an independent conforming implementation.
 
