@@ -1,16 +1,23 @@
-# Open `.skill` Protocol
+# Skillerr
 
-An **open protocol for portable AI skills**. Hosts, agents, and apps adopt a shared contract: create or ingest a `.skill` package, inspect digests and seals before run, and execute against the same runtime lifecycle — across tools, not locked to one product.
+Open protocol and portable `.skill` format for AI skills.
 
-**Artifact:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`) · **Libraries:** `@dot-skill/*`
+Conforming **hosts** (AI apps, agents, IDEs) implement the Skillerr specification.
+The **`skillerr`** CLI is the **reference implementation** for validation, inspection,
+compile, and run.
+
+**Site:** [skillerr.com](https://skillerr.com) · **Artifact:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`)
 
 [![npm](https://img.shields.io/npm/v/skillerr.svg)](https://www.npmjs.com/package/skillerr)
-[![CI](https://github.com/dot-skill/dot-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/dot-skill/dot-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 [![Protocol](https://img.shields.io/badge/protocol-0.5.0_draft-orange.svg)](./docs/PROTOCOL.md)
 
-> Draft **0.5.0** — transferable authoring and runtime contract. Independent conforming implementations welcome.
+## Status
+
+Specification: Draft **0.5.0** ([docs/PROTOCOL.md](./docs/PROTOCOL.md))  
+Reference CLI: `skillerr`  
+Independent conforming implementations welcome.
 
 Why implement: portable packages with typed I/O, workflow, redacted provenance, integrity digests, optional mint, TrustView-before-execute, and continuity handoffs. Why not markdown alone? → [docs/WHY.md](./docs/WHY.md)
 
@@ -22,7 +29,7 @@ Why implement: portable packages with typed I/O, workflow, redacted provenance, 
 npm i -g skillerr
 ```
 
-Then: `skill --help`. Node ≥ 20. One-shot: `npx -y skillerr --help`. App authors typically depend on `@dot-skill/protocol`, `@dot-skill/core`, and `@dot-skill/runtime` instead of (or in addition to) the CLI.
+Then: `skill --help`. Node ≥ 20. One-shot: `npx -y skillerr --help`. Host authors typically integrate the Skillerr protocol libraries (schemas, compile, runtime) instead of — or in addition to — the CLI.
 
 ```bash
 export SKILL_HOST=cursor   # required when creating
@@ -118,18 +125,19 @@ See [docs/SECURITY.md](./docs/SECURITY.md).
 
 ## Packages
 
-| Package | Purpose |
-|---------|---------|
-| [`skillerr`](./packages/dot-skill) | **Reference CLI** — bin `skill` |
-| [`@dot-skill/cli`](./packages/cli) | CLI implementation |
-| [`@dot-skill/protocol`](./packages/protocol) | SkillContract, SkillSource, types |
-| [`@dot-skill/core`](./packages/core) | Compile, pack, validate, mint |
-| [`@dot-skill/runtime`](./packages/runtime) | Inspect / dry-run / execute |
-| [`@dot-skill/workspace`](./packages/workspace) | Local `.skill/` working tree |
-| [`@dot-skill/registry`](./packages/registry) | Optional local transparency log |
+| Package / path | Purpose |
+|----------------|---------|
+| [`skillerr`](./packages/skillerr) | **Reference CLI** — bin `skill` |
+| [`packages/cli`](./packages/cli) | CLI implementation |
+| [`packages/protocol`](./packages/protocol) | SkillContract, SkillSource, types |
+| [`packages/core`](./packages/core) | Compile, pack, validate, mint |
+| [`packages/runtime`](./packages/runtime) | Inspect / dry-run / execute |
+| [`packages/workspace`](./packages/workspace) | Local `.skill/` working tree |
+| [`packages/registry`](./packages/registry) | Optional local transparency log |
+
+From this repository root:
 
 ```bash
-git clone https://github.com/dot-skill/dot-skill.git && cd dot-skill
 npm i && npm run build && npm link -w skillerr
 ```
 
