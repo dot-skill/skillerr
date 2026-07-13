@@ -183,12 +183,19 @@ export function assertCapabilityAllowed(
     }
   }
 
-  if (side === "read" || side === "write" || side === "destructive") {
+  if (side === "read" || side === "write" || side === "destructive" || side === "exec") {
     const perm = permissionCovers(pkg.manifest.permissions, side);
     // SEC-H: `read` used to be exempt from deny-by-default (undeclared reads
     // were allowed), contradicting the documented deny-by-default model and
     // leaving an exfiltration path (read an arbitrary file, emit it later).
     // A declared read permission is now required like write/destructive.
+    // PHASE 4: `exec` had the exact same gap and had gone unnoticed — this
+    // whole `if` was originally read/write/destructive only, so a `tool`
+    // step invoking an `exec`-class capability (the bundled-script case
+    // this phase documents) fell through every branch below unchecked and
+    // was silently allowed regardless of permissions/consent, the most
+    // dangerous side_effect_class to have had this gap. `exec` now
+    // requires a declared permission exactly like the others.
     if (!perm) {
       throw new Error(
         `Denied: capability ${cap.name} uses ${side} but no matching permission is declared`,

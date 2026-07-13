@@ -80,6 +80,15 @@ missing evidence is neutral, never penalized as if it were bad). If
 `@skillerr/skill-score` isn't installed this writes `assessment.json`
 instead and tells you how to score it.
 
+## Bundling a script
+
+Declare a capability (`side_effect_class:"exec"`) **and** a matching
+permission **and** a `tool` step that invokes it — all three, or the
+runtime denies it. Never wire step 3 (the `tool` step) unless a human
+actually reviewed and authorized the script; declaring the capability
+alone (what `skill ingest` does automatically) is not authorization. See
+[docs/RESOURCES.md](./RESOURCES.md).
+
 ## Ingest / load / run (what you run)
 
 ```bash

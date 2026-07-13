@@ -92,6 +92,28 @@ test("capability gate: read requires a declared permission (not exempt from deny
   assert.doesNotThrow(() => assertCapabilityAllowed(withPerm, readCap, { path: "/data/notes.txt" }));
 });
 
+test("PHASE 4: capability gate: exec requires a declared permission (not exempt from deny-by-default) — the bundled-script case", () => {
+  const execCap = {
+    name: "run_lint",
+    description: "Run a bundled lint script",
+    side_effect_class: "exec" as const,
+    fallback: "ask_human" as const,
+    required: false,
+  };
+  const noPerm = minimalPackage({});
+  assert.throws(
+    () => assertCapabilityAllowed(noPerm, execCap, {}),
+    /Denied: capability run_lint uses exec but no matching permission is declared/,
+  );
+
+  const withPerm = minimalPackage({
+    permissions: [
+      { side_effect_class: "exec", description: "Run bundled scripts", requires_consent: true },
+    ],
+  });
+  assert.doesNotThrow(() => assertCapabilityAllowed(withPerm, execCap, {}));
+});
+
 test("input resolution: required input with no value/default is reported missing; a default resolves automatically", async () => {
   const pkg = minimalPackage({
     inputs: [

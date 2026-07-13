@@ -2289,3 +2289,129 @@ test("P0: execute refuses unsigned packages without --allow-untrusted", async ()
     assert.doesNotMatch(allowed.error ?? "", /Refusing execute:.*UNSIGNED/i);
   }
 });
+
+// PHASE 4: bundled-script / progressive-disclosure semantics — a `tool`
+// step invoking an `exec`-class capability backed by a bundled script
+// under resources/scripts/, exactly the ingest.ts / docs/RESOURCES.md
+// pattern. This is also the regression fixture for the exec deny-by-default
+// gap this phase found and fixed (assertCapabilityAllowed previously had
+// no branch for side_effect_class="exec" at all, unlike read/write/
+// destructive/network — see the PHASE 4 comment in runtime/src/index.ts).
+function bundledScriptSource(): SkillSource {
+  return {
+    kind: "skill_source",
+    id: "src_bundled_script",
+    hash: "sha256:" + "d".repeat(64),
+    title: "Bundled lint script",
+    contract: {
+      kind: "skill_contract",
+      contract_version: "0.5",
+      skill_kind: "procedure",
+      title: "Bundled lint script",
+      intent: "Run a bundled lint script against reviewed changelog copy.",
+      sensitivity: "private",
+      triggers: { status: "specified", items: [{ id: "t1", description: "A changelog draft is ready to lint." }] },
+      inputs: { status: "none", reason: "No runtime inputs beyond the bundled script." },
+      preconditions: { status: "none", reason: "None." },
+      steps: {
+        status: "specified",
+        items: [
+          {
+            id: "lint",
+            title: "Run lint script",
+            kind: "tool",
+            capability: "run_lint",
+          },
+          { id: "emit", title: "Emit result", kind: "emit", output: "result", from: "lint" },
+        ],
+      },
+      branches: { status: "none", reason: "None." },
+      human_decisions: { status: "none", reason: "None." },
+      capabilities: {
+        status: "specified",
+        items: [
+          {
+            name: "run_lint",
+            description: "Run resources/scripts/lint.py against the draft.",
+            side_effect_class: "exec",
+            fallback: "ask_human",
+            required: true,
+          },
+        ],
+      },
+      permissions: {
+        status: "specified",
+        items: [
+          {
+            id: "p_exec",
+            side_effect_class: "exec",
+            description: "Run the bundled lint script.",
+            consent: "explicit_human",
+          },
+        ],
+      },
+      forbidden_actions: { status: "none", reason: "None." },
+      outputs: {
+        status: "specified",
+        items: [{ name: "result", description: "Lint result", schema: { type: "string" }, required: true }],
+      },
+      recovery: { status: "not_applicable", reason: "The script has no destructive side effects." },
+      verification: {
+        status: "specified",
+        items: [{ id: "v1", assertion: "Lint completed.", check: "human", required: true }],
+      },
+      corrections: { status: "none", reason: "None." },
+      provenance: {
+        evidence: { status: "none", reason: "None." },
+        limitations: { status: "none", reason: "None." },
+        human_review: {
+          status: "reviewed",
+          actor: "test-human",
+          at: "2026-07-13T00:00:00.000Z",
+          scope: ["complete contract"],
+        },
+      },
+    },
+    sections: [],
+    steering: [],
+    prompts: [],
+    code_refs: [],
+    parents: [],
+    agent: { host: "cursor" },
+    journey: { summary: "Bundled-script fixture.", redacted: true, sensitivity: "private" },
+    inputs_declared: "none",
+    sensitivity: "private",
+    created_at: "2026-07-13T00:00:00.000Z",
+    actor: { id: "test-agent" },
+    source_protocol_version: PROTOCOL_VERSION,
+  };
+}
+
+test("PHASE 4: a tool step backed by a bundled exec-class script refuses without a declared permission, dry-runs once one is declared", async () => {
+  const compiledNoPerm = compileSkillSource(
+    { ...bundledScriptSource(), contract: { ...bundledScriptSource().contract!, permissions: { status: "none", reason: "Deliberately omitted for this fixture." } } },
+    { profile: "continuity" },
+  );
+  const runDenied = await runSkillArchive(compiledNoPerm.packageBytes, { host: "test" }, { mode: "dry_run" });
+  assert.equal(runDenied.status, "failed");
+  assert.match(runDenied.error ?? "", /Denied: capability run_lint uses exec but no matching permission is declared/);
+
+  const compiled = compileSkillSource(bundledScriptSource(), { profile: "continuity" });
+  const withResources = {
+    ...compiled.files,
+    resources: { "scripts/lint.py": "print('ok')\n" },
+  };
+  const packageBytes = packSkill(withResources);
+  const unpacked = unpackSkill(packageBytes);
+  assert.ok(Object.keys(unpacked.raw.resources ?? {}).includes("scripts/lint.py"));
+
+  // The overall run may still fail on the unrelated auto-injected verify
+  // step (contract.verification's check:"human" item, with no
+  // verifyAssertion callback supplied here) — that's not what this fixture
+  // is testing. What matters is that the `lint` tool step itself, which
+  // was the one denied above, now succeeds once the exec permission exists.
+  const runAllowed = await runSkillArchive(packageBytes, { host: "test" }, { mode: "dry_run" });
+  const toolStep = runAllowed.steps.find((s) => s.step_id === "lint");
+  assert.equal(toolStep?.status, "succeeded");
+  assert.equal(runAllowed.steps.find((s) => s.step_id === "emit")?.status, "succeeded");
+});

@@ -96,6 +96,17 @@ excludes `signatures/**` but includes every other file, so `score.json`
 tampering with either after packing is detectable the same way tampering
 with any other content file is.
 
+## Bundled scripts + progressive disclosure (Phase 4)
+
+`resources/scripts/*` and `resources/references/*` are established naming
+conventions (not distinct container primitives) for the two most common
+`skill-creator` patterns — a bundled helper script, and reference material
+too large for the primary knowledge body. A script never auto-executes:
+its capability, a matching permission, and a `tool` step invoking it must
+all be present, and the runtime's deny-by-default gate checks every
+`side_effect_class` — including `exec` — the same way it checks
+`read`/`write`/`destructive`/`network`. See [RESOURCES.md](./RESOURCES.md).
+
 ## Container
 
 ```text

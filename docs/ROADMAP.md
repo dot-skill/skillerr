@@ -41,6 +41,11 @@ Status: protocol **Draft 0.5.0**; reference packages **0.6.0**.
       sealed `provenance/score.json` receipt slot. SKILL.md-ingested
       sources are honestly tiered self-reported, not observed — see
       `packages/cli/src/score-adapter.ts`
+- [x] Bundled-script / progressive-disclosure semantics documented
+      (`resources/scripts/*`, `resources/references/*`) — see
+      [docs/RESOURCES.md](./RESOURCES.md). Found and fixed a real gap in
+      the process: `exec`-class capabilities had no deny-by-default gate
+      at all (unlike read/write/destructive/network)
 
 ## Next (great contribution targets)
 
@@ -52,7 +57,11 @@ Status: protocol **Draft 0.5.0**; reference packages **0.6.0**.
 - [ ] HTTP transparency-log server (same log format as local registry)
 - [ ] Stronger `verify` assertion language + fixtures — would also enrich
       `skill score`'s validationEvidence beyond contains:/not_contains:/regex:
-- [ ] Host adapters: local OpenAI-compatible, Cursor, Claude Code, Codex
+- [ ] Host adapters: local OpenAI-compatible, Cursor, Claude Code, Codex —
+      also the natural place to implement real `tool`-step script execution
+- [ ] First-class progressive-disclosure primitive (a manifest-level
+      pointer list for `resources/references/*`, not just the naming
+      convention documented in [RESOURCES.md](./RESOURCES.md))
 - [ ] Second language runtime (Go or Rust) for Stable eligibility — reproduce
       the adversarial corpus and canonicalization vectors byte-for-byte
       (now also covers Ed25519/PEM signing — see CONTRIBUTING.md)
