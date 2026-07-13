@@ -124,9 +124,12 @@ Create:
   skill compile -m "msg" [--approve] [--mint] [--profile release|continuity]
                                        Release refuses if incomplete
   skill load <file.skill>              Resume continuity in another AI
-  skill mint [--host name] [--signer-key <pem>] [--key-id id]
-                                       Seal release (host required). Default seal is
-                                       public-dev HMAC (development trust only). Pass
+  skill mint [file.skill] [--host name] [--signer-key <pem>] [--key-id id]
+                                       Seal release (host required). No file arg
+                                       uses the current workspace's last compile;
+                                       an explicit file works standalone, same as
+                                       inspect/validate. Default seal is public-dev
+                                       HMAC (development trust only). Pass
                                        --signer-key for a configured Ed25519 issuer
                                        seal (verified_issuer-eligible) — see
                                        skill keygen and docs/KEY-CEREMONY.md
@@ -615,9 +618,14 @@ async function main() {
 
     case "mint": {
       requireAgentHost(opt(rest, "--host"));
-      const root = requireWorkspace();
-      const head = await loadHead(root);
-      const file = rest.find((a) => a.endsWith(".skill")) ?? head.package_path;
+      // An explicit file argument works standalone, same as inspect/validate/
+      // verify-trust — mint only needs a workspace to find an *implicit*
+      // package (the last compile's head.package_path). Requiring one even
+      // when the caller names a file was an inconsistency with every other
+      // file-taking command, and blocked minting a package that was never
+      // produced via a workspace (e.g. `skill pack <source.json>` output).
+      const explicitFile = rest.find((a) => a.endsWith(".skill"));
+      const file = explicitFile ?? (await loadHead(requireWorkspace())).package_path;
       if (!file) throw new Error("No package to mint. Run skill compile first.");
       const bytes = new Uint8Array(await readFile(resolve(file)));
       const unpacked = unpackSkill(bytes);

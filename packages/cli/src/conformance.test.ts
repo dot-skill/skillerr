@@ -445,6 +445,44 @@ test("CLI version comes from its package metadata", () => {
   assert.equal(output, `${cli.version}\n`);
 });
 
+test("CLI mint works standalone on an explicit file, outside any workspace — consistent with inspect/validate/verify-trust", async () => {
+  const { mkdtempSync, writeFileSync } = await import("node:fs");
+  const { generateKeyPairSync } = await import("node:crypto");
+  const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
+  const sourcePath = fileURLToPath(
+    new URL("../../../examples/contract-foundation/source.json", import.meta.url),
+  );
+  const dir = mkdtempSync(join(tmpdir(), "skill-mint-standalone-"));
+  const packageFile = join(dir, "out.skill");
+
+  execFileSync(
+    process.execPath,
+    [cliPath, "pack", sourcePath, "-o", packageFile, "--profile", "release", "--host", "cursor"],
+    { encoding: "utf8", env: { ...process.env, SKILL_HOST: "cursor" } },
+  );
+
+  // No `skill init` ran in `dir` — this must not require a workspace.
+  const { privateKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const keyPath = join(dir, "signer.pem");
+  writeFileSync(keyPath, privateKey as unknown as string);
+
+  const result = JSON.parse(
+    execFileSync(
+      process.execPath,
+      [cliPath, "mint", packageFile, "--host", "cursor", "--signer-key", keyPath, "--key-id", "test-key"],
+      {
+        encoding: "utf8",
+        env: { ...process.env, SKILL_HOST: "cursor", SKILL_SESSION_ID: "ses_test" },
+      },
+    ),
+  ) as { ok: boolean; mint_status: string };
+  assert.equal(result.ok, true);
+  assert.equal(result.mint_status, "minted");
+});
+
 test("CLI exposes machine-readable contract template and field assessment", () => {
   const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
   const template = JSON.parse(
