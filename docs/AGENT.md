@@ -43,6 +43,20 @@ skill checkpoint -m "WIP"                 # continuity handoff (partial OK)
 skill compile -m "…" --approve --mint      # release (complete or compile_refused)
 ```
 
+## Convert an existing SKILL.md (what you run)
+
+```bash
+skill ingest ./some-skill-folder -o out.skill --host cursor
+```
+
+Reads a `SKILL.md` file or a skill-creator-style folder (`SKILL.md` +
+optional `scripts/`, `references/`, `assets/`, `evals/evals.json`) and
+writes a **continuity** `.skill`. The JSON result's `missing_for_release`
+names exactly what still needs authoring (almost always
+`provenance.human_review` — ingest can never fabricate that a human
+reviewed it) — tell the human what's listed there, do not claim it's
+release-ready until they have.
+
 ## Ingest / load / run (what you run)
 
 ```bash

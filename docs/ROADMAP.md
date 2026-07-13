@@ -25,6 +25,14 @@ Status: protocol **Draft 0.5.0**; reference packages **0.6.0**.
 - [x] JSON Schemas (draft 2020-12) for every container file — contract,
       manifest, workflow, knowledge items, DSSE attestation — checked by
       `skill validate` via `@skillerr/protocol`'s `loadSchema()`
+- [x] Production-grade signing: pluggable Ed25519 issuer signer + local
+      trust store (`configured_ed25519`), replacing dev-HMAC-only trust —
+      see [docs/KEY-CEREMONY.md](./KEY-CEREMONY.md)
+- [x] Public RFC folder (`docs/rfcs/`) — six RFCs; PROTO-2 (asymmetric
+      signing) has since shipped as real code, the rest remain spec-only
+- [x] Forward `SKILL.md` -> `.skill` ingest (`skill ingest`), distinct from
+      the existing lossy `to-skill-md` export — see
+      [examples/ingest-skill-md/](../examples/ingest-skill-md/)
 
 ## Next (great contribution targets)
 
@@ -33,14 +41,14 @@ Status: protocol **Draft 0.5.0**; reference packages **0.6.0**.
       `assertCapabilityAllowed` — grammar-valid today (PROTO-5) but not yet
       functional; see the `scoped-npm-monorepo-publishing` gold example
 - [ ] Validate the published authoring schema with an independent implementation
-- [ ] Production-grade signing (replace dev HMAC; document key ceremony)
 - [ ] HTTP transparency-log server (same log format as local registry)
 - [ ] Stronger `verify` assertion language + fixtures
 - [ ] Host adapters: local OpenAI-compatible, Cursor, Claude Code, Codex
 - [ ] Second language runtime (Go or Rust) for Stable eligibility — reproduce
       the adversarial corpus and canonicalization vectors byte-for-byte
-- [ ] Official `SKILL.md` round-trip adapter tests
-- [ ] Public RFC folder (`docs/rfcs/`)
+      (now also covers Ed25519/PEM signing — see CONTRIBUTING.md)
+- [ ] Native eval/benchmark loop (`skill eval`) and wiring `skill-score` in
+      as a sealed `provenance/score.json` receipt
 
 ## Later
 

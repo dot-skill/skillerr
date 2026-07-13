@@ -36,6 +36,8 @@ import {
   createEd25519Signer,
   loadTrustStore,
   defaultTrustStorePath,
+  ingestSkillMd,
+  packSkill,
 } from "@skillerr/core";
 import { runSkillArchive } from "@skillerr/runtime";
 import { lookup, list, verify as registryVerify, publish as registryPublish } from "@skillerr/registry";
@@ -115,6 +117,11 @@ Multi-skill identify:
   skill segment …                      Alias of extract
 
 Ingest / run:
+  skill ingest <path> [-o out.skill] [--host $SKILL_HOST]
+                                       Import a SKILL.md or skill-creator-style
+                                       folder into a continuity .skill (never
+                                       fabricates release completeness — prints
+                                       exactly what still needs authoring)
   skill inspect <file.skill> [--trust] [--trust-store <path>]
                                        TrustView (no compile / no model body)
   skill validate <file.skill>          Structure + hash integrity
@@ -675,6 +682,46 @@ async function main() {
             knowledge: u.knowledge,
             journey: u.raw.provenance?.journey,
             generation_usage: u.raw.provenance?.generation_usage,
+          },
+          null,
+          2,
+        ),
+      );
+      break;
+    }
+    case "ingest": {
+      const inputPath = rest[0];
+      if (!inputPath) usage();
+      const host = requireAgentHost(opt(rest, "--host"));
+      const out = opt(rest, "-o") ?? "out.skill";
+      const { source, contract, resources, assets, report } = ingestSkillMd(resolve(inputPath!), {
+        host,
+      });
+      const compiled = compileSkillSource(source, { profile: "continuity" });
+      compiled.files.resources = { ...compiled.files.resources, ...resources };
+      compiled.files.assets = { ...compiled.files.assets, ...assets };
+      const packageBytes = packSkill(compiled.files);
+      await writeFile(resolve(out), packageBytes);
+
+      const releaseAssessment = assessSkillContract(contract, "release");
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            out,
+            skill_id: compiled.files.manifest.id,
+            package_digest: compiled.files.manifest.package_digest,
+            found: report.found,
+            notes: report.notes,
+            release_ready: releaseAssessment.complete,
+            missing_for_release: releaseAssessment.issues.map((i) => ({
+              field: i.field,
+              message: i.message,
+              fix: i.fix,
+            })),
+            next: releaseAssessment.complete
+              ? `Release-ready as authored. Review, then: skill pack <source> --approve --profile release, or promote this workspace and skill compile --mint.`
+              : `Continuity draft written to ${out}. Fill the fields listed in missing_for_release (start with provenance.human_review — ingest can never fabricate that), then re-assess before a release compile.`,
           },
           null,
           2,

@@ -1,0 +1,17 @@
+{
+  "evals": [
+    {
+      "prompt": "fix(auth): handle expired refresh token by forcing re-login instead of silent 500",
+      "assertions": [
+        "The output does not mention internal ticket numbers or service names.",
+        { "description": "The output leads with the user-visible behavior change.", "check": "human" }
+      ]
+    },
+    {
+      "prompt": "chore: bump lodash to 4.17.21",
+      "assertions": [
+        "A purely internal dependency bump with no user-visible effect is omitted or clearly marked as internal, not written as a feature change."
+      ]
+    }
+  ]
+}

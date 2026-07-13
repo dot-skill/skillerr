@@ -19,6 +19,22 @@ release. Show me status and the output path.
 
 ---
 
+## Convert an existing SKILL.md
+
+```text
+I have a SKILL.md at ./SKILL.md (or a skill-creator folder with scripts/,
+references/, assets/, evals/). Install skillerr if needed (npm i -g skillerr),
+set SKILL_HOST, then use `skill ingest` to convert it into a portable .skill.
+Show me the output path and exactly what's still missing before it can be a
+release — don't invent contract fields to make it look more complete than it is.
+```
+
+`.skill` isn't a competing format to `SKILL.md` — it's the integrity/eval
+layer above it. A worked example lives at
+[ingest-skill-md/](./ingest-skill-md/).
+
+---
+
 ## Inspect a `.skill` before trusting it
 
 ```text

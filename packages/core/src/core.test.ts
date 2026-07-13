@@ -144,6 +144,15 @@ test("pack/unpack: round-trips manifest, workflow, and knowledge unchanged", () 
   assert.ok(unpacked.manifest.manifest_digest);
 });
 
+test("pack/unpack: assets/ round-trips like resources/artifacts (Phase 6 icon slot, Phase 1 ingest asset mapping)", () => {
+  const pkg = minimalPackage();
+  pkg.assets = { "icon.svg": "<svg></svg>" };
+  const bytes = packSkill(pkg);
+  const unpacked = unpackSkill(bytes);
+  assert.equal(new TextDecoder().decode(unpacked.raw.assets!["icon.svg"] as Uint8Array), "<svg></svg>");
+  assert.ok(unpacked.manifest.content.some((c) => c.path === "assets/icon.svg"));
+});
+
 test("PROTO-7: a well-formed package validates clean against the JSON Schemas", () => {
   const pkg = minimalPackage();
   pkg.knowledge = [

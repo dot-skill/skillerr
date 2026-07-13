@@ -630,6 +630,8 @@ export interface SkillPackageFiles {
   prompts?: Record<string, string>;
   resources?: Record<string, Uint8Array | string>;
   artifacts?: Record<string, Uint8Array | string>;
+  /** Optional per-skill presentational assets, e.g. `icon.svg` — see PROTOCOL.md "Format icon slot". */
+  assets?: Record<string, Uint8Array | string>;
   provenance?: {
     /** Scrubbed SkillSource or product source (never secrets). */
     source?: unknown;

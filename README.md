@@ -55,6 +55,20 @@ handoff or compile --approve --mint when release-complete. Do not invent filler.
 Show me status and the output path.
 ```
 
+### Convert an existing skill
+
+Already have a `SKILL.md` or a skill-creator folder? `.skill` isn't a
+competing format — it's the integrity layer on top. One command upgrades it:
+
+```text
+I have a SKILL.md at ./SKILL.md (or a skill folder). Install skillerr if
+needed (npm i -g skillerr), set SKILL_HOST, then `skill ingest` it into a
+portable .skill. Show me the output path and what's still missing before it
+can be a release. Don't invent contract fields.
+```
+
+`skill ingest` never claims completeness it can't back up — see [docs/FAQ.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd).
+
 ### Inspect before you trust or run
 
 ```text
@@ -96,6 +110,7 @@ Commands below are what the **agent** runs — not a human homework list.
 | Goal | What the agent runs |
 |------|---------------------|
 | Create workspace | `skill init` → `journey` → `propose` → `status` |
+| Convert an existing SKILL.md | `skill ingest <path>` |
 | Mid-work handoff | `skill checkpoint` |
 | Release when complete | `skill compile -m "…" --approve --mint` |
 | Trust before run | `skill inspect --trust` → `validate` → `run` (dry-run) |
@@ -170,6 +185,7 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 - [Protocol](./docs/PROTOCOL.md) · [Agent](./docs/AGENT.md) · [Prompts](./examples/prompts.md)
 - [Why structured packages](./docs/WHY.md) · [Continuity](./docs/CONTINUITY.md) · [Privacy](./docs/PRIVACY.md)
 - [FAQ](./docs/FAQ.md) · [Security](./docs/SECURITY.md) · [Roadmap](./docs/ROADMAP.md)
+- [File type / OS registration](./docs/FILE-TYPE.md)
 - Site guides: [skillerr.com](https://dot-skill.github.io/skillerr-com/)
 
 ---

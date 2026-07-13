@@ -17,6 +17,7 @@ Sources for compile / pack / extract tests.
 | `code-changing/` | Legacy adapter source | Continuity pack fixture |
 | `contract-foundation/` | `SkillSource` / contract (`source.json`) | Release compile fixture |
 | `multi-skill-extract/` | Redacted journey (`journey.json`) | `skill extract` / `segment` fixture |
+| `ingest-skill-md/` | Skill-creator folder (`SKILL.md` + `scripts/` + `references/` + `evals/`) | `skill ingest` fixture — see [docs/FAQ.md](../docs/FAQ.md#how-do-i-convert-an-existing-skillmd) |
 
 Protocol vocabulary is **section / SkillSource / SkillContract / compile**.
 Legacy `recipe.json` fixtures exercise the adapter path only.

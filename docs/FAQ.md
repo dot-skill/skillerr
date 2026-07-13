@@ -56,9 +56,29 @@ Yes — public install is unscoped `skillerr` (no org required). Install: `npm i
 
 ## Claude Desktop claims `.skill` on macOS — is that Skillerr?
 
-**No.** On macOS, Claude Desktop may register the `.skill` extension for its own **Agent Skills** format (a zip with `SKILL.md` inside). Skillerr `.skill` files are a **different** sealed package (typed contract, digests, mint, assets) — same extension, different format.
+**No, and you don't have to choose.** On macOS, Claude Desktop may register the `.skill` extension for its own **Agent Skills** format (a zip with `SKILL.md` inside). Skillerr `.skill` files are a different sealed package — same extension, different format — but Skillerr is built to sit **above** `SKILL.md`, not compete with it: run `skill ingest ./your-skill-folder` and an existing Claude/skill-creator skill becomes a sealed, typed, integrity-checked Skillerr superset in one command. `SKILL.md` still works everywhere it always did; `.skill` adds digests, mint, trust states, and (once evaluated) a portable score receipt on top of it. See [How do I convert an existing SKILL.md?](#how-do-i-convert-an-existing-skillmd) below.
 
-**What to do:** Use the CLI (`skill inspect ./file.skill`) or your AI agent to identify the file. In Finder, use **Open With** → your editor or terminal instead of double-clicking if the wrong app opens. Do not assume every `.skill` file is Claude-native or Skillerr-native without inspecting.
+**What to do:** Use the CLI (`skill inspect ./file.skill`) or your AI agent to identify a file you didn't create yourself. In Finder, use **Open With** → your editor or terminal instead of double-clicking if the wrong app opens. Do not assume every `.skill` file is Claude-native or Skillerr-native without inspecting.
+
+## How do I convert an existing SKILL.md?
+
+```text
+I have a SKILL.md at ./SKILL.md (or a skill-creator folder). Install skillerr
+if needed (npm i -g skillerr), set SKILL_HOST, then `skill ingest` it into a
+portable .skill. Show me the output path and what's still missing before it
+can be a release. Don't invent contract fields.
+```
+
+`skill ingest <path> [-o out.skill]` reads a `SKILL.md` file or a
+skill-creator-style folder (`SKILL.md` + optional `scripts/`, `references/`,
+`assets/`, `evals/evals.json`) and produces a **continuity** `.skill` —
+frontmatter maps to intent/triggers, `##` sections become knowledge, bundled
+scripts become stub capabilities (never auto-authorized to execute), and
+`evals/evals.json` assertions map into the contract's verification items.
+It never fabricates completeness: the output always names exactly which
+fields (usually just recorded human review) still need attention before a
+release compile. See [examples/ingest-skill-md/](../examples/ingest-skill-md/)
+for a worked example.
 
 ## Is this production-final?
 

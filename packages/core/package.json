@@ -48,7 +48,7 @@
     "build": "rimraf dist && tsc",
     "prepack": "npm run build",
     "clean": "rimraf dist",
-    "test": "node --test dist/core.test.js"
+    "test": "node --test dist/core.test.js dist/ingest.test.js"
   },
   "dependencies": {
     "@skillerr/protocol": "^0.6.0",

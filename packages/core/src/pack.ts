@@ -169,6 +169,11 @@ export function buildFileMap(pkg: SkillPackageFiles): Record<string, Uint8Array>
       files[`artifacts/${normalizePath(name)}`] = toBytes(body);
     }
   }
+  if (pkg.assets) {
+    for (const [name, body] of Object.entries(pkg.assets)) {
+      files[`assets/${normalizePath(name)}`] = toBytes(body);
+    }
+  }
   if (pkg.provenance?.recipe) {
     files["provenance/recipe.json"] = textEncode(pkg.provenance.recipe);
   }
@@ -304,11 +309,13 @@ export function unpackSkill(archive: Uint8Array): UnpackResult {
   const prompts: Record<string, string> = {};
   const resources: Record<string, Uint8Array> = {};
   const artifacts: Record<string, Uint8Array> = {};
+  const assets: Record<string, Uint8Array> = {};
   const signatures: Record<string, unknown> = {};
   for (const [path, data] of Object.entries(unzipped)) {
     if (path.startsWith("prompts/")) prompts[path.slice("prompts/".length)] = strFromU8(data);
     if (path.startsWith("resources/")) resources[path.slice("resources/".length)] = data;
     if (path.startsWith("artifacts/")) artifacts[path.slice("artifacts/".length)] = data;
+    if (path.startsWith("assets/")) assets[path.slice("assets/".length)] = data;
     if (path.startsWith("signatures/") && path.endsWith(".json")) {
       signatures[path.slice("signatures/".length)] = JSON.parse(strFromU8(data));
     }
@@ -333,6 +340,7 @@ export function unpackSkill(archive: Uint8Array): UnpackResult {
     prompts,
     artifacts,
     resources,
+    assets,
     provenance: {
       recipe: unzipped["provenance/recipe.json"]
         ? JSON.parse(strFromU8(unzipped["provenance/recipe.json"]))

@@ -34,6 +34,8 @@ export {
 } from "./validate.js";
 export type { ValidationIssue, ValidationResult } from "./validate.js";
 export { migrateLegacySkill, toSkillMdAdapter } from "./migrate.js";
+export { ingestSkillMd } from "./ingest.js";
+export type { IngestOptions, IngestResult, IngestReport } from "./ingest.js";
 export {
   mintSkillPackage,
   addPermanenceAnchor,
