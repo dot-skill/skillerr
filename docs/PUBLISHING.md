@@ -63,33 +63,37 @@ Create the `@skillerr` npm organization (https://www.npmjs.com/org/create) if it
 
 Do this **once per package** (each package has its own Trusted Publisher). Packages must already exist on npm (create via a first token publish if needed — see fallback below).
 
-For each of:
+There is **no reliable npm CLI** to configure or audit Trusted Publishers today — use the npmjs.com UI while logged in as `csinye` (maintainer on all seven packages).
 
-- `https://www.npmjs.com/package/@skillerr/protocol`
-- `https://www.npmjs.com/package/@skillerr/core`
-- `https://www.npmjs.com/package/@skillerr/runtime`
-- `https://www.npmjs.com/package/@skillerr/registry`
-- `https://www.npmjs.com/package/@skillerr/workspace`
-- `https://www.npmjs.com/package/@skillerr/cli`
-- `https://www.npmjs.com/package/skillerr`
+### Copy-paste checklist (live repo = `dot-skill/dot-skill`)
 
-1. Open the package page → **Settings** (you must be a maintainer).
-2. Find **Trusted Publisher**.
-3. Under **Select your publisher**, choose **GitHub Actions**.
-4. Fill in exactly:
-   - **Organization or user:** `dot-skill`
-   - **Repository:** `dot-skill` (live name until renamed to `skillerr`)
-   - **Workflow filename:** `publish.yml` (filename only, not a path)
-   - **Environment name:** leave empty (this repo does not use a GitHub Environment for publish)
-   - **Allowed actions:** select **`npm publish`** (required for direct publish)
-5. Save.
+For **each** package below, open **Settings → Trusted Publisher → GitHub Actions** and enter **exactly**:
+
+| Field | Value |
+|-------|-------|
+| Organization or user | `dot-skill` |
+| Repository | `dot-skill` |
+| Workflow filename | `publish.yml` |
+| Environment name | _(leave empty)_ |
+| Allowed actions | `npm publish` |
+
+Do all seven (same fields every time):
+
+1. https://www.npmjs.com/package/@skillerr/protocol → Settings → Trusted Publisher
+2. https://www.npmjs.com/package/@skillerr/core → Settings → Trusted Publisher
+3. https://www.npmjs.com/package/@skillerr/runtime → Settings → Trusted Publisher
+4. https://www.npmjs.com/package/@skillerr/registry → Settings → Trusted Publisher
+5. https://www.npmjs.com/package/@skillerr/workspace → Settings → Trusted Publisher
+6. https://www.npmjs.com/package/@skillerr/cli → Settings → Trusted Publisher
+7. https://www.npmjs.com/package/skillerr → Settings → Trusted Publisher
 
 Notes:
 
-- Values are case-sensitive and must match the repo that runs Actions.
+- Values are case-sensitive and must match the repo that runs Actions (`dot-skill/dot-skill` today).
 - Desired public name is `dot-skill/skillerr`. Until that rename lands, Trusted Publisher + `repository.url` must match live `dot-skill/dot-skill`.
 - If the GitHub repo is renamed later, update every package’s Trusted Publisher fields and every `package.json` `repository.url` in the same change.
 - After Trusted Publishing works, optionally go to **Settings → Publishing access** and select **Require two-factor authentication and disallow tokens**, then revoke old automation tokens.
+- Do **not** create an org-profile `dot-skill/.github` repo for branding; keep About/README on the product repo only.
 
 Official reference: https://docs.npmjs.com/trusted-publishers/
 
@@ -108,17 +112,19 @@ Remove `NPM_TOKEN` once every package has a working Trusted Publisher.
 
 ## Cut a release (GitHub Actions)
 
-1. Bump versions in workspace `package.json` files (keep them aligned) and update internal dependency ranges as needed.
+**Prerequisite:** Trusted Publisher configured on all seven packages (checklist above). Prefer that over `NPM_TOKEN`.
+
+1. Bump versions in workspace `package.json` files as needed (they do not all have to match; the workflow **skips** any `name@version` already on npm).
 2. Commit and push to `main`. Confirm CI is green.
-3. Tag and push (tag should match the version you are publishing):
+3. After TP is saved on npmjs, tag and push (tag is a release marker; publish uses each package’s `package.json` version):
 
 ```bash
-git tag v0.6.0
-git push origin v0.6.0
+git tag v0.6.1
+git push origin v0.6.1
 ```
 
-4. The **Publish** workflow runs on tag `v*`: installs, tests, then publishes in the order above with provenance.
-5. Or run **Actions → Publish → Run workflow** (`workflow_dispatch`) from the desired ref after versions are bumped.
+4. The **Publish** workflow runs on tag `v*`: installs, tests, then publishes in the order above with provenance (OIDC). Unchanged versions are skipped.
+5. Or run **Actions → Publish → Run workflow** (`workflow_dispatch`) from the desired ref after versions are bumped — same publish path, useful once TP is configured.
 
 Verify after publish:
 

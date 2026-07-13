@@ -36,6 +36,8 @@ jobs:
 
       # Order: protocol → core → runtime → registry → workspace → cli → skillerr
       # Auth: npm Trusted Publishing (OIDC). Optional fallback: NPM_TOKEN secret.
+      # Skip versions already on the registry so a partial bump (e.g. skillerr@0.6.1)
+      # can publish without failing on unchanged @skillerr/*@0.6.0 packages.
       - name: Publish packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -43,8 +45,20 @@ jobs:
           set -euo pipefail
           publish_one() {
             local ws="$1"
-            echo "::group::npm publish -w ${ws}"
-            npm publish -w "${ws}" --access public
+            local name ver
+            name="$(npm pkg get name -w "${ws}" | tr -d '"')"
+            ver="$(npm pkg get version -w "${ws}" | tr -d '"')"
+            echo "::group::npm publish -w ${ws} (${name}@${ver})"
+            if npm view "${name}@${ver}" version >/dev/null 2>&1; then
+              echo "Skip ${name}@${ver} — already on npm"
+              echo "::endgroup::"
+              return 0
+            fi
+            if [[ "${name}" == @* ]]; then
+              npm publish -w "${ws}" --access public
+            else
+              npm publish -w "${ws}"
+            fi
             echo "::endgroup::"
           }
           publish_one @skillerr/protocol
@@ -53,6 +67,4 @@ jobs:
           publish_one @skillerr/registry
           publish_one @skillerr/workspace
           publish_one @skillerr/cli
-          echo "::group::npm publish -w skillerr"
-          npm publish -w skillerr
-          echo "::endgroup::"
+          publish_one skillerr
