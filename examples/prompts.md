@@ -1,6 +1,11 @@
 # Copy-paste prompts for your AI
 
-Install once (`npm i -g skillerr`), then paste these into Cursor, ChatGPT, Claude, Codex, or any agent that can run shell tools. Adjust paths and host names as needed.
+Paste these into Cursor, ChatGPT, Claude, Codex, or any agent that can run
+shell tools. The first two prompts spell out the install + `SKILL_HOST` steps
+literally as numbered commands — nothing for the agent to infer or guess.
+Every other prompt below assumes those two steps already ran once in this
+environment (check with `skill --version`). Adjust paths and host names as
+needed.
 
 These are the primary getting-started path — not a human CLI checklist.
 
@@ -9,12 +14,17 @@ These are the primary getting-started path — not a human CLI checklist.
 ## Create a skill from this chat
 
 ```text
-Install skillerr if needed (`npm i -g skillerr`). Set SKILL_HOST to your host id
-(e.g. cursor, claude, codex, ollama). From this conversation, create a portable
-.skill package: redacted journey summary, exact section bodies I approved
-(secrets only as {{refs}}), then either checkpoint for handoff or
-compile --approve --mint when release-complete. Do not invent filler to force a
-release. Show me status and the output path.
+Run these exact commands in your terminal, in order:
+
+1. npm i -g skillerr          (skip if `skill --version` already works)
+2. export SKILL_HOST=cursor   (replace "cursor" with your actual tool name —
+                                claude, codex, ollama, etc.)
+
+Then, from this conversation, create a portable .skill package: redacted
+journey summary, exact section bodies I approved (secrets only as {{refs}}),
+then either checkpoint for handoff or compile --approve --mint when
+release-complete. Do not invent filler to force a release. Show me status and
+the output path.
 ```
 
 ---
@@ -23,10 +33,16 @@ release. Show me status and the output path.
 
 ```text
 I have a SKILL.md at ./SKILL.md (or a skill-creator folder with scripts/,
-references/, assets/, evals/). Install skillerr if needed (npm i -g skillerr),
-set SKILL_HOST, then use `skill ingest` to convert it into a portable .skill.
-Show me the output path and exactly what's still missing before it can be a
-release — don't invent contract fields to make it look more complete than it is.
+references/, assets/, evals/). Run these exact commands in your terminal, in
+order:
+
+1. npm i -g skillerr          (skip if `skill --version` already works)
+2. export SKILL_HOST=cursor   (replace "cursor" with your actual tool name)
+3. skill ingest ./SKILL.md    (adjust the path to where your SKILL.md is)
+
+Then show me the output path and exactly what's still missing before it can
+be a release — don't invent contract fields to make it look more complete
+than it is.
 ```
 
 `.skill` isn't a competing format to `SKILL.md` — it's the integrity/eval

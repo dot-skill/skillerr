@@ -8,15 +8,15 @@ Two jobs matter: **create** a `.skill`, and **ingest / load / run** one someone 
 
 ## Install (reference CLI)
 
-If `skill` is missing on the machine:
+Check first, install only if needed:
 
 ```bash
-npm i -g skillerr
-# one-shot:
+skill --version || npm i -g skillerr
+# one-shot alternative, no global install:
 npx -y skillerr --help
 ```
 
-Bin: `skill`. Node ≥ 20. Product hosts may wrap Skillerr libraries instead of shelling out.
+Bin: `skill`. Node ≥ 20. Product hosts may wrap `@skillerr/*` libraries instead of shelling out.
 
 ## Rules
 

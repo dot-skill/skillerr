@@ -20,13 +20,19 @@
 
 Already have a `SKILL.md` or a skill-creator folder? `.skill` isn't a
 competing format — it's the integrity layer on top. One command upgrades it,
-and it never claims completeness it can't back up:
+and it never claims completeness it can't back up. Paste this to your agent —
+it names every command literally, nothing to guess:
 
 ```text
-I have a SKILL.md at ./SKILL.md (or a skill folder). Install skillerr if
-needed (npm i -g skillerr), set SKILL_HOST, then `skill ingest` it into a
-portable .skill. Show me the output path and what's still missing before it
-can be a release. Don't invent contract fields.
+Run these exact commands in your terminal, in order:
+
+1. npm i -g skillerr          (skip if `skill --version` already works)
+2. export SKILL_HOST=cursor   (replace "cursor" with your actual tool name —
+                                claude-code, codex, ollama, etc.)
+3. skill ingest ./SKILL.md    (adjust the path if your SKILL.md lives elsewhere)
+
+Then show me the output path and exactly what's still missing before it can be
+a release. Don't invent contract fields to make it look more complete than it is.
 ```
 
 See [docs/FAQ.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd).
@@ -58,14 +64,24 @@ Node ≥ 20. One-shot: `npx -y skillerr --help`. After that, you do not drive a 
 
 ## Talk to your AI
 
-Paste prompts like these into Cursor, ChatGPT, Claude, Codex, or any agent that can run shell tools. Your agent sets `SKILL_HOST` and runs the reference commands.
+Paste prompts like these into Cursor, ChatGPT, Claude, Codex, or any agent
+that can run shell tools. The two prompts above (convert / create) spell out
+the install + `SKILL_HOST` steps explicitly since they're usually the first
+thing you paste. The prompts below assume you already ran those two steps
+once in this environment — if `skill --version` fails, run `npm i -g
+skillerr` and `export SKILL_HOST=<your-tool-name>` first.
 
 ### Create a skill from this chat
 
 ```text
-Install skillerr if needed (`npm i -g skillerr`). Set SKILL_HOST to your host id
-(e.g. cursor). From this conversation, create a portable .skill: redacted journey,
-exact sections I approved (secrets only as {{refs}}), then either checkpoint for
+Run these exact commands in your terminal, in order:
+
+1. npm i -g skillerr          (skip if `skill --version` already works)
+2. export SKILL_HOST=cursor   (replace "cursor" with your actual tool name —
+                                claude-code, codex, ollama, etc.)
+
+Then, from this conversation, create a portable .skill: redacted journey, exact
+sections I approved (secrets only as {{refs}}), then either checkpoint for
 handoff or compile --approve --mint when release-complete. Do not invent filler.
 Show me status and the output path.
 ```
