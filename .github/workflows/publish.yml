@@ -34,9 +34,8 @@ jobs:
       - run: npm run test:examples
       - run: npm run pack:check
 
-      # Publish order: protocol → core → runtime → registry → workspace → cli → skillerr
-      # OIDC trusted publishing authenticates when configured on npmjs.com.
-      # Optional fallback: repository secret NPM_TOKEN (automation token).
+      # Order: protocol → core → runtime → registry → workspace → cli → skillerr
+      # Auth: npm Trusted Publishing (OIDC). Optional fallback: NPM_TOKEN secret.
       - name: Publish packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
