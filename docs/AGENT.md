@@ -43,6 +43,11 @@ skill checkpoint -m "WIP"                 # continuity handoff (partial OK)
 skill compile -m "…" --approve --mint      # release (complete or compile_refused)
 ```
 
+Authoring a full contract from a conversation, step by step, with the
+reasoning behind each field explained? Follow
+[examples/skillerr-authoring/SKILL.md](../examples/skillerr-authoring/SKILL.md)
+instead of improvising — it's written for exactly this.
+
 ## Convert an existing SKILL.md (what you run)
 
 ```bash
