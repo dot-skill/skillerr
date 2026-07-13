@@ -90,7 +90,9 @@ example.skill
 
 ## Integrity & trust
 
-- Canonical JSON for the package index: JCS-inspired serialization · Digests: `sha256:<hex>`
+- Canonical JSON for the package index: **RFC 8785 (JCS)** — see
+  [CANONICALIZATION.md](./CANONICALIZATION.md) for the exact byte-level rules and
+  cross-implementation test vectors under `fixtures/canonicalization/` · Digests: `sha256:<hex>`
 - **`skill_id`** (PROTO-1) is content-addressed — `skl_<sha256-prefix>` derived from
   `source.hash` (and `source.contract`, when present), not a random UUID. The same
   logical skill compiled twice gets the same identity; a human-friendly label still

@@ -556,6 +556,27 @@ test("canonicalize sorts object keys", () => {
   assert.equal(canonicalize({ b: 1, a: 2 }), '{"a":2,"b":1}');
 });
 
+test("SEC-K: RFC 8785 cross-implementation canonicalization vectors", () => {
+  const vectorsPath = fileURLToPath(
+    new URL("../../../fixtures/canonicalization/vectors.json", import.meta.url),
+  );
+  const vectors = JSON.parse(readFileSync(vectorsPath, "utf8")) as Array<{
+    name: string;
+    input: unknown;
+    canonical: string;
+    sha256: string;
+  }>;
+  assert.ok(vectors.length >= 10, "expected the full canonicalization vector set");
+  for (const { name, input, canonical, sha256 } of vectors) {
+    assert.equal(canonicalize(input), canonical, `canonical mismatch for vector "${name}"`);
+    assert.equal(sha256Digest(canonical), sha256, `digest mismatch for vector "${name}"`);
+  }
+  // The RFC 8785 gotcha, called out explicitly: UTF-16 code-unit sort, not
+  // code-point sort, puts the surrogate-pair emoji key before the BMP key.
+  const utf16 = vectors.find((v) => v.name === "utf16_surrogate_sort")!;
+  assert.equal(utf16.canonical.indexOf("😀"), 2);
+});
+
 test("pack/unpack/validate round-trip", () => {
   const pkg: SkillPackageFiles = {
     manifest: {

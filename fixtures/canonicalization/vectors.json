@@ -1,0 +1,119 @@
+[
+  {
+    "name": "empty_object",
+    "input": {},
+    "canonical": "{}",
+    "sha256": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  },
+  {
+    "name": "empty_array",
+    "input": [],
+    "canonical": "[]",
+    "sha256": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "name": "key_sort_flat",
+    "input": {
+      "b": 1,
+      "a": 2
+    },
+    "canonical": "{\"a\":2,\"b\":1}",
+    "sha256": "sha256:d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+  },
+  {
+    "name": "key_sort_nested",
+    "input": {
+      "a": {
+        "c": 1,
+        "b": 2
+      },
+      "z": 3
+    },
+    "canonical": "{\"a\":{\"b\":2,\"c\":1},\"z\":3}",
+    "sha256": "sha256:36cf8fdbe4a3354511399647c9114d980cf685f29d6d028f26741e326b118123"
+  },
+  {
+    "name": "numbers",
+    "input": {
+      "int": 42,
+      "negative": -7,
+      "float": 3.14,
+      "zero": 0,
+      "negZero": 0,
+      "large": 9007199254740991
+    },
+    "canonical": "{\"float\":3.14,\"int\":42,\"large\":9007199254740991,\"negZero\":0,\"negative\":-7,\"zero\":0}",
+    "sha256": "sha256:8b438f64e17dd0deeafff1378de4059262f5b62744f0811079c21a7d36cac9ae"
+  },
+  {
+    "name": "string_escapes",
+    "input": {
+      "s": "quote\" backslash\\ tab\t newline\n"
+    },
+    "canonical": "{\"s\":\"quote\\\" backslash\\\\ tab\\t newline\\n\"}",
+    "sha256": "sha256:b42a2c48552ac2f2f5674b007ea2f33c9bd1edcb9774ba0b51b8de9c45b7a3ad"
+  },
+  {
+    "name": "unicode_bmp",
+    "input": {
+      "s": "café € 100"
+    },
+    "canonical": "{\"s\":\"café € 100\"}",
+    "sha256": "sha256:1a864f2fc5aba1506330b46e5765489b8fd0980a1d494014f2b941206b295a23"
+  },
+  {
+    "name": "utf16_surrogate_sort",
+    "input": {
+      "דּ": "hebrew_bmp",
+      "😀": "emoji_surrogate_pair"
+    },
+    "canonical": "{\"😀\":\"emoji_surrogate_pair\",\"דּ\":\"hebrew_bmp\"}",
+    "sha256": "sha256:b5613681dcfc5a022b0e2fa5ccf623972caf0ef18cab27ce894221115bc9ec94"
+  },
+  {
+    "name": "array_mixed",
+    "input": [
+      1,
+      "two",
+      true,
+      null,
+      {
+        "a": 1
+      }
+    ],
+    "canonical": "[1,\"two\",true,null,{\"a\":1}]",
+    "sha256": "sha256:e821f97efd8cf9fa03d18b392ad541fa8b54dd4ae300c1ab764406934fae3d7b"
+  },
+  {
+    "name": "realistic_claims",
+    "input": {
+      "id": "skl_abc123",
+      "title": "Example",
+      "permissions": [
+        {
+          "side_effect_class": "network",
+          "hosts": [
+            "example.com"
+          ],
+          "requires_consent": true
+        },
+        {
+          "side_effect_class": "read",
+          "paths": [
+            "/data"
+          ],
+          "requires_consent": false
+        }
+      ],
+      "policy": {
+        "allow_network": true,
+        "consent_for": [
+          "network",
+          "write"
+        ]
+      }
+    },
+    "canonical": "{\"id\":\"skl_abc123\",\"permissions\":[{\"hosts\":[\"example.com\"],\"requires_consent\":true,\"side_effect_class\":\"network\"},{\"paths\":[\"/data\"],\"requires_consent\":false,\"side_effect_class\":\"read\"}],\"policy\":{\"allow_network\":true,\"consent_for\":[\"network\",\"write\"]},\"title\":\"Example\"}",
+    "sha256": "sha256:70f0a0d62ff4b5869fc349406e43b06021d1d1895b1e65a39e107964a611a890"
+  }
+]
