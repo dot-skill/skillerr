@@ -603,6 +603,48 @@ test("pack/unpack/validate round-trip", () => {
   assert.equal(inspected.summary.title, "Test skill");
 });
 
+test("BUG-3: validate refuses a package with inputs or policy.consent_for stripped, instead of silently treating them as empty", () => {
+  const basePkg: SkillPackageFiles = {
+    manifest: {
+      kind: "dot-skill",
+      id: "skl_stripped",
+      version: "1.0.0",
+      title: "Test skill",
+      description: "A minimal skill for conformance",
+      container_version: CONTAINER_VERSION,
+      protocol_version: PROTOCOL_VERSION,
+      entrypoint: "s1",
+      inputs: [],
+      outputs: [{ name: "result", schema: { type: "string" }, required: true }],
+      capabilities: [],
+      permissions: [],
+      policy: { ...DEFAULT_SKILL_POLICY },
+      content: [],
+      package_digest: "sha256:" + "0".repeat(64),
+      provenance_mode: "proof_only",
+    },
+    workflow: {
+      kind: "workflow",
+      dialect_version: WORKFLOW_DIALECT_VERSION,
+      entrypoint: "s1",
+      steps: [{ id: "s1", kind: "emit", output: "result", from: "s1" }],
+    },
+    knowledge: [],
+  };
+
+  const noInputs = structuredClone(basePkg);
+  delete (noInputs.manifest as unknown as Record<string, unknown>).inputs;
+  const validationNoInputs = validatePackageBytes(packSkill(noInputs));
+  assert.equal(validationNoInputs.ok, false);
+  assert.ok(validationNoInputs.issues.some((i) => i.code === "inputs_missing"));
+
+  const noConsent = structuredClone(basePkg);
+  delete (noConsent.manifest.policy as unknown as Record<string, unknown>).consent_for;
+  const validationNoConsent = validatePackageBytes(packSkill(noConsent));
+  assert.equal(validationNoConsent.ok, false);
+  assert.ok(validationNoConsent.issues.some((i) => i.code === "policy_consent_for_missing"));
+});
+
 test("rejects path traversal in package build via normalize", () => {
   assert.throws(() => {
     packSkill({
@@ -1120,6 +1162,155 @@ test("journey and endpoint provenance are scrubbed", () => {
     JSON.stringify(compiled.files.provenance?.source ?? {}),
     /supersecret/,
   );
+});
+
+test("BUG-3: secret redaction skips hex digests (git SHAs, content hashes) but still redacts real secrets, and reports every redaction", () => {
+  const gitSha = "a".repeat(40); // 40-char hex — looks like a git SHA, not a secret
+  const contentDigest = "b".repeat(64); // 64-char hex — looks like a sha256 digest
+  const realSecret = "sk-" + "Xy9".repeat(14); // sk-prefixed, not hex-only
+  const contract = demoContract();
+  contract.steps = {
+    status: "specified",
+    items: [
+      {
+        id: "connect",
+        title: "Connect API",
+        kind: "instruct",
+        instruction: `Call using ${realSecret}.`,
+      },
+      { id: "emit", title: "Emit result", kind: "emit", output: "result", from: "connect" },
+    ],
+  };
+  const source: SkillSource = {
+    kind: "skill_source",
+    id: "src_redact",
+    hash: "sha256:" + "c".repeat(64),
+    title: contract.title,
+    contract,
+    sections: [
+      {
+        id: "sec_1",
+        revision: 1,
+        type: "doc",
+        title: "Notes",
+        body: `Built from commit ${gitSha} (content digest ${contentDigest}). Token: ${realSecret}`,
+        attachments: [],
+        code_refs: [],
+        sensitivity: "shareable_redacted",
+        authored_by: "agent",
+      },
+    ],
+    steering: [],
+    prompts: [],
+    code_refs: [],
+    parents: [],
+    agent: { host: "cursor" },
+    journey: { summary: "Redaction fixture.", redacted: true, sensitivity: "private" },
+    inputs_declared: "none",
+    sensitivity: "private",
+    created_at: "2026-07-13T00:00:00.000Z",
+    actor: { id: "test-agent" },
+    source_protocol_version: PROTOCOL_VERSION,
+  };
+
+  const compiled = compileSkillSource(source, {
+    profile: "release",
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+  });
+  const body = compiled.files.knowledge[0]!.body;
+  assert.match(body, new RegExp(gitSha), "hex git SHA must survive redaction unchanged");
+  assert.match(body, new RegExp(contentDigest), "hex content digest must survive redaction unchanged");
+  assert.doesNotMatch(body, /sk-/, "a real secret-shaped token must still be redacted");
+  assert.match(body, /\{\{secret_ref\}\}/);
+
+  const report = compiled.files.provenance?.compilation_report;
+  assert.ok(
+    report?.issues.some((i) => i.code === "secret_redacted" && i.related?.includes("sec_1")),
+    `expected a secret_redacted issue, got: ${JSON.stringify(report?.issues)}`,
+  );
+});
+
+test("BUG-3: a contract step missing its kind-required field is flagged, not silently compiled as empty text", () => {
+  const contract = demoContract();
+  contract.steps = {
+    status: "specified",
+    items: [
+      // "instruct" with no `instruction` — compileContractStep would otherwise
+      // silently fall back to text:"" with zero signal that anything is wrong.
+      { id: "connect", title: "Connect API", kind: "instruct" },
+      { id: "emit", title: "Emit result", kind: "emit", output: "result", from: "connect" },
+    ],
+  };
+  const assessment = assessSkillContract(contract, "release");
+  assert.equal(assessment.complete, false);
+  assert.ok(
+    assessment.issues.some(
+      (i) => i.field === "steps" && i.message.includes("lacks instruction"),
+    ),
+    `expected a steps issue about the missing instruction, got: ${JSON.stringify(assessment.issues)}`,
+  );
+});
+
+test("BUG-3: verify refuses a stripped issuer_class instead of reconstructing it from key_id", () => {
+  const recipe = demoRecipe();
+  recipe.id = "rcp_bug3_issuer";
+  let compiled = compileRecipeToSkill(recipe, {
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+    host: "cursor",
+    profile: "release",
+  });
+  compiled = approveCompilation(compiled, { inputs: ["*"], permissions: true });
+  compiled.files.manifest.needs_human_review = false;
+  const { packageBytes } = mintSkillPackage(compiled.files, { host: "cursor" });
+
+  // Simulate an attacker stripping issuer_class from an otherwise-valid
+  // public-dev-HMAC-sealed package to see if verify silently reconstructs a
+  // (possibly more trusted-looking) class from key_id instead of refusing.
+  const unpacked = unpackSkill(packageBytes);
+  const dsse = unpacked.raw.signatures?.["creation.dsse.json"] as {
+    attestation: Record<string, unknown>;
+  };
+  delete dsse.attestation.issuer_class;
+  const tampered = packSkill({ ...unpacked.raw, signatures: unpacked.raw.signatures });
+
+  const trust = verifyMintTrust(tampered, "minted", {
+    allow_development_issuer: true,
+    allow_self_reported: true,
+  });
+  assert.equal(trust.ok, false);
+  assert.ok(
+    trust.issues.some((i) => i.code === "missing_issuer_class"),
+    `expected missing_issuer_class, got: ${JSON.stringify(trust.issues)}`,
+  );
+  // Must not be laundered into a higher-trust label than the true (stripped) class.
+  assert.notEqual(trust.trust_state, "verified_issuer");
+});
+
+test("BUG-3: workspace status() does not swallow errors, only the expected missing-agent-host case", async () => {
+  const { mkdtempSync } = await import("node:fs");
+  const dir = mkdtempSync(join(tmpdir(), "skill-ws-status-"));
+  const prev = process.cwd();
+  const prevHost = process.env.SKILL_HOST;
+  process.chdir(dir);
+  try {
+    const { initWorkspace, proposeSection, status } = await import("@skillerr/workspace");
+    process.env.SKILL_HOST = "cursor";
+    await initWorkspace(dir, { title: "Status WS" });
+    await proposeSection(dir, { title: "Note", body: "Plain text.", type: "doc" });
+
+    // Expected case: no valid agent host — status() must not throw, just
+    // omit completeness (agent_host_ok already reports the reason).
+    delete process.env.SKILL_HOST;
+    const st = await status(dir);
+    assert.equal(st.completeness, undefined);
+    assert.equal(st.agent_host_ok, false);
+  } finally {
+    process.chdir(prev);
+    if (prevHost === undefined) delete process.env.SKILL_HOST;
+    else process.env.SKILL_HOST = prevHost;
+  }
 });
 
 test("registry local log publish and lookup", async () => {

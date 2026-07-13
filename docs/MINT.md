@@ -13,7 +13,11 @@ Required for minted skills. Includes:
 - `package_digest` and **`sealed_manifest_digest`** (identity + permissions/policy/capabilities + content claims)
 - agent host / provider / model (self-reported unless issuer-verified)
 - `host_claim_binding`: `self_reported` | `verified_issuer`
-- `issuer_class`: `public_dev_hmac` | `configured_hmac` | `verified_issuer`
+- `issuer_class`: `public_dev_hmac` | `configured_hmac` | `verified_issuer`. Required on
+  verify — a stripped/absent `issuer_class` is `missing_issuer_class` and refuses; it is
+  never reconstructed from `key_id` (an attacker-controlled field just like `issuer_class`
+  itself, so reconstruction could launder a `public_dev_hmac` seal into a
+  higher-trust-looking label).
 - journey refs, optional `generation_usage` (tokens)
 - `human_approvals.actors` / **`human_approvals.attested`**: `actors` is only ever the
   identity evidence a caller actually passed (`MintOptions.actors`); mint never fabricates

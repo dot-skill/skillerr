@@ -436,11 +436,23 @@ export function verifyMintTrust(
         });
       }
 
-      const issuerClass =
-        attestation.issuer_class ??
-        (attestation.agent.key_id === PUBLIC_DEV_MINT_KEY_ID
-          ? "public_dev_hmac"
-          : "configured_hmac");
+      // issuer_class is a required attestation field. A stripped/absent value
+      // must be a loud, fail-closed error — never leniently reconstructed
+      // from key_id, which an attacker controls just as easily as the field
+      // itself and could use to launder a public_dev_hmac seal into a
+      // higher-trust label downstream (see classifyTrustState, which reads
+      // attestation.issuer_class directly and would otherwise report
+      // self_reported/verified_issuer instead of development).
+      if (!attestation.issuer_class) {
+        issues.push({
+          severity: "error",
+          code: "missing_issuer_class",
+          message:
+            "CreationAttestation.issuer_class is absent. Trust class must be explicit on the " +
+            "attestation; it is never reconstructed from key_id.",
+        });
+      }
+      const issuerClass = attestation.issuer_class;
 
       // Fail closed: public-dev HMAC is never production trust unless explicitly allowed.
       if (issuerClass === "public_dev_hmac" && !opts.allow_development_issuer) {

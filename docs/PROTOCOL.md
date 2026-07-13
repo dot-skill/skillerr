@@ -99,6 +99,15 @@ example.skill
 - `SKILL_HOST` alone is self-reported provenance — not proof of authorship (especially for local LLMs)
 - Digests and seals are **inspectable without executing** (`skill inspect --trust`)
 - Runtime **deny-by-default** for undeclared network / filesystem / secrets; execute refuses untrusted seals without explicit opt-in
+- `manifest.inputs` and `manifest.policy.consent_for` are required and structurally
+  checked by `skill validate` (`inputs_missing` / `policy_missing` /
+  `policy_consent_for_missing`) — a package with either stripped fails validation
+  instead of the runtime's consent gate silently treating the field as empty
+- `verify-trust` requires `attestation.issuer_class` to be present; a stripped
+  value is `missing_issuer_class`, never reconstructed from `key_id`
+- `redactSecrets()` skips pure hex runs (git SHAs, sha256/sha1 content digests) so
+  they survive packaging unchanged; every other redaction is a `secret_redacted`
+  entry in `compilation_report.issues`, never a silent content change
 
 ## Source adapters
 

@@ -2,10 +2,25 @@ import type {
   ContractAssessment,
   ContractField,
   ContractIssue,
+  ContractStep,
   ExplicitDeclaration,
   SkillContract,
 } from "./contract.js";
 import type { SkillCompileProfile } from "./types.js";
+
+/**
+ * Fields each step kind needs to compile into a real workflow step.
+ * compileContractStep() falls back to "" for these when absent — a fallback
+ * that must stay unreachable for any contract this function calls complete.
+ * (transform/checkpoint/human_decision/verify have their own documented
+ * defaults or fall back to the always-required `title`, so they're exempt.)
+ */
+const STEP_KIND_REQUIRED_FIELDS: Partial<Record<ContractStep["kind"], (keyof ContractStep)[]>> = {
+  instruct: ["instruction"],
+  prompt: ["instruction"],
+  tool: ["capability"],
+  emit: ["output", "from"],
+};
 
 const DECLARATIONS: ContractField[] = [
   "triggers",
@@ -161,6 +176,29 @@ export function assessSkillContract(
   ]);
   validateItems("preconditions", contract.preconditions, ["id", "assertion", "check", "on_failure"]);
   validateItems("steps", contract.steps, ["id", "title", "kind"]);
+  {
+    const stepsDeclaration = contract.steps as
+      | { status?: string; items?: ContractStep[] }
+      | undefined;
+    if (stepsDeclaration?.status === "specified" && Array.isArray(stepsDeclaration.items)) {
+      stepsDeclaration.items.forEach((item, index) => {
+        if (!item || typeof item !== "object") return;
+        const required = STEP_KIND_REQUIRED_FIELDS[item.kind] ?? [];
+        const missing = required.filter((key) => {
+          const value = item[key];
+          return typeof value !== "string" || !value.trim();
+        });
+        if (missing.length) {
+          issues.push({
+            field: "steps",
+            code: "invalid",
+            message: `steps.items[${index}] (kind=${item.kind}) lacks ${missing.join(", ")}`,
+            fix: `Add ${missing.join(", ")} to steps.items[${index}] — a ${item.kind} step cannot compile without it.`,
+          });
+        }
+      });
+    }
+  }
   validateItems("branches", contract.branches, ["id", "condition", "then"]);
   validateItems("human_decisions", contract.human_decisions, [
     "id",

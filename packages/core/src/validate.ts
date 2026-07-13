@@ -58,6 +58,33 @@ export function validateManifestShape(manifest: SkillManifest): ValidationIssue[
       message: `Unsupported protocol_version ${manifest.protocol_version}; expected ${PROTOCOL_VERSION}`,
     });
   }
+  // manifest.inputs and manifest.policy.consent_for are required protocol
+  // fields. Nothing structurally checked their presence before — code that
+  // reads them defensively falls back to `?? []`, so a package with either
+  // field stripped passed silently instead of failing validation. That
+  // matters beyond hygiene: runtime's consent gating loops over
+  // policy.consent_for, so a stripped array would silently skip requiring
+  // consent for write/network/exec/destructive side effects.
+  if (!Array.isArray(manifest.inputs)) {
+    issues.push({
+      severity: "error",
+      code: "inputs_missing",
+      message: "manifest.inputs is required and must be an array",
+    });
+  }
+  if (!manifest.policy || typeof manifest.policy !== "object") {
+    issues.push({
+      severity: "error",
+      code: "policy_missing",
+      message: "manifest.policy is required",
+    });
+  } else if (!Array.isArray(manifest.policy.consent_for)) {
+    issues.push({
+      severity: "error",
+      code: "policy_consent_for_missing",
+      message: "manifest.policy.consent_for is required and must be an array",
+    });
+  }
   if (manifest.compile_profile === "release") {
     if (!manifest.contract) {
       issues.push({

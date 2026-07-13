@@ -39,6 +39,17 @@ const SECRET_PATTERNS: RegExp[] = [
   /\b[A-Za-z0-9+/]{40,}={0,2}\b/g,
 ];
 
+/**
+ * Pure hex runs (git SHAs, sha256/sha1 content digests, …) match the broad
+ * 40+ char base64-alphabet pattern above but are not secrets — redacting
+ * them corrupts knowledge bodies that legitimately reference a commit or
+ * digest. Any real secret candidate uses at least one non-hex character
+ * (mixed case beyond a-f, digits mixed with `+`/`/`/`=`, …).
+ */
+function looksLikeHexDigestNotSecret(match: string): boolean {
+  return /^[0-9a-fA-F]+$/.test(match);
+}
+
 const GENERALIZABLE_PATTERNS: Array<{
   re: RegExp;
   name: string;
@@ -97,12 +108,44 @@ function slug(name: string): string {
   );
 }
 
-/** Scrub likely secrets from text before packaging. */
-export function redactSecrets(text: string): string {
+/**
+ * Scrub likely secrets from text before packaging.
+ * `onRedact` is called for every match actually replaced (not for hex
+ * digests skipped as false positives) so callers building a
+ * compilation_report can turn a redaction into a loud, inspectable entry
+ * instead of a silent content change.
+ */
+export function redactSecrets(text: string, onRedact?: (match: string) => void): string {
   let out = text;
   for (const re of SECRET_PATTERNS) {
     re.lastIndex = 0;
-    out = out.replace(re, "{{secret_ref}}");
+    out = out.replace(re, (match) => {
+      if (looksLikeHexDigestNotSecret(match)) return match;
+      onRedact?.(match);
+      return "{{secret_ref}}";
+    });
+  }
+  return out;
+}
+
+/** redactSecrets(), but pushes a loud `secret_redacted` report entry for any match. */
+function redactSecretsReported(
+  text: string,
+  issues: CompilationIssue[],
+  context: string,
+  relatedId?: string,
+): string {
+  let count = 0;
+  const out = redactSecrets(text, () => {
+    count += 1;
+  });
+  if (count > 0) {
+    issues.push({
+      severity: "info",
+      code: "secret_redacted",
+      message: `${count} likely secret(s) redacted from ${context}`,
+      related: relatedId ? [relatedId] : undefined,
+    });
   }
   return out;
 }
@@ -402,12 +445,18 @@ function compileNativeContract(
     requires_consent: permission.consent === "explicit_human",
   }));
 
+  const redactionIssues: CompilationIssue[] = [];
   const knowledge: KnowledgeItem[] = source.sections.map((section) => ({
     kind: "knowledge",
     id: `k_${section.id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 16)}`,
     type: knowledgeTypeFor(section),
     title: section.title,
-    body: redactSecrets(section.body),
+    body: redactSecretsReported(
+      section.body,
+      redactionIssues,
+      `knowledge section "${section.title}"`,
+      section.id,
+    ),
     fidelity: "exact",
     pinned: true,
     sensitivity: section.sensitivity === "public" ? "public" : "private",
@@ -519,6 +568,17 @@ function compileNativeContract(
       statement: forbidden.description,
     }),
   );
+  const safeJourney = {
+    ...source.journey,
+    summary: redactSecretsReported(source.journey.summary, redactionIssues, "journey summary"),
+    open_questions: source.journey.open_questions?.map((q) =>
+      redactSecretsReported(q, redactionIssues, "journey open question"),
+    ),
+    decisions: source.journey.decisions?.map((d) =>
+      redactSecretsReported(d, redactionIssues, "journey decision"),
+    ),
+    redacted: true,
+  };
   const report: CompilationReport = {
     kind: "compilation_report",
     skill_id: skillId,
@@ -527,23 +587,19 @@ function compileNativeContract(
     created_at: new Date().toISOString(),
     mappings: [],
     inferred_inputs: [],
-    issues: assessment.issues.map((issue) => ({
-      severity: profile === "release" ? "error" : "warning",
-      code: `contract_${issue.code}`,
-      message: `${issue.field}: ${issue.message}`,
-      related: [issue.field],
-    })),
+    issues: [
+      ...assessment.issues.map((issue) => ({
+        severity: (profile === "release" ? "error" : "warning") as CompilationIssue["severity"],
+        code: `contract_${issue.code}`,
+        message: `${issue.field}: ${issue.message}`,
+        related: [issue.field],
+      })),
+      ...redactionIssues,
+    ],
     pending_approvals: [],
     approved: contract.provenance.human_review.status === "reviewed",
     completeness,
     semantic_contract: "native_0.5",
-  };
-  const safeJourney = {
-    ...source.journey,
-    summary: redactSecrets(source.journey.summary),
-    open_questions: source.journey.open_questions?.map(redactSecrets),
-    decisions: source.journey.decisions?.map(redactSecrets),
-    redacted: true,
   };
   const files: SkillPackageFiles = {
     manifest: {
@@ -687,7 +743,12 @@ export function compileSkillSource(
   };
 
   for (const section of source.sections) {
-    let body = redactSecrets(section.body);
+    let body = redactSecretsReported(
+      section.body,
+      issues,
+      `knowledge section "${section.title}"`,
+      section.id,
+    );
     PLACEHOLDER_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = PLACEHOLDER_RE.exec(section.body))) {
@@ -887,9 +948,11 @@ export function compileSkillSource(
     inferredInputs.length > 0 || source.inputs_declared === "none";
   const safeJourney = {
     ...source.journey,
-    summary: redactSecrets(source.journey.summary),
-    open_questions: source.journey.open_questions?.map(redactSecrets),
-    decisions: source.journey.decisions?.map(redactSecrets),
+    summary: redactSecretsReported(source.journey.summary, issues, "journey summary"),
+    open_questions: source.journey.open_questions?.map((q) =>
+      redactSecretsReported(q, issues, "journey open question"),
+    ),
+    decisions: source.journey.decisions?.map((d) => redactSecretsReported(d, issues, "journey decision")),
     redacted: true,
   };
 
@@ -1040,7 +1103,7 @@ export function compileSkillSource(
       ? Object.fromEntries(
           source.prompts.map((prompt) => [
             `${prompt.id}.txt`,
-            redactSecrets(prompt.body),
+            redactSecretsReported(prompt.body, issues, `prompt "${prompt.id}"`, prompt.id),
           ]),
         )
       : undefined,

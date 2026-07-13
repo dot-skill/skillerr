@@ -328,7 +328,7 @@ export async function setJourney(
 ): Promise<WorkspaceConfig> {
   const config = await loadConfig(root);
   config.journey_summary = redactSecrets(journey.summary);
-  config.open_questions = journey.open_questions?.map(redactSecrets);
+  config.open_questions = journey.open_questions?.map((q) => redactSecrets(q));
   await saveConfig(root, config);
   return config;
 }
@@ -373,25 +373,27 @@ export async function status(root: string): Promise<StatusResult> {
   const all = await listSections(root);
   const stagedSet = new Set(index.staged);
   const staged = all.filter((i) => stagedSet.has(i.id));
+  // Only the well-understood "no agent host declared yet" case is skipped —
+  // `agent_host_ok` below already reports it. Any other failure (corrupted
+  // section/contract file, a rejected non-agent section, …) must propagate;
+  // a blanket catch here would silently swallow errors this module is
+  // elsewhere careful to make loud (see BUG-2's listSectionFiles rejection).
+  const agentHostOk = isValidAgentHost(process.env.SKILL_HOST);
   let completeness: CompletenessReport | undefined;
-  try {
-    if (staged.length) {
-      const source = await toSkillSource(root, staged, "status", "continuity");
-      const { assessCompleteness } = await import("@skillerr/core");
-      completeness = assessCompleteness(source, {
-        profile: "release",
-        hasWorkflowAction: staged.some((s) =>
-          ["integration", "prompt", "implementation_note", "workflow_note", "code"].includes(
-            s.type,
-          ),
+  if (staged.length && agentHostOk) {
+    const source = await toSkillSource(root, staged, "status", "continuity");
+    const { assessCompleteness } = await import("@skillerr/core");
+    completeness = assessCompleteness(source, {
+      profile: "release",
+      hasWorkflowAction: staged.some((s) =>
+        ["integration", "prompt", "implementation_note", "workflow_note", "code"].includes(
+          s.type,
         ),
-        hasKnowledge: staged.length > 0,
-        hasInputsDeclared: true,
-        pendingApprovals: [],
-      });
-    }
-  } catch {
-    // status should not throw on incomplete
+      ),
+      hasKnowledge: staged.length > 0,
+      hasInputsDeclared: true,
+      pendingApprovals: [],
+    });
   }
   return {
     root,
