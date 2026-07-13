@@ -62,6 +62,10 @@ Status: protocol **Draft 0.5.0**; reference packages **0.6.0**.
 - [ ] First-class progressive-disclosure primitive (a manifest-level
       pointer list for `resources/references/*`, not just the naming
       convention documented in [RESOURCES.md](./RESOURCES.md))
+- [ ] Pixel-level (not byte-level) drift check for the `brand` CI job —
+      sharp/libvips PNG encoding isn't byte-stable across OS/architecture,
+      so today's job only proves `scripts/build-brand.mjs` runs, not that
+      checked-in assets exactly match its output
 - [ ] Second language runtime (Go or Rust) for Stable eligibility — reproduce
       the adversarial corpus and canonicalization vectors byte-for-byte
       (now also covers Ed25519/PEM signing — see CONTRIBUTING.md)

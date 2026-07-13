@@ -32,12 +32,23 @@ jobs:
       - run: npm run pack:check
 
   brand:
-    # Asset generation is OS-independent (pure JS raster/ICO encoding via
-    # sharp + png-to-ico), so this runs once on ubuntu rather than across
-    # the full matrix above. It proves assets/ is reproducible from
-    # assets/skillerr-mark.svg rather than hand-edited out of sync: any
-    # drift between the checked-in PNGs/ICO and what the SVG produces
-    # fails the build.
+    # Proves scripts/build-brand.mjs actually runs end-to-end against the
+    # checked-in master SVGs (assets/skillerr-mark.svg,
+    # assets/skillerr-lockup.svg) without erroring — catching a broken
+    # pipeline (bad SVG, script bug, missing dependency), which is the
+    # thing this job can reliably guarantee cross-machine.
+    #
+    # This deliberately does NOT byte-diff the regenerated PNGs/ICO against
+    # the checked-in ones: sharp/libvips's PNG encoding is not guaranteed
+    # byte-identical across OS/architecture/library-patch-version even for
+    # pixel-identical output (metadata chunks, compression-path
+    # differences), so a contributor regenerating locally on macOS and CI
+    # regenerating on ubuntu can legitimately produce different bytes for
+    # the same SVG input. A strict `git diff --exit-code` here previously
+    # failed CI on every PR regardless of whether the SVGs actually
+    # changed — see git history. Pixel-level (not byte-level) comparison
+    # would restore a real drift check; noted as a "Next" contribution in
+    # docs/ROADMAP.md rather than shipped half-working.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -47,4 +58,3 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node scripts/build-brand.mjs
-      - run: git diff --exit-code -- assets/

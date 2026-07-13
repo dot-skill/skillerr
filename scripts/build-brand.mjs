@@ -3,8 +3,12 @@
 // assets/ that isn't a master SVG is *generated* from one — do not
 // hand-edit the PNGs/ICO this script writes. Re-run after any change to
 // assets/skillerr-mark.svg or assets/skillerr-lockup.svg and commit the
-// results (CI re-runs this and fails the build if `assets/` drifts from
-// what the SVGs produce).
+// results. CI (.github/workflows/ci.yml's `brand` job) re-runs this on
+// every push to prove the pipeline itself works, but does not byte-diff
+// the output against what's checked in — sharp/libvips's PNG encoding
+// isn't guaranteed byte-identical across OS/architecture even for
+// pixel-identical input, so a strict diff would fail CI on machine
+// differences having nothing to do with the SVG actually changing.
 //
 // There are two master SVGs, both traced from the official reference
 // image at assets/source/dot-skill-official.png (kept in the repo as
