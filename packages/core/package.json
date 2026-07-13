@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/core",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Compile, pack, validate, and mint portable .skill packages",
   "license": "MIT",
   "author": {
@@ -51,7 +51,7 @@
     "test": "node --test dist/core.test.js dist/ingest.test.js dist/eval.test.js"
   },
   "dependencies": {
-    "@skillerr/protocol": "^0.6.0",
+    "@skillerr/protocol": "^0.7.0",
     "ajv": "^8.17.1",
     "fflate": "^0.8.2"
   },

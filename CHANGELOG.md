@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.7.0 — 2026-07-14
+
+First real publish of `@skillerr/protocol`, `@skillerr/core`, `@skillerr/runtime`,
+`@skillerr/registry`, `@skillerr/workspace`, and `@skillerr/cli` since their
+initial `0.6.0` release — that version was published on day one and never
+updated, so every fix and feature below existed only on `main` until now.
+`npm i -g skillerr` previously resolved `@skillerr/cli@^0.6.0`, which was
+the pre-hardening skeleton; it now resolves `0.7.0`.
+
+- Security hardening (Tier 0-4): closed network/filesystem allowlist
+  bypasses, real HMAC-SHA256 seal envelope, manifest self-digest, streamed
+  zip unpacking (duplicate-entry / zip-bomb resistant), adversarial
+  package corpus run on every `npm test`, RFC 8785 canonicalization with
+  cross-implementation vectors, content-addressed `skill_id`
+- Pluggable Ed25519 issuer signer + local trust store
+  (`issuer_class: configured_ed25519` → `trust_state: verified_issuer`),
+  replacing dev-HMAC-only trust — see `docs/KEY-CEREMONY.md`
+- `skill ingest`: forward `SKILL.md` → `.skill` conversion, distinct from
+  the existing lossy `to-skill-md` export
+- Native eval/benchmark loop (`skill eval`) with a sealed
+  `provenance/benchmark.json`
+- `@skillerr/skill-score` wired in as an optional dependency of the CLI
+  (`skill score`) — gracefully degrades to a mapped `assessment.json`
+  when not installed, never fabricates a number
+- Structured permission grammar for `permission.hosts`/`.paths`, validated
+  at both authoring and manifest-validation time
+- JSON Schemas (draft 2020-12) for every container file, checked by
+  `skill validate`
+- Bundled-script / progressive-disclosure semantics
+  (`resources/scripts/*`, `resources/references/*`); found and fixed a
+  real gap where `exec`-class capabilities had no deny-by-default gate
+- Public RFC folder (`docs/rfcs/`) — six RFCs
+- Fixed `skill mint <file>` requiring a workspace even with an explicit
+  file argument, unlike every other file-taking CLI command
+
 ## 0.6.4 — 2026-07-13
 
 - New transparent `.skill` mark — coffee-wave scroll motif replaces stacked diamonds; teal accent on waves.
