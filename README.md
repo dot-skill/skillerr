@@ -1,10 +1,9 @@
-# Skillerr
+# Open `.skill` Protocol
 
 <p align="center">
   <img src="./assets/skillerr-mark.png" alt="Skillerr .skill mark" width="128" height="128" />
 </p>
 
-<p align="center"><strong>Skillerr</strong></p>
 <p align="center"><em>Sealed <code>.skill</code> packages for AI agents</em></p>
 
 **The integrity + evaluation layer for AI skills.** Your `SKILL.md` still works — `.skill` seals it, scores it, and makes it portable and inspectable before anyone runs it.
@@ -58,7 +57,7 @@ Markdown remains a **lossy adapter only** — not the protocol. Full comparison:
 npm i -g skillerr
 ```
 
-Node ≥ 20. One-shot: `npx -y skillerr --help`. After that, you do not drive a CLI checklist — you **point your AI at Skillerr**.
+Node ≥ 20. One-shot: `npx -y skillerr --help`. After that, you do not drive a CLI checklist — you **point your AI at `skillerr`**.
 
 ---
 
@@ -148,7 +147,7 @@ Creation requires a declared agent host (`SKILL_HOST=cursor|ollama|claude|…`).
 - **Validate** structure and hash integrity
 - **Dry-run** before execute
 - Continuity drafts may be incomplete; **release** compile refuses incomplete contracts (`compile_refused`)
-- Reference mint HMAC in this repo is **development-only** — not production identity proof
+- Default mint (no `--signer-key`) uses a **development-only** HMAC — not production identity proof. A configured Ed25519 issuer key (`skill keygen` + `--signer-key`) mints as `verified_issuer` instead — see [docs/KEY-CEREMONY.md](./docs/KEY-CEREMONY.md)
 
 See [docs/SECURITY.md](./docs/SECURITY.md).
 
@@ -182,8 +181,14 @@ Full container spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 ## Status
 
 Specification: Draft **0.5.0** ([docs/PROTOCOL.md](./docs/PROTOCOL.md))  
-Reference CLI: `skillerr` @ **0.6.x**  
+Reference CLI: `skillerr` @ **0.7.0**  
 Independent conforming implementations welcome.
+
+**Why the format doesn't lock you in:**
+
+- The container is protocol-defined, not tied to this CLI — any conforming implementation can read/write it (see [docs/rfcs/](./docs/rfcs/) for how the spec evolves in the open)
+- The optional permanence-anchor slot (`skill registry`) is an extension point, not a required dependency — new anchor kinds can be added later without breaking existing packages
+- Trust states are explicit and versioned in the manifest, so a package minted today stays verifiable under future trust-store/issuer changes instead of silently degrading
 
 ---
 

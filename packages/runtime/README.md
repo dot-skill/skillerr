@@ -22,7 +22,7 @@ Fails clearly when required capabilities or minted trust profiles are unmet. Doe
 
 - Digests and seals are visible without executing workflow steps.
 - Trust profiles: `open` | `minted` | `anchored` | `issuer:<id>`
-- Reference mint verification matches `@skillerr/core` (dev HMAC ≠ production PKI)
+- Reference mint verification matches `@skillerr/core` — dev HMAC (`trust_state: development`) by default, or `verified_issuer` when a configured Ed25519 signer key was used
 
 ## Related
 

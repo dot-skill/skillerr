@@ -8,12 +8,11 @@
   <img src="https://raw.githubusercontent.com/dot-skill/skillerr/main/assets/skillerr-mark.png" alt="Skillerr .skill mark" width="128" height="128" />
 </p>
 
-<p align="center"><strong>Skillerr</strong></p>
-<p align="center"><em>Sealed <code>.skill</code> packages for AI agents</em></p>
+<p align="center"><em>Sealed <code>.skill</code> packages for AI agents — reference CLI for the Open <code>.skill</code> Protocol</em></p>
 
 **The integrity + evaluation layer for AI skills.** Your `SKILL.md` still works — `.skill` seals it, scores it, and makes it portable and inspectable before anyone runs it.
 
-You install once. Then you **point your AI** at Skillerr. The agent creates, inspects, hands off, and dry-runs skills; you review and approve releases.
+You install once. Then you **point your AI** at `skillerr`. The agent creates, inspects, hands off, and dry-runs skills; you review and approve releases.
 
 **Bin:** `skill` · **Site:** [skillerr.com](https://dot-skill.github.io/skillerr-com/) · **Format:** `.skill` · **Repo:** [dot-skill/skillerr](https://github.com/dot-skill/skillerr) · **License:** MIT
 
@@ -23,7 +22,7 @@ You install once. Then you **point your AI** at Skillerr. The agent creates, ins
 
 A `.skill` is a sealed ZIP: typed inputs, workflow, pinned knowledge, redacted provenance, integrity digests, and optional mint + eval/score. Inspect TrustView before anything runs.
 
-Plain markdown skills lose structure, integrity, and portability across hosts. Skillerr fixes that with one inspectable artifact, without asking you to abandon `SKILL.md` — see [WHY.md](../../docs/WHY.md).
+Plain markdown skills lose structure, integrity, and portability across hosts. The `.skill` format fixes that with one inspectable artifact, without asking you to abandon `SKILL.md` — see [WHY.md](../../docs/WHY.md).
 
 Already have a `SKILL.md`? `skill ingest ./your-skill` upgrades it in one command — see [FAQ.md](../../docs/FAQ.md#how-do-i-convert-an-existing-skillmd).
 
@@ -91,7 +90,7 @@ More prompts: [examples/prompts.md](../../examples/prompts.md). Agent rules: [AG
 
 ## Trust before run
 
-Digests and seals are visible without execution. Prefer inspect → validate → dry-run. Reference mint HMAC is **development-only**.
+Digests and seals are visible without execution. Prefer inspect → validate → dry-run. Default mint is **development-only** HMAC; a configured Ed25519 issuer key mints as `verified_issuer` instead — see [KEY-CEREMONY.md](../../docs/KEY-CEREMONY.md).
 
 ---
 

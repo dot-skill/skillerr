@@ -17,7 +17,7 @@ npm i @skillerr/core
 | Compile | SkillSource → package files; release profile refuses if incomplete |
 | Pack / unpack | Deterministic ZIP container |
 | Validate | Structure + SHA-256 digests |
-| Mint | Creation attestation (reference HMAC is development-only) |
+| Mint | Creation attestation — default HMAC is development-only; a configured Ed25519 signer key mints as `verified_issuer` |
 | Inspect helpers | Manifest and seal visibility without execution |
 
 ## Profiles
