@@ -56,9 +56,6 @@
     "@skillerr/runtime": "^0.6.0",
     "@skillerr/workspace": "^0.6.0"
   },
-  "optionalDependencies": {
-    "@skillerr/skill-score": "^0.1.0-draft.2"
-  },
   "devDependencies": {
     "@types/node": "^22.15.21",
     "rimraf": "^6.0.1",
