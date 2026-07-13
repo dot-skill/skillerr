@@ -442,6 +442,15 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
     created_at: nowIso,
     actor: { id: "skill-ingest" },
     source_protocol_version: PROTOCOL_VERSION,
+    // A structured, reliably-detectable marker that this source came from
+    // automated SKILL.md ingest — not free text buried in
+    // provenance.limitations. Downstream evidence/scoring tooling (e.g.
+    // @skillerr/skill-score's benchmark adapter) can check
+    // source_refs.some(r => r.product === "skill-md-ingest") to honestly
+    // tier structural/provenance evidence as self-reported rather than
+    // observed, since triggers/steps/section boundaries here are
+    // heuristically derived, not human-authored from scratch.
+    source_refs: [{ product: "skill-md-ingest", kind: "automated_ingest", id: friendlyPath(skillMdPath), hash }],
   };
 
   const report: IngestReport = {

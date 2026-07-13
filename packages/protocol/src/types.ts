@@ -685,6 +685,13 @@ export interface SkillPackageFiles {
     compilation_report?: CompilationReport;
     /** PHASE 2: sealed into provenance/benchmark.json when `skill eval` ran before compile. */
     benchmark?: BenchmarkReport;
+    /**
+     * PHASE 3: an optional sealed quality-score receipt (`@skillerr/skill-score`'s
+     * ScoreResult). Typed `unknown` deliberately — this protocol package
+     * does not depend on the scorer's types, matching `recipe`/`proof`'s
+     * existing "product-shaped, not protocol-native" convention.
+     */
+    score?: unknown;
   };
   signatures?: Record<string, unknown>;
   attestation?: CreationAttestation;

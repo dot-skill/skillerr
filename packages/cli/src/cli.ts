@@ -42,6 +42,7 @@ import {
   buildBenchmarkReport,
 } from "@skillerr/core";
 import type { GradeOverride } from "@skillerr/core";
+import { buildSkillAssessment } from "./score-adapter.js";
 import { runSkillArchive } from "@skillerr/runtime";
 import { lookup, list, verify as registryVerify, publish as registryPublish } from "@skillerr/registry";
 import type { Recipe, SectionType, Skill, SkillContract, SkillSource } from "@skillerr/protocol";
@@ -133,6 +134,14 @@ Ingest / run:
                                        pending_human (never a fabricated
                                        pass). --attach seals it into the
                                        next compile's provenance/benchmark.json
+  skill score <file.skill> [--profile release|continuity] [--emit] [-o out]
+                                       Maps provenance/benchmark.json into
+                                       @skillerr/skill-score's input and
+                                       prints score+confidence+coverage.
+                                       Falls back to writing assessment.json
+                                       if the (optional) scorer isn't
+                                       installed. --emit seals a sealed
+                                       provenance/score.json copy.
   skill inspect <file.skill> [--trust] [--trust-store <path>]
                                        TrustView (no compile / no model body)
   skill validate <file.skill>          Structure + hash integrity
@@ -840,6 +849,56 @@ async function main() {
           2,
         ),
       );
+      break;
+    }
+    case "score": {
+      const file = rest[0];
+      if (!file) usage();
+      const profile = (opt(rest, "--profile") ?? "release") as "release" | "continuity";
+      const bytes = new Uint8Array(await readFile(resolve(file!)));
+      const validation = validatePackageBytes(bytes);
+      const unpacked = unpackSkill(bytes);
+      const assessment = buildSkillAssessment({
+        manifest: unpacked.manifest,
+        benchmark: unpacked.raw.provenance?.benchmark,
+        provenanceSource: unpacked.raw.provenance?.source,
+        valid: validation.ok,
+      });
+
+      let scoreResult: unknown;
+      try {
+        const skillScore = await import("@skillerr/skill-score");
+        scoreResult = skillScore.scoreSkill(assessment, profile);
+      } catch {
+        const assessmentOut = opt(rest, "-o") ?? "assessment.json";
+        await writeFile(resolve(assessmentOut), JSON.stringify(assessment, null, 2) + "\n");
+        console.log(
+          JSON.stringify(
+            {
+              ok: false,
+              error: "@skillerr/skill-score is not installed.",
+              assessment_out: assessmentOut,
+              next: `npm i -D @skillerr/skill-score, then re-run — or score it directly: skill-score ${assessmentOut} ${profile}`,
+              evidence_count: assessment.evidence.length,
+            },
+            null,
+            2,
+          ),
+        );
+        break;
+      }
+
+      if (flag(rest, "--emit")) {
+        const sealed = {
+          ...unpacked.raw,
+          provenance: { ...unpacked.raw.provenance, score: scoreResult },
+        };
+        const out = opt(rest, "-o") ?? file!;
+        await writeFile(resolve(out), packSkill(sealed));
+        console.log(JSON.stringify({ ok: true, out, score: scoreResult }, null, 2));
+      } else {
+        console.log(JSON.stringify({ ok: true, score: scoreResult }, null, 2));
+      }
       break;
     }
     case "pack": {

@@ -35,6 +35,12 @@ Status: protocol **Draft 0.5.0**; reference packages **0.6.0**.
       [examples/ingest-skill-md/](../examples/ingest-skill-md/)
 - [x] Native eval/benchmark loop (`skill eval`, sealed
       `provenance/benchmark.json`) — see [docs/EVAL.md](./EVAL.md)
+- [x] `@skillerr/skill-score` wired in as an optional dependency of the CLI
+      (`skill score`), mapping `provenance/benchmark.json` +
+      manifest/provenance evidence into its assessment input, with a
+      sealed `provenance/score.json` receipt slot. SKILL.md-ingested
+      sources are honestly tiered self-reported, not observed — see
+      `packages/cli/src/score-adapter.ts`
 
 ## Next (great contribution targets)
 
@@ -44,14 +50,12 @@ Status: protocol **Draft 0.5.0**; reference packages **0.6.0**.
       functional; see the `scoped-npm-monorepo-publishing` gold example
 - [ ] Validate the published authoring schema with an independent implementation
 - [ ] HTTP transparency-log server (same log format as local registry)
-- [ ] Stronger `verify` assertion language + fixtures
+- [ ] Stronger `verify` assertion language + fixtures — would also enrich
+      `skill score`'s validationEvidence beyond contains:/not_contains:/regex:
 - [ ] Host adapters: local OpenAI-compatible, Cursor, Claude Code, Codex
 - [ ] Second language runtime (Go or Rust) for Stable eligibility — reproduce
       the adversarial corpus and canonicalization vectors byte-for-byte
       (now also covers Ed25519/PEM signing — see CONTRIBUTING.md)
-- [ ] Wire `@skillerr/skill-score` in as the consumer of `benchmark.json`,
-      with a sealed `provenance/score.json` receipt (Stronger `verify`
-      assertion language above feeds this too)
 
 ## Later
 

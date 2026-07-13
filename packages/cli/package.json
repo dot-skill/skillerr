@@ -38,6 +38,8 @@
   "files": [
     "dist/cli.js",
     "dist/cli.d.ts",
+    "dist/score-adapter.js",
+    "dist/score-adapter.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -45,7 +47,7 @@
     "build": "rimraf dist && tsc -p tsconfig.json",
     "clean": "rimraf dist",
     "prepack": "npm run build",
-    "test": "node --test dist/conformance.test.js dist/adversarial.test.js"
+    "test": "node --test dist/conformance.test.js dist/adversarial.test.js dist/score-adapter.test.js"
   },
   "dependencies": {
     "@skillerr/core": "^0.6.0",
@@ -53,6 +55,9 @@
     "@skillerr/registry": "^0.6.0",
     "@skillerr/runtime": "^0.6.0",
     "@skillerr/workspace": "^0.6.0"
+  },
+  "optionalDependencies": {
+    "@skillerr/skill-score": "^0.1.0-draft.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

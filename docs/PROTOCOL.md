@@ -82,6 +82,20 @@ An optional `contract.evals[]` array of test-prompt-plus-assertion cases.
 the result into `provenance/benchmark.json` on the next compile. See
 [EVAL.md](./EVAL.md).
 
+## Quality score (Phase 3)
+
+`provenance/score.json` is an **optional** sealed receipt — a
+`@skillerr/skill-score` `ScoreResult` (score, confidence, coverage,
+per-dimension breakdown, evidence receipt ids). Scoring is a separate,
+independently-versioned package with its own formula and gate caps; this
+protocol only reserves the container slot and the mapping from
+`provenance/benchmark.json` into that package's evidence-receipt input —
+see `skill score` in the reference CLI. A package's `package_digest`
+excludes `signatures/**` but includes every other file, so `score.json`
+(like `benchmark.json`) is covered by the package's own integrity digest —
+tampering with either after packing is detectable the same way tampering
+with any other content file is.
+
 ## Container
 
 ```text
@@ -93,7 +107,7 @@ example.skill
 ├── resources/
 ├── artifacts/
 ├── assets/icon.*         # optional per-skill icon — see "Format icon slot" below
-├── provenance/          # journey + usage + compilation_report + optional benchmark
+├── provenance/          # journey + usage + compilation_report + optional benchmark/score
 └── signatures/          # attestation + optional anchors
 ```
 

@@ -48,6 +48,20 @@ See [docs/EVAL.md](../docs/EVAL.md).
 
 ---
 
+## Score a skill's quality/completeness evidence
+
+```text
+Score ./file.skill with skillerr (skill score --profile release). If
+provenance/benchmark.json is missing or thin, tell me that the confidence
+will be low, not the quality — don't conflate the two.
+```
+
+Needs `@skillerr/skill-score` installed (`npm i -D @skillerr/skill-score`)
+to compute a real score; otherwise it writes the mapped `assessment.json`
+for you to score separately.
+
+---
+
 ## Inspect a `.skill` before trusting it
 
 ```text

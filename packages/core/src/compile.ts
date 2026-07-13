@@ -685,6 +685,7 @@ function compileNativeContract(
                   : undefined,
               },
               section_ids: source.sections.map((section) => `${section.id}@${section.revision}`),
+              source_refs: source.source_refs,
             },
       journey: safeJourney,
       generation_usage: opts.generation_usage ?? source.generation_usage,

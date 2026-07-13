@@ -68,6 +68,18 @@ Only grade what you can honestly check. `pending_human` on an assertion
 means exactly that — don't report it to the human as passed. See
 [docs/EVAL.md](./EVAL.md).
 
+## Score a skill (what you run)
+
+```bash
+skill score ./file.skill --profile release
+```
+
+Needs `provenance/benchmark.json` to be useful (run `skill eval --attach`
++ recompile first, or the score will be low-confidence, not low-quality —
+missing evidence is neutral, never penalized as if it were bad). If
+`@skillerr/skill-score` isn't installed this writes `assessment.json`
+instead and tells you how to score it.
+
 ## Ingest / load / run (what you run)
 
 ```bash
