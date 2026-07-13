@@ -45,11 +45,12 @@
     "./skill-contract.schema.json": "./skill-contract.schema.json"
   },
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "build": "rimraf dist && tsc",
     "prepack": "npm run build",
-    "clean": "rm -rf dist"
+    "clean": "rimraf dist"
   },
   "devDependencies": {
+    "rimraf": "^6.0.1",
     "typescript": "^5.4.5"
   }
 }

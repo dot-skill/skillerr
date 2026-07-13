@@ -25,7 +25,7 @@
   "scripts": {
     "build": "npm run build -w @skillerr/protocol && npm run build -w @skillerr/core && npm run build -w @skillerr/runtime && npm run build -w @skillerr/registry && npm run build -w @skillerr/workspace && npm run build -w @skillerr/cli",
     "test": "npm run build && npm run test -w @skillerr/cli",
-    "test:examples": "SKILL_HOST=example-agent node packages/cli/dist/cli.js pack examples/knowledge-only/recipe.json --approve --profile continuity -o /tmp/skillerr-knowledge.skill && SKILL_HOST=example-agent node packages/cli/dist/cli.js pack examples/parameterized-integration/recipe.json --approve --profile continuity -o /tmp/skillerr-integration.skill && SKILL_HOST=example-agent node packages/cli/dist/cli.js pack examples/code-changing/recipe.json --approve --profile continuity -o /tmp/skillerr-code.skill && SKILL_HOST=example-agent node packages/cli/dist/cli.js pack examples/contract-foundation/source.json --profile release -o /tmp/skillerr-contract.skill",
+    "test:examples": "node scripts/test-examples.mjs",
     "pack:check": "npm pack --workspaces --dry-run",
     "pack:check:meta": "npm pack -w skillerr --dry-run",
     "skill": "node packages/cli/dist/cli.js",
