@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { strToU8 } from "fflate";
+import { strToU8, strFromU8, zipSync } from "fflate";
 import {
   canonicalize,
   inspectSkill,
@@ -635,15 +635,31 @@ test("BUG-3: validate refuses a package with inputs or policy.consent_for stripp
     knowledge: [],
   };
 
-  const noInputs = structuredClone(basePkg);
-  delete (noInputs.manifest as unknown as Record<string, unknown>).inputs;
-  const validationNoInputs = validatePackageBytes(packSkill(noInputs));
+  // packSkill() itself now refuses a manifest missing required fields (its
+  // own manifest_digest computation can't be trusted to gloss over them —
+  // see SEC-F), which correctly rules out "just pack it with the field
+  // missing". The real threat this guards against is an attacker editing
+  // skill.json bytes directly inside an *already-packed* archive, so that's
+  // what this simulates: pack a complete package, then rewrite skill.json
+  // in the zip with a field stripped, bypassing finalizeManifest entirely.
+  const { files } = unpackSkill(packSkill(basePkg));
+  function repackWithTamperedManifest(mutate: (m: Record<string, unknown>) => void): Uint8Array {
+    const manifest = JSON.parse(strFromU8(files["skill.json"]!)) as Record<string, unknown>;
+    mutate(manifest);
+    return zipSync({ ...files, "skill.json": strToU8(JSON.stringify(manifest, null, 2)) });
+  }
+
+  const noInputs = repackWithTamperedManifest((m) => {
+    delete m.inputs;
+  });
+  const validationNoInputs = validatePackageBytes(noInputs);
   assert.equal(validationNoInputs.ok, false);
   assert.ok(validationNoInputs.issues.some((i) => i.code === "inputs_missing"));
 
-  const noConsent = structuredClone(basePkg);
-  delete (noConsent.manifest.policy as unknown as Record<string, unknown>).consent_for;
-  const validationNoConsent = validatePackageBytes(packSkill(noConsent));
+  const noConsent = repackWithTamperedManifest((m) => {
+    delete (m.policy as Record<string, unknown>).consent_for;
+  });
+  const validationNoConsent = validatePackageBytes(noConsent);
   assert.equal(validationNoConsent.ok, false);
   assert.ok(validationNoConsent.issues.some((i) => i.code === "policy_consent_for_missing"));
 });
@@ -1012,6 +1028,65 @@ test("continuity compiles a partial native contract and returns field-specific f
 
 test("digest helper", () => {
   assert.match(sha256Digest("abc"), /^sha256:[a-f0-9]{64}$/);
+});
+
+test("SEC-F: a draft (never-minted) package carries a self-consistent manifest_digest", () => {
+  const recipe = demoRecipe();
+  recipe.id = "rcp_secf_draft";
+  const compiled = compileRecipeToSkill(recipe, {
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+    host: "cursor",
+    profile: "release",
+  });
+  const manifest = compiled.files.manifest as unknown as Record<string, unknown>;
+  assert.ok(typeof manifest.manifest_digest === "string" && manifest.manifest_digest.length > 0);
+  const validation = validatePackageBytes(compiled.packageBytes);
+  assert.equal(validation.ok, true, JSON.stringify(validation.issues));
+});
+
+test("SEC-F: tampering with permissions/policy after packing is caught even without minting", () => {
+  const recipe = demoRecipe();
+  recipe.id = "rcp_secf_tamper";
+  const compiled = compileRecipeToSkill(recipe, {
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+    host: "cursor",
+    profile: "release",
+  });
+  const { files } = unpackSkill(compiled.packageBytes);
+  const manifest = JSON.parse(strFromU8(files["skill.json"]!)) as {
+    policy: { allow_network: boolean };
+  };
+  // Escalate a permission after packing — package_digest doesn't cover
+  // skill.json, and this package was never minted, so before SEC-F nothing
+  // would catch this.
+  manifest.policy.allow_network = true;
+  const tampered = zipSync({
+    ...files,
+    "skill.json": strToU8(JSON.stringify(manifest, null, 2)),
+  });
+  const validation = validatePackageBytes(tampered);
+  assert.equal(validation.ok, false);
+  assert.ok(validation.issues.some((i) => i.code === "manifest_digest_mismatch"));
+});
+
+test("SEC-F: after minting, manifest_digest matches sealed_manifest_digest", () => {
+  const recipe = demoRecipe();
+  recipe.id = "rcp_secf_mint";
+  let compiled = compileRecipeToSkill(recipe, {
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+    host: "cursor",
+    profile: "release",
+  });
+  compiled = approveCompilation(compiled, { inputs: ["*"], permissions: true });
+  compiled.files.manifest.needs_human_review = false;
+  const { files, packageBytes } = mintSkillPackage(compiled.files, { host: "cursor" });
+  assert.ok(files.manifest.manifest_digest);
+  assert.equal(files.manifest.manifest_digest, files.manifest.sealed_manifest_digest);
+  const validation = validatePackageBytes(packageBytes);
+  assert.equal(validation.ok, true, JSON.stringify(validation.issues));
 });
 
 test("mint seals package and verify-trust accepts development profile with explicit opt-in", () => {

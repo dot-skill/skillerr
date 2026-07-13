@@ -194,6 +194,12 @@ export function mintSkillPackage(
     },
   };
   const sealed_manifest_digest = sealedManifestDigest(sealedManifestBase);
+  // Minting tightens policy fields (require_signatures/require_minted/
+  // trust_profile), which are covered by manifest_digest's claim set too.
+  // Refresh it so it isn't left stale/mismatched against the sealed state —
+  // sealed_manifest_digest and manifest_digest are the same computation over
+  // the same claims, so they're equal for a minted package by construction.
+  sealedManifestBase.manifest_digest = sealed_manifest_digest;
 
   const attestation: CreationAttestation = {
     kind: "creation_attestation",

@@ -92,7 +92,8 @@ example.skill
 
 - Canonical JSON for the package index: JCS-inspired serialization · Digests: `sha256:<hex>`
 - `package_digest` excludes `skill.json` and `signatures/**`
-- **`sealed_manifest_digest`** binds identity + permissions/policy/capabilities + content claims inside the creation seal
+- **`sealed_manifest_digest`** binds identity + permissions/policy/capabilities + content claims inside the creation seal — present only once minted
+- **`manifest_digest`**: the same identity/permissions/policy/capabilities/content claim set, self-digested at pack time and checked by `skill validate` on *every* package, minted or not (`manifest_digest_missing` / `manifest_digest_mismatch`). Without it, `package_digest` excluding `skill.json` plus `sealed_manifest_digest` only existing post-mint meant a draft/continuity package's own permissions/capabilities/policy carried no integrity binding at all — hand-edited tampering passed `skill validate` silently. For a minted package `manifest_digest` equals `sealed_manifest_digest` (same computation over the post-seal policy state)
 - **Valid** = package structure + digests
 - **Minted** = signed creation attestation; TrustView states: `untrusted` | `development` | `self_reported` | `verified_issuer`
 - The bundled development HMAC signer is **never** production trust (`issuer_class=public_dev_hmac`)

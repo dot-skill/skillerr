@@ -5,7 +5,7 @@ import {
   PROTOCOL_VERSION,
   WORKFLOW_DIALECT_VERSION,
 } from "@skillerr/protocol";
-import { packageDigestFromContent, sha256Digest } from "./hash.js";
+import { packageDigestFromContent, sealedManifestDigest, sha256Digest } from "./hash.js";
 import { unpackSkill } from "./pack.js";
 
 export interface ValidationIssue {
@@ -84,6 +84,37 @@ export function validateManifestShape(manifest: SkillManifest): ValidationIssue[
       code: "policy_consent_for_missing",
       message: "manifest.policy.consent_for is required and must be an array",
     });
+  }
+  // SEC-F: package_digest excludes skill.json, and sealed_manifest_digest
+  // only exists once minted — without manifest_digest, a draft/continuity
+  // package's own permissions/capabilities/policy carry no integrity
+  // binding at all, and hand-edited tampering passes validate silently.
+  // Checked on every package, minted or not.
+  if (!manifest.manifest_digest) {
+    issues.push({
+      severity: "error",
+      code: "manifest_digest_missing",
+      message:
+        "manifest.manifest_digest is required; without it permissions/policy/capabilities have no integrity binding",
+    });
+  } else {
+    // Recomputing can itself throw on a sufficiently malformed/tampered
+    // manifest (e.g. a required array field stripped) — that is itself a
+    // mismatch, not a crash. validate() must always return a report.
+    let recomputed: string | undefined;
+    try {
+      recomputed = sealedManifestDigest(manifest);
+    } catch {
+      recomputed = undefined;
+    }
+    if (recomputed === undefined || manifest.manifest_digest !== recomputed) {
+      issues.push({
+        severity: "error",
+        code: "manifest_digest_mismatch",
+        message:
+          "manifest.manifest_digest does not match the recomputed identity/permissions/policy/capabilities/content claims — the manifest may have been altered after packing",
+      });
+    }
   }
   if (manifest.compile_profile === "release") {
     if (!manifest.contract) {

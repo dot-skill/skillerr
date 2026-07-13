@@ -420,6 +420,15 @@ export interface SkillManifest {
   policy: SkillPolicy;
   content: ContentDigest[];
   package_digest: string;
+  /**
+   * Self-digest over identity/permissions/policy/capabilities/content claims
+   * (same claim set as sealed_manifest_digest), computed at pack time and
+   * checked by `skill validate` on every package — minted or not.
+   * package_digest excludes skill.json itself, and sealed_manifest_digest
+   * only exists once minted, so without this a draft/continuity package's
+   * permissions/capabilities/policy carry no integrity binding at all.
+   */
+  manifest_digest?: string;
   dependencies?: SkillDependency[];
   supersedes?: string;
   provenance_mode: ProvenanceMode;

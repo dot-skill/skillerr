@@ -7,7 +7,7 @@ import type {
   Workflow,
   CompilationReport,
 } from "@skillerr/protocol";
-import { packageDigestFromContent, sha256Digest } from "./hash.js";
+import { packageDigestFromContent, sealedManifestDigest, sha256Digest } from "./hash.js";
 import {
   assertSafePaths,
   MAX_COMPRESSION_RATIO,
@@ -203,8 +203,8 @@ export function buildFileMap(pkg: SkillPackageFiles): Record<string, Uint8Array>
  * `package_digest` is the digest of that index (RFC8785 JCS + SHA-256).
  */
 export function finalizeManifest(
-  base: Omit<SkillManifest, "content" | "package_digest"> &
-    Partial<Pick<SkillManifest, "content" | "package_digest">>,
+  base: Omit<SkillManifest, "content" | "package_digest" | "manifest_digest"> &
+    Partial<Pick<SkillManifest, "content" | "package_digest" | "manifest_digest">>,
   files: Record<string, Uint8Array>,
 ): SkillManifest {
   const content = Object.keys(files)
@@ -215,12 +215,16 @@ export function finalizeManifest(
       digest: sha256Digest(files[path]!),
       bytes: files[path]!.byteLength,
     }));
-  return {
+  const withoutDigest = {
     ...base,
     mint: base.mint ?? { mint_status: "draft" },
     content,
     package_digest: packageDigestFromContent(content),
   } as SkillManifest;
+  // SEC-F: a self-digest over the same claim set as sealed_manifest_digest,
+  // computed here so every package — draft or minted — has an integrity
+  // binding over permissions/capabilities/policy, not only minted ones.
+  return { ...withoutDigest, manifest_digest: sealedManifestDigest(withoutDigest) };
 }
 
 export function packSkill(pkg: SkillPackageFiles, _opts: PackOptions = {}): Uint8Array {
