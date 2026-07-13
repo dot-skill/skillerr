@@ -4,7 +4,7 @@ Free static hosting from **dot-skill/dot-skill** — no paid host, no org `.gith
 
 ## What ships
 
-- VitePress docs at `website/` (agent-first pages, Dotling mark, Mermaid workflows)
+- VitePress docs at `website/` (agent-first pages, Shimmer mark, Mermaid workflows)
 - Tested `.skill` fixtures in `website/docs/public/fixtures/`
 - `llms.txt` at site root for agents
 - CNAME: `skillerr.com`
@@ -45,21 +45,11 @@ npm run preview        # http://localhost:4173
 
 Requires reference CLI built at repo root (`npm run build`).
 
-## Sync from skillerr-world staging
-
-If editing in `skillerr-world/apps/website/`:
-
-```bash
-./scripts/sync-to-dot-skill.sh
-```
-
-Then commit and push from `dot-skill`.
-
 ## Pages (13 routes)
 
 | Path | Content |
 |------|---------|
-| `/` | Overview + hero (Dotling) |
+| `/` | Overview + hero (Shimmer mark) |
 | `/getting-started` | Copy-paste agent prompts |
 | `/workflows` | Mermaid create / ingest / extract diagrams |
 | `/create-a-skill` | Create path |

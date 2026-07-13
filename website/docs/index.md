@@ -7,7 +7,7 @@ hero:
   tagline: Install once. Talk to your AI. Portable skills with inspect-before-run trust.
   image:
     src: /assets/skillerr-mark-512.png
-    alt: Skillerr mark — the Dotling
+    alt: Skillerr mark — Shimmer skill-core
   actions:
     - theme: brand
       text: Getting started
@@ -34,9 +34,7 @@ features:
     details: Checkpoint mid-work packages for AI↔AI resume. Release compile refuses incomplete contracts.
 ---
 
-## The Dotling
-
-*The Dotling — living `.` of `.skill`*
+## Sealed `.skill` packages
 
 Skillerr is an open protocol and portable **`.skill`** format so AI agents can author, inspect, hand off, and run skills across hosts.
 

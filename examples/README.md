@@ -30,7 +30,7 @@ skill extract examples/multi-skill-extract/journey.json -o /tmp/skillerr-extract
 
 ## Packed fixtures (validated)
 
-Pre-packed `.skill` downloads (also served from [skillerr.com/examples/](https://skillerr.com/examples/)):
+Pre-packed `.skill` downloads (also served from [skillerr.com/fixtures](https://skillerr.com/fixtures)):
 
 | File | Profile |
 |------|---------|
@@ -39,9 +39,10 @@ Pre-packed `.skill` downloads (also served from [skillerr.com/examples/](https:/
 | [`packs/skillerr-code.skill`](./packs/skillerr-code.skill) | continuity |
 | [`packs/skillerr-contract.skill`](./packs/skillerr-contract.skill) | release |
 
-Regenerate:
+Regenerate (also runs at site build time):
 
 ```bash
 npm run test:examples
-# then copy /tmp/skillerr-*.skill → examples/packs/ and site/public/examples/
+# copy /tmp/skillerr-*.skill → examples/packs/
+# or: cd website && DOT_SKILL_ROOT=.. npm run fixtures:build
 ```

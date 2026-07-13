@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const websiteRoot = resolve(__dirname, "..");
 const dotSkillRoot =
-  process.env.DOT_SKILL_ROOT ?? resolve(websiteRoot, "../../../dot-skill");
+  process.env.DOT_SKILL_ROOT ?? resolve(websiteRoot, "..");
 const cli = join(dotSkillRoot, "packages/cli/dist/cli.js");
 const fixturesDir = join(websiteRoot, "docs/public/fixtures");
 const manifest = JSON.parse(

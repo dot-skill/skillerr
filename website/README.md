@@ -1,16 +1,16 @@
 # Skillerr docs site (VitePress)
 
-Agent-first documentation for [skillerr.com](https://skillerr.com). Source content lives in `website-content/` at the skillerr-world root; this app builds the static site.
+Agent-first documentation for [skillerr.com](https://skillerr.com). Source lives in `website/docs/` in this repo.
 
 ## Run locally
 
 ```bash
-# From skillerr-world root — ensure dot-skill CLI is built
-cd ../dot-skill && npm run build && cd -
+# From repo root — build reference CLI first
+npm run build
 
-cd apps/website
+cd website
 npm install
-npm run fixtures:build   # needs DOT_SKILL_ROOT or sibling dot-skill checkout
+DOT_SKILL_ROOT=.. npm run fixtures:build
 npm run dev              # http://localhost:5173
 ```
 
@@ -24,29 +24,6 @@ npm run fixtures:test    # validate / inspect / dry-run all fixtures
 
 ## Deploy (GitHub Pages)
 
-The live deploy workflow lives in **dot-skill/dot-skill** (`.github/workflows/pages.yml`). After push to `main`, Pages serves `skillerr.com` from the built artifact.
+The live deploy workflow is [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) in this repo. After push to `main`, Pages serves `skillerr.com` from the built artifact.
 
-### DNS (skillerr.com apex)
-
-At your registrar, for apex `skillerr.com`:
-
-| Type | Name | Value |
-|------|------|-------|
-| A | `@` | `185.199.108.153` |
-| A | `@` | `185.199.109.153` |
-| A | `@` | `185.199.110.153` |
-| A | `@` | `185.199.111.153` |
-
-Optional `www`:
-
-| Type | Name | Value |
-|------|------|-------|
-| CNAME | `www` | `dot-skill.github.io` |
-
-Then in GitHub → **dot-skill/dot-skill** → Settings → Pages → Custom domain: `skillerr.com` (Enforce HTTPS).
-
-## Sync to dot-skill
-
-```bash
-./scripts/sync-to-dot-skill.sh
-```
+See [DEPLOY.md](./DEPLOY.md) for DNS and custom-domain steps.
