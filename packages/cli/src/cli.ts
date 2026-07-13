@@ -87,8 +87,26 @@ function loadPackageVersion(): string {
 
 const VERSION = loadPackageVersion();
 
+/**
+ * ASCII rendition of the skillerr mark (scroll + rising wave) for terminal
+ * contexts, since the real SVG/PNG mark (assets/skillerr-mark.svg) can't
+ * render there. Only shown on --help/bare invocation, not on every command
+ * — this CLI's primary consumer is an agent piping/parsing output, and only
+ * printed when stdout is a real TTY with color support (respects NO_COLOR),
+ * so it never pollutes scripted or redirected output.
+ */
+function banner(): string {
+  if (!process.stdout.isTTY || process.env.NO_COLOR) return "";
+  const teal = "\x1b[36m";
+  const reset = "\x1b[0m";
+  return `${teal}     /\\  /\\  /\\
+    /  \\/  \\/  \\
+   /____________\\${reset}
+`;
+}
+
 function usage(exitCode = 1): never {
-  console.log(`skill — Open .skill Protocol CLI v${VERSION}
+  console.log(`${banner()}skill — Open .skill Protocol CLI v${VERSION}
 
 Easily create, inspect, and run portable .skill packages.
 Agents create; humans approve releases.

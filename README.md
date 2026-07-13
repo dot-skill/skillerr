@@ -7,7 +7,7 @@
 <p align="center"><strong>Skillerr</strong></p>
 <p align="center"><em>Sealed <code>.skill</code> packages for AI agents</em></p>
 
-Open protocol and portable **`.skill`** format for AI skills — built so your **AI agent** can create, inspect, hand off, and run skills. You install once; then you talk to your AI.
+**The integrity + evaluation layer for AI skills.** Your `SKILL.md` still works — `.skill` seals it, scores it, and makes it portable and inspectable before anyone runs it.
 
 **Site:** [skillerr.com](https://dot-skill.github.io/skillerr-com/) · **Artifact:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`) · **Repo:** [dot-skill/skillerr](https://github.com/dot-skill/skillerr)
 
@@ -16,18 +16,33 @@ Open protocol and portable **`.skill`** format for AI skills — built so your *
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 [![Protocol](https://img.shields.io/badge/protocol-0.5.0_draft-orange.svg)](./docs/PROTOCOL.md)
 
-## Why this exists
+## Convert your `SKILL.md` in one line
 
-Plain markdown “skills” and chat exports break down fast:
+Already have a `SKILL.md` or a skill-creator folder? `.skill` isn't a
+competing format — it's the integrity layer on top. One command upgrades it,
+and it never claims completeness it can't back up:
 
-- Every model re-interprets free-form prose differently
-- Context dies when you switch chats, tools, or hosts
-- Workflows stay trapped in one product’s format
-- There is no integrity story before something runs
+```text
+I have a SKILL.md at ./SKILL.md (or a skill folder). Install skillerr if
+needed (npm i -g skillerr), set SKILL_HOST, then `skill ingest` it into a
+portable .skill. Show me the output path and what's still missing before it
+can be a release. Don't invent contract fields.
+```
 
-**`.skill`** is a sealed, inspectable package: typed I/O, workflow, pinned knowledge, redacted provenance, digests, and optional mint. **Skillerr** is the project and docs behind it; install **`skillerr`** once (`npm i -g skillerr`) and point your agent at the work.
+See [docs/FAQ.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd).
 
-Markdown remains a **lossy adapter only** — not the protocol. See [docs/WHY.md](./docs/WHY.md).
+## What a sealed `.skill` gives you that a bare `SKILL.md` can't
+
+| | Bare `SKILL.md` | Sealed `.skill` |
+|---|---|---|
+| **Structure** | Freeform prose | Typed contract: intent, triggers, inputs/outputs, ordered steps, capabilities, permissions, verification |
+| **Integrity** | None | Content-addressed `skill_id` + SHA-256 `package_digest`/`manifest_digest` — any edit after packing is detectable |
+| **Trust before run** | None | Inspect seal/issuer/digests without executing (`skill inspect --trust`); `untrusted`/`development`/`self_reported`/`verified_issuer` states, never blurred together |
+| **Quality evidence** | None | Native eval/benchmark loop + an optional sealed score receipt (`skill eval`, `skill score`) — see [docs/EVAL.md](./docs/EVAL.md) |
+| **Handoff** | Copy the chat | Continuity draft — a real AI↔AI handoff object, partial-OK, privacy-scrubbed |
+| **Authenticity path** | None | An optional, extensible permanence-anchor slot (`skill registry`, more anchor kinds later) — the same sealed digest a future verification layer would check against, never a required dependency today |
+
+Markdown remains a **lossy adapter only** — not the protocol. Full comparison: [docs/WHY.md](./docs/WHY.md).
 
 ---
 
@@ -59,20 +74,6 @@ Starting from a blank page instead of a chat you want to seal? Point your
 agent at [examples/skillerr-authoring/SKILL.md](./examples/skillerr-authoring/SKILL.md)
 — it's the interview → contract → review → mint front door, written so an
 agent can follow it without hand-writing the contract JSON.
-
-### Convert an existing skill
-
-Already have a `SKILL.md` or a skill-creator folder? `.skill` isn't a
-competing format — it's the integrity layer on top. One command upgrades it:
-
-```text
-I have a SKILL.md at ./SKILL.md (or a skill folder). Install skillerr if
-needed (npm i -g skillerr), set SKILL_HOST, then `skill ingest` it into a
-portable .skill. Show me the output path and what's still missing before it
-can be a release. Don't invent contract fields.
-```
-
-`skill ingest` never claims completeness it can't back up — see [docs/FAQ.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd).
 
 ### Inspect before you trust or run
 
@@ -147,14 +148,15 @@ See [docs/SECURITY.md](./docs/SECURITY.md).
 
 ```text
 example.skill
-├── skill.json           # manifest, digests, profile, completeness
-├── workflow.json        # runnable steps
-├── knowledge/           # pinned decisions / rules
-├── prompts/             # versioned prompt templates
-├── resources/           # supporting files (e.g. references, data)
-├── artifacts/           # generated outputs
-├── provenance/          # redacted journey + generation_usage (tokens)
-└── signatures/          # mint attestation (release)
+├── skill.json         # manifest, digests, profile, completeness
+├── workflow.json      # runnable steps
+├── knowledge/         # pinned decisions / rules
+├── prompts/           # versioned prompt templates
+├── resources/         # bundled scripts, reference material
+├── artifacts/         # generated outputs
+├── assets/icon.*      # optional per-skill icon (format mark otherwise)
+├── provenance/        # journey, usage, compile report, optional eval + score
+└── signatures/        # mint attestation, optional anchors
 ```
 
 Full container spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
@@ -189,22 +191,21 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 
 - [Protocol](./docs/PROTOCOL.md) · [Agent](./docs/AGENT.md) · [Prompts](./examples/prompts.md)
 - [Why structured packages](./docs/WHY.md) · [Continuity](./docs/CONTINUITY.md) · [Privacy](./docs/PRIVACY.md)
-- [FAQ](./docs/FAQ.md) · [Security](./docs/SECURITY.md) · [Roadmap](./docs/ROADMAP.md)
-- [File type / OS registration](./docs/FILE-TYPE.md)
+- [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md)
+- [Ingest a SKILL.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [Eval / benchmark](./docs/EVAL.md) · [Bundled scripts / resources](./docs/RESOURCES.md)
+- [Security](./docs/SECURITY.md) · [Threat model](./docs/THREAT-MODEL.md) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
+- [Mint](./docs/MINT.md) · [Workspace](./docs/WORKSPACE.md) · [File type / OS registration](./docs/FILE-TYPE.md)
+- [RFCs](./docs/rfcs/) — protocol design proposals, spec-only and implemented
 - Site guides: [skillerr.com](https://dot-skill.github.io/skillerr-com/)
 
 ---
 
 ## Contributing
 
-Independent runtimes, language ports, adapters, and adversarial fixtures make this real.
+Independent runtimes, language ports, adapters, and adversarial fixtures make this real — see the [second-runtime call in CONTRIBUTING.md](./CONTRIBUTING.md#wanted-a-second-independent-runtime).
 
-- [CONTRIBUTING.md](./CONTRIBUTING.md) · [DCO.md](./DCO.md) (sign-off required)
+- [CONTRIBUTING.md](./CONTRIBUTING.md) (dev setup, PR checklist) · [DCO.md](./DCO.md) (sign-off required)
 - [GOVERNANCE.md](./GOVERNANCE.md) · [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
-
-```bash
-npm test
-```
 
 ---
 
