@@ -1,6 +1,14 @@
 # Examples
 
-Fixture sources for compile / pack tests.
+## Copy-paste prompts (start here)
+
+Humans install `skillerr` once, then point their AI at the work. Starter prompts:
+
+→ **[prompts.md](./prompts.md)**
+
+## Fixtures
+
+Sources for compile / pack / extract tests.
 
 | Path | Kind | Notes |
 |------|------|-------|
@@ -13,9 +21,9 @@ Fixture sources for compile / pack tests.
 Protocol vocabulary is **section / SkillSource / SkillContract / compile**.
 Legacy `recipe.json` fixtures exercise the adapter path only.
 
-Multi-skill identify path:
+What an agent runs for the multi-skill identify path:
 
 ```bash
-node packages/cli/dist/cli.js agent-guide
-node packages/cli/dist/cli.js extract examples/multi-skill-extract/journey.json -o /tmp/skillerr-extract
+skill agent-guide
+skill extract examples/multi-skill-extract/journey.json -o /tmp/skillerr-extract
 ```

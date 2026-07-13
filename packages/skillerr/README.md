@@ -1,93 +1,94 @@
 # skillerr
 
-Reference CLI for **Skillerr** — create, inspect, and run portable `.skill` packages. Works with any conforming host runtime.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/dot-skill/dot-skill/main/assets/skillerr-pixel.png" alt="Skillerr pixel mark — sealed skill package" width="128" height="128" />
+</p>
 
-**Bin:** `skill` · **Site:** [skillerr.com](https://skillerr.com) · **Format:** `.skill` · **License:** MIT
+<p align="center"><strong>Skillerr</strong></p>
+
+Reference CLI for **Skillerr** — portable `.skill` packages for AI agents.
+
+You install once. Then you **point your AI** at Skillerr. The agent creates, inspects, hands off, and dry-runs skills; you review and approve releases.
+
+**Bin:** `skill` · **Site:** [skillerr.com](https://skillerr.com) · **Format:** `.skill` · **Repo:** [dot-skill/dot-skill](https://github.com/dot-skill/dot-skill) · **License:** MIT
 
 [![npm](https://img.shields.io/npm/v/skillerr.svg)](https://www.npmjs.com/package/skillerr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../../LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 
-A `.skill` is a sealed ZIP: typed inputs, workflow, pinned knowledge, redacted provenance, integrity digests, and optional mint attestation. Inspect and verify before you run.
+A `.skill` is a sealed ZIP: typed inputs, workflow, pinned knowledge, redacted provenance, integrity digests, and optional mint. Inspect TrustView before anything runs.
+
+Plain markdown skills lose structure, integrity, and portability across hosts. Skillerr fixes that with one inspectable artifact. See [WHY.md](../../docs/WHY.md).
 
 ---
 
-## Install
+## Install once
 
 ```bash
 npm i -g skillerr
 ```
 
-```bash
-skill --help
-```
-
-One-shot: `npx -y skillerr --help`. Node ≥ 20.
-
-```bash
-export SKILL_HOST=cursor   # required when creating (ollama | claude | codex | …)
-```
+Node ≥ 20. One-shot: `npx -y skillerr --help`.
 
 ---
 
-## Quickstart
+## Talk to your AI
 
-### Create
+Paste into Cursor / ChatGPT / Claude / Codex (or any agent with shell tools):
 
-```bash
-export SKILL_HOST=cursor
+**Create from this chat**
 
-skill init --title "Demo"
-skill journey --summary "Human+AI built a short-answer API client; secrets as refs."
-skill propose --json '[
-  {"title":"Tone","body":"Keep answers short.","type":"decision"},
-  {"title":"API","body":"POST {{base_url}}/v1","type":"integration"}
-]'
-skill status
-skill checkpoint
-skill compile -m "Demo" --approve --mint
+```text
+Install skillerr if needed. Set SKILL_HOST to your host id. From this conversation,
+create a portable .skill with a redacted journey and exact sections I approved
+(secrets as {{refs}}). Checkpoint for handoff, or compile --approve --mint when
+release-complete. Do not invent filler. Show status and the output path.
 ```
 
-### Ingest / run
+**Inspect before run**
 
-```bash
-skill inspect ./file.skill
-skill validate ./file.skill
-skill verify-trust ./file.skill
-skill load ./file.skill
-skill run ./file.skill            # dry-run by default
+```text
+Inspect ./file.skill TrustView without executing. Validate, then dry-run.
+Summarize trust warnings. Do not execute for real unless I ask.
 ```
+
+**Load a handoff**
+
+```text
+Load ./handoff.skill as continuity context. Summarize intent, gaps, and knowledge.
+Resume the work; do not mint an incomplete release.
+```
+
+More prompts: [examples/prompts.md](../../examples/prompts.md). Agent rules: [AGENT.md](../../docs/AGENT.md).
 
 ---
 
-## For agents
+## What your agent will do
 
-Treat `skill` like versioned portable procedures.
+| Goal | Agent runs |
+|------|------------|
+| Create | `skill init` → `journey` → `propose` → `status` |
+| Handoff | `skill checkpoint` |
+| Release | `skill compile -m "…" --approve --mint` |
+| Trust | `skill inspect --trust` → `validate` → `run` (dry-run) |
+| Resume | `skill load ./file.skill` |
 
-- Set `SKILL_HOST` before create/propose/compile
-- Prefer exact human-approved section bodies
-- Secrets only as `{{refs}}`
-- `skill checkpoint` for mid-work handoff
-- `skill compile … --approve --mint` only when release-complete
+`SKILL_HOST` is required when creating (`cursor`, `ollama`, `claude`, `codex`, …). Prefer `SKILL_AGENT_INVOCATION=1`. Never use denylisted hosts (`human`, `cli`, `shell`, `manual`, …).
 
-Full guide: [AGENT.md](../../docs/AGENT.md)
+---
+
+## Trust before run
+
+Digests and seals are visible without execution. Prefer inspect → validate → dry-run. Reference mint HMAC is **development-only**.
 
 ---
 
 ## Documentation
 
-- [Protocol](../../docs/PROTOCOL.md)
-- [Why `.skill`](../../docs/WHY.md)
-- [Security](../../docs/SECURITY.md)
-- [skillerr.com](https://skillerr.com)
+- [Protocol](../../docs/PROTOCOL.md) · [Agent](../../docs/AGENT.md) · [Prompts](../../examples/prompts.md)
+- [Security](../../docs/SECURITY.md) · [skillerr.com](https://skillerr.com)
 
-Skillerr protocol libraries in this monorepo power the CLI. End users install **`skillerr`** only.
-
----
-
-## Contributing
-
-PRs welcome. See [CONTRIBUTING.md](../../CONTRIBUTING.md) (DCO sign-off required).
+End users install **`skillerr`**. Host authors integrate `@skillerr/*` libraries or an independent conforming implementation.
 
 ---
 

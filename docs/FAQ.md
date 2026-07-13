@@ -4,13 +4,15 @@
 
 An open format for **portable AI skills**: typed inputs, workflow, pinned knowledge, redacted journey provenance, optional token usage, integrity digests, and mint attestation. Home: [skillerr.com](https://skillerr.com).
 
-## How do I install the CLI?
+## How do I use Skillerr?
+
+Install the reference CLI once, then **talk to your AI** — paste a prompt that points the agent at create, inspect, load, or handoff. You review and approve releases; the agent runs the tooling.
 
 ```bash
 npm i -g skillerr
 ```
 
-Bin: `skill`.
+Prompts: [examples/prompts.md](../examples/prompts.md). Agent contract: [AGENT.md](./AGENT.md).
 
 ## How is this different from `SKILL.md`?
 
@@ -23,17 +25,18 @@ See [WHY.md](./WHY.md). Short version: structured package + digests + mint + con
 
 ## How do I create a skill?
 
-Agents create; humans approve. Set `SKILL_HOST`, then `skill init` → `propose` → `checkpoint` or `compile --approve --mint`. See [AGENT.md](./AGENT.md).
+Ask your agent. Set `SKILL_HOST`, then the agent runs `init` → `propose` → `checkpoint` or `compile --approve --mint`. Prefer exact human-approved section bodies. See [AGENT.md](./AGENT.md).
 
 ## How do I ingest or run a skill?
 
-Inspect first, then validate, then dry-run:
+Ask your agent to inspect first, then validate, then dry-run:
 
-```bash
-skill inspect ./file.skill
-skill validate ./file.skill
-skill run ./file.skill
+```text
+Inspect ./file.skill TrustView without executing. Validate, then dry-run.
+Summarize trust warnings. Do not execute for real unless I ask.
 ```
+
+What the agent runs: `skill inspect` → `validate` → `run` (dry-run by default).
 
 ## How is agent authorship represented?
 
