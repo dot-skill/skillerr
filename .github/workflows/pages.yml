@@ -38,7 +38,7 @@ jobs:
 
       - name: Install website deps
         working-directory: website
-        run: npm ci
+        run: npm install
 
       - name: Build fixtures and site
         working-directory: website
