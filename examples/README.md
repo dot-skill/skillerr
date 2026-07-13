@@ -44,5 +44,5 @@ Regenerate (also runs at site build time):
 ```bash
 npm run test:examples
 # copy /tmp/skillerr-*.skill → examples/packs/
-# or: cd website && DOT_SKILL_ROOT=.. npm run fixtures:build
+# or: in skillerr-com — DOT_SKILL_ROOT=../skillerr npm run fixtures:build
 ```
