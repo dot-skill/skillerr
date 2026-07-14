@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.1 — 2026-07-14
+
+`skillerr`, `@skillerr/core`, `@skillerr/runtime` only — README fixes.
+
+- READMEs led with "Skillerr" as a brand title; `skillerr` is the package/CLI
+  name, not the project identity — protocol-first framing to match the site.
+- Fixed READMEs (`skillerr`, `core`, `runtime`) that still claimed reference
+  mint is unconditionally dev-only HMAC; a configured Ed25519 signer key
+  mints as `verified_issuer` (shipped in 0.7.0, docs hadn't caught up).
+
 ## 0.7.0 — 2026-07-14
 
 First real publish of `@skillerr/protocol`, `@skillerr/core`, `@skillerr/runtime`,

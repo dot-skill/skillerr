@@ -1,6 +1,6 @@
 {
   "name": "skillerr",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Easily create, inspect, and run portable .skill packages for AI agents. Bin: skill.",
   "license": "MIT",
   "author": {

@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/core",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Compile, pack, validate, and mint portable .skill packages",
   "license": "MIT",
   "author": {
