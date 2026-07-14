@@ -23,13 +23,13 @@ Public docs and GitHub Pages live in **[dot-skill/skillerr-com](https://github.c
 
 ### Release steps
 
-1. **Merge to `main`** — CI must pass (Node 20 and 22).
+1. **Merge to `main`** — CI must pass (mac/Linux/Windows × Node 22/24).
 2. **Bump versions** in workspace `package.json` files and update `CHANGELOG.md`.
 3. **Tag and push** — the tag is the release marker; publish reads each package’s `package.json` version:
 
 ```bash
-git tag v0.6.3
-git push origin v0.6.3
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 4. **Publish workflow runs** — checkout → install → test → publish in dependency order. Versions already on npm are skipped.
@@ -123,11 +123,11 @@ See [How releases work](#how-releases-work) for the full pipeline. Short version
 
 ```bash
 # after versions bumped and merged to main with green CI
-git tag v0.6.3
-git push origin v0.6.3
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
-`v0.6.3` Publish failed with `ENEEDAUTH` until Trusted Publisher is configured. After TP: **Actions → Publish → Run workflow** on ref `v0.6.3` (no need to re-tag).
+Publish fails with `ENEEDAUTH` until Trusted Publisher is configured. After TP: **Actions → Publish → Run workflow** on the tag ref (no need to re-tag).
 
 ---
 
