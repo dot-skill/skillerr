@@ -94,6 +94,8 @@ non-determinism to fix. If you need byte-identical output for testing,
 pass a fixed clock via the `now` option to `ingestSkillMd()` (core API;
 not exposed as a CLI flag).
 
-## Is this production-final?
+## Is this ready to use?
 
-Public **draft** (0.5.0). Default mint (no `--signer-key`) uses a **development-only** HMAC — replace with a configured Ed25519 issuer key (`skill keygen` + `--signer-key`, see [KEY-CEREMONY.md](./KEY-CEREMONY.md)) for `verified_issuer` trust in production. Digests and inspect-before-run are real either way; see [What is verifiable](./WHAT-IS-VERIFIABLE.md) for exactly what a signature does and doesn't prove.
+Yes, for real use today — digests, validation, inspect-before-run, the runtime capability gate, and the adversarial security corpus are all real, tested code, not placeholders. The **protocol spec** is versioned Draft 0.5.0 and evolves in the open via [RFCs](./rfcs/) as more hosts and implementations adopt it — that's a normal spec-maturity stage, not a claim that the tooling is unreliable.
+
+For production trust, configure a real Ed25519 issuer key (`skill keygen` + `--signer-key`, see [KEY-CEREMONY.md](./KEY-CEREMONY.md)) so mints earn `verified_issuer` trust — the bundled zero-setup key (used when no `--signer-key` is given) is for trying the CLI, not for shipping. See [What is verifiable](./WHAT-IS-VERIFIABLE.md) for exactly what a signature does and doesn't prove either way.

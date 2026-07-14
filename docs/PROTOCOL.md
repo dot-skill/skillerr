@@ -1,6 +1,6 @@
 # Open `.skill` Protocol
 
-**Status:** Draft 0.5.0  
+**Status:** Draft 0.5.0 — evolving in the open via [RFCs](./rfcs/), not frozen  
 **Extension:** `.skill`  
 **Media type:** `application/vnd.dot-skill+zip`
 

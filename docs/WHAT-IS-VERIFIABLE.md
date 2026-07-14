@@ -4,9 +4,9 @@ This is the single most important page in this repo's docs if you're deciding wh
 
 ## The one-sentence guarantee
 
-**Today, as of protocol Draft 0.5.0 / reference packages 0.8.0:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest — those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
+**As of protocol Draft 0.5.0 / reference packages 0.9.3:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest — those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
 
-A public, independently-checkable transparency log (so a third party — not just you — can confirm *when* a package was first registered, without trusting your local trust store alone) is planned but **not yet implemented** — see the roadmap note at the bottom of this page. Until then, "verifiable" means "verifiable by you, using your own pinned trust store," not "verifiable by anyone, against a public record."
+If a package was minted with `--transparency` (see [TRANSPARENCY.md](./TRANSPARENCY.md)), that guarantee extends further: a public, independently-checkable Rekor transparency log entry means a third party — not just you — can confirm *when* it was first registered, without trusting your local trust store alone. Anchoring is opt-in, not automatic — a package without an anchor is exactly as verifiable as described above (verifiable by you, using your own pinned trust store), which is still the common case today.
 
 ## What's actually cryptographic
 
@@ -26,6 +26,15 @@ These are checked by math, not by asking the package what it claims about itself
 
 This is real cryptography — you're not being lied to about signature validity — but it is **not** the same as a publicly-verifiable identity. If someone hands you a `.skill` file and says "trust key X," and you add key X to your trust store, `verified_issuer` from that point on just means "signed by the key I was told to trust." Garbage in, garbage out.
 
+## What's cryptographic *and* publicly checkable — only if the package was anchored
+
+| Claim | How it's checked |
+|---|---|
+| **Log inclusion** — this exact signed digest was submitted to a specific public Rekor log entry | `skill verify-trust` checks the entry's inclusion proof against the log's signed tree head — no live network call needed by default (`--online` re-fetches the entry as an extra check). See [TRANSPARENCY.md](./TRANSPARENCY.md). |
+| **Log timestamp** — when that entry was integrated into the log | The log's own `integratedTime`, not a self-claimed value — this is the one timestamp in this whole system that isn't just "whatever the signer's machine said." |
+
+This still doesn't identify *who* the signer is (see above) — Rekor anchoring proves *when and that* something was logged, not *who* logged it, unless the mint also used Fulcio keyless signing (not yet implemented — see "Related" below).
+
 ## What's self-reported — NOT guaranteed by anything above
 
 | Field | Why it's not guaranteed |
@@ -43,9 +52,9 @@ This is real cryptography — you're not being lied to about signature validity 
 3. **`verified_issuer` means "I already trust this key,"** not "this key is publicly known to be trustworthy." Curate your trust store deliberately.
 4. **Self-reported fields (host, model, timestamp, human review) are claims, not proofs**, no matter what trust state the package has.
 
-## Roadmap: what this page will say once transparency logging ships
+## Roadmap: what's still pending
 
-A planned future phase adds an optional public transparency log (Rekor-based) so a package's first-registration timestamp and signature can be checked by anyone, not just against your local trust store, plus optional keyless signing (Fulcio) so `owner_identity` can be a real, independently-checkable OIDC identity instead of an opaque key you were told to trust. When that ships, this page — and the machine-readable `skill verify-trust --json` output — will add `log_inclusion`/`log_timestamp` (cryptographic) and `owner_identity` (identity-bound when Fulcio-signed) as new rows, without changing anything above: today's guarantees stay exactly what they are, this just adds more.
+Optional keyless signing (Fulcio) is **not yet implemented**. When it ships, `owner_identity` becomes a real, independently-checkable OIDC identity instead of an opaque key you were told to trust — a genuinely stronger claim than anything in the "key-bound" section above. Log inclusion/timestamp (the previous item on this list) already shipped — see the section above, not a roadmap item anymore.
 
 ## Related
 
