@@ -186,7 +186,7 @@ export interface ContractProvenance {
  */
 export interface SkillContract {
   kind: "skill_contract";
-  contract_version: "0.5";
+  contract_version: "1.0";
   skill_kind: SkillKind;
   title: string;
   intent: string;

@@ -1,6 +1,6 @@
 # Open `.skill` Protocol
 
-**Status:** Draft 0.5.0 — evolving in the open via [RFCs](./rfcs/), not frozen  
+**Status:** 1.0.0 (Stable) — future changes go through the open [RFC process](./rfcs/), not silent revisions  
 **Extension:** `.skill`  
 **Media type:** `application/vnd.dot-skill+zip`
 
@@ -19,7 +19,7 @@ mint attestation.
 ## Required components (release)
 
 1. **Agent context** — declared agent host, provider, model, and deployment when known
-2. **SkillContract** — complete 0.5 semantic source of truth
+2. **SkillContract** — complete 1.0 semantic source of truth
 3. **Intent and triggers** — purpose and when to apply it
 4. **Typed inputs and outputs** — schemas, optionality, defaults, sensitivity, ask and approval policy
 5. **Workflow** — ordered steps, branches, decisions, failure/recovery edges
@@ -40,7 +40,7 @@ Optional: `generation_usage` (tokens).
 |------|---------|
 | **section** | Atomic authored unit (decision, integration, lesson, …) |
 | **SkillSource** | Structured authoring input before compile |
-| **SkillContract** | Transferable semantic contract (0.5+) |
+| **SkillContract** | Transferable semantic contract (1.0+) |
 | **extract / segment** | Agent-identified candidates → incomplete contract scaffolds + missing reports |
 | **compile** | Source → `.skill` package (continuity or release) |
 | **mint** | Seal a complete release with creation attestation |
@@ -266,7 +266,8 @@ built for.
 
 | `skillerr` npm version | Reads/writes `protocol_version` |
 |---|---|
-| 0.6.x | `0.5.0` |
+| ≤ 0.9.x | `0.5.0` |
+| 1.0.0+ | `1.0.0` |
 
 Update this table on every protocol version bump. If you're implementing a
 second runtime (see [ROADMAP.md](./ROADMAP.md)), match this policy exactly:

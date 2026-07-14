@@ -17,7 +17,7 @@ import { PROTOCOL_VERSION, type SkillContract, type SkillSource } from "@skiller
 function validContract(): SkillContract {
   return {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "knowledge",
     title: "Claims unit test contract",
     intent: "A minimal complete contract for assessClaims coverage.",

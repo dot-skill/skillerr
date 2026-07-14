@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: protocol **Draft 0.5.0**; reference packages **1.0.0**.
+Status: protocol **1.0.0 (Stable)**; reference packages **1.0.1**.
 
 ## Now (done in this repo)
 
@@ -110,12 +110,13 @@ Status: protocol **Draft 0.5.0**; reference packages **1.0.0**.
       sharp/libvips PNG encoding isn't byte-stable across OS/architecture,
       so today's job only proves `scripts/build-brand.mjs` runs, not that
       checked-in assets exactly match its output
-- [ ] Second language runtime (Go or Rust) for Stable eligibility — reproduce
-      the adversarial corpus and canonicalization vectors byte-for-byte
-      (now also covers Ed25519/PEM signing — see CONTRIBUTING.md)
+- [ ] Second language runtime (Go or Rust) — reproduce the adversarial
+      corpus and canonicalization vectors byte-for-byte (now also covers
+      Ed25519/PEM signing — see CONTRIBUTING.md). Ecosystem growth, not a
+      stability prerequisite: the protocol is versioned 1.0 (Stable)
+      against this reference implementation's own corpus already
 
 ## Later
 
 - [ ] Multi-issuer trust roots / key transparency
 - [ ] Optional ledger anchors as one permanence kind (never required)
-- [ ] Mark **Candidate** then **Stable** after two independent runtimes pass the same corpus

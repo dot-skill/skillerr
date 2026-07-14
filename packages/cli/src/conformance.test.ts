@@ -46,7 +46,7 @@ import { fileURLToPath } from "node:url";
 
 const demoContract = (): SkillContract => ({
   kind: "skill_contract",
-  contract_version: "0.5",
+  contract_version: "1.0",
   skill_kind: "procedure",
   title: "Demo integration",
   intent: "Wire a service to a configured endpoint without exposing credentials.",
@@ -228,7 +228,7 @@ const npmPublishingSource = (): SkillSource => ({
   intent: "Release a coordinated set of scoped workspace packages safely and verifiably.",
   contract: {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "integration",
     title: "Scoped npm monorepo publishing",
     intent: "Release a coordinated set of scoped workspace packages safely and verifiably.",
@@ -425,7 +425,7 @@ const npmPublishingSource = (): SkillSource => ({
   sensitivity: "private",
   created_at: "2026-07-13T00:00:00.000Z",
   actor: { id: "acceptance-reviewer" },
-  source_protocol_version: "0.5.0",
+  source_protocol_version: "1.0.0",
 });
 
 function packageIdentity(relativeUrl: string): { name: string; version: string } {
@@ -624,7 +624,7 @@ test("CLI exposes machine-readable contract template and field assessment", () =
     execFileSync(process.execPath, [cliPath, "contract-template"], { encoding: "utf8" }),
   ) as { kind: string; contract_version: string };
   assert.equal(template.kind, "skill_contract");
-  assert.equal(template.contract_version, "0.5");
+  assert.equal(template.contract_version, "1.0");
 
   const sourcePath = fileURLToPath(
     new URL("../../../examples/contract-foundation/source.json", import.meta.url),
@@ -2478,7 +2478,7 @@ function bundledScriptSource(): SkillSource {
     title: "Bundled lint script",
     contract: {
       kind: "skill_contract",
-      contract_version: "0.5",
+      contract_version: "1.0",
       skill_kind: "procedure",
       title: "Bundled lint script",
       intent: "Run a bundled lint script against reviewed changelog copy.",

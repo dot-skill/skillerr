@@ -15,7 +15,7 @@
 [![npm](https://img.shields.io/npm/v/skillerr.svg)](https://www.npmjs.com/package/skillerr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
-[![Protocol](https://img.shields.io/badge/protocol-0.5.0-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)
+[![Protocol](https://img.shields.io/badge/protocol-1.0.0-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)
 [![Tests](https://img.shields.io/badge/tests-165%20passing-brightgreen.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/SECURITY.md)
 
 ## Convert your `SKILL.md` in one line
@@ -189,8 +189,8 @@ Full container spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/bl
 
 ## Status
 
-Specification: Draft **0.5.0** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)) — evolving in the open via [RFCs](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/), not frozen and not abandoned. Reaching **Candidate**, then **Stable**, requires independent conforming runtimes passing the same corpus — see [docs/ROADMAP.md](https://github.com/dot-skill/skillerr/blob/main/docs/ROADMAP.md).  
-Reference CLI: `skillerr` @ **1.0.0** — a stable public API from here forward, backed by 165 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/blob/main/docs/THREAT-MODEL.md) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md). Package API stability and protocol spec maturity are separate claims — this covers the former.  
+Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)) — future changes go through the open [RFC process](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/), not silent revisions.  
+Reference CLI: `skillerr` @ **1.0.1** — a stable public API, backed by 165 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/blob/main/docs/THREAT-MODEL.md) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**

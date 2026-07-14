@@ -152,10 +152,10 @@ export async function loadWorkspaceContract(root: string): Promise<ContractLoadR
     return { error: `.skill/contract.json is not valid JSON: ${(e as Error).message}` };
   }
   const candidate = parsed as { kind?: unknown; contract_version?: unknown };
-  if (candidate.kind !== "skill_contract" || candidate.contract_version !== "0.5") {
+  if (candidate.kind !== "skill_contract" || candidate.contract_version !== "1.0") {
     return {
       error:
-        '.skill/contract.json does not look like a SkillContract (expected kind="skill_contract", contract_version="0.5")',
+        '.skill/contract.json does not look like a SkillContract (expected kind="skill_contract", contract_version="1.0")',
     };
   }
   return { contract: parsed as SkillContract };

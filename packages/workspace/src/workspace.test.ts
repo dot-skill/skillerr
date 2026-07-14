@@ -40,7 +40,7 @@ test("saveWorkspaceContract + loadWorkspaceContract: round-trips a valid contrac
   await initWorkspace(dir, { title: "Unit" });
   const contract: SkillContract = {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "knowledge",
     title: "Unit contract",
     intent: "Round-trip test.",

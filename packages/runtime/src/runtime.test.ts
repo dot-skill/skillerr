@@ -167,7 +167,7 @@ test("input resolution: a secret-sensitivity input is substituted with a secret 
 function validContract(): SkillContract {
   return {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "knowledge",
     title: "Runtime trust gate fixture",
     intent: "A minimal complete contract for trust-gate unit coverage.",

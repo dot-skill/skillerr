@@ -1,6 +1,6 @@
 # Authoring contract
 
-Protocol 0.5 makes `SkillContract` the source of truth for transferable skill semantics. Sections remain useful knowledge and evidence, but section prose cannot satisfy release completeness.
+Protocol 1.0 makes `SkillContract` the source of truth for transferable skill semantics. Sections remain useful knowledge and evidence, but section prose cannot satisfy release completeness.
 
 ## Required declarations
 
@@ -93,7 +93,7 @@ Example fixture: `examples/multi-skill-extract/journey.json`.
 
 ## 0.4 migration
 
-`SkillSource` and the deprecated product `Recipe` shape remain readable. If they do not carry a 0.5 contract:
+`SkillSource` and the deprecated product `Recipe` shape remain readable. If they do not carry a native contract (`contract_version: "1.0"`):
 
 - continuity compiles with `semantic_contract: "legacy_lossy"`, explicit losses, and `needs_human_review`
 - release compilation refuses with `missing: ["semantic_contract"]`

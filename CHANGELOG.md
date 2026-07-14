@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.0.1 — 2026-07-15
+
+**Protocol specification is now versioned 1.0.0 and marked Stable.**
+Previously the spec was versioned separately from the reference
+packages (Draft 0.5.0), with Stable status gated on independent
+conforming runtimes existing beyond this reference implementation.
+That gate is removed: a single, thoroughly-tested reference
+implementation (165 tests, an adversarial security corpus, multi-OS/
+Node CI) is considered sufficient evidence of stability. Community
+implementations remain welcome and encouraged, but are ecosystem
+growth, not a prerequisite for the spec's own stability claim.
+
+**Breaking change:** `PROTOCOL_VERSION` (embedded in every sealed
+package's `skill.json` as `protocol_version`, and checked by `skill
+validate`/`skill inspect` with **exact** string equality, never a
+semver range) changes from `"0.5.0"` to `"1.0.0"`. Packages minted
+with any CLI version ≤ 0.9.x embed `protocol_version: "0.5.0"` and will
+fail validation against this CLI version or later — re-mint with the
+current CLI for compatibility. This is intentional, not an oversight:
+the whole point of exact-match `protocol_version` checking (see
+`docs/PROTOCOL.md`'s compatibility table) is to make a real protocol
+version bump an explicit, loud, unmissable event instead of a package
+silently being read leniently against a spec version the CLI wasn't
+built for.
+
+Also bumped `contract_version` (the `SkillContract` type's own
+schema-dialect marker, JSON-schema-enforced via `const`) from `"0.5"`
+to `"1.0"` for consistency — a separate constant from
+`protocol_version`, also checked exactly, also embedded in every
+authored contract and local workspace `.skill/contract.json` file.
+
+v1.0.0 (published minutes before this release, in the same session)
+does not include this change — its `PROTOCOL_VERSION`/`contract_version`
+remained at the pre-1.0 values despite the package version already
+reading 1.0.0. Upgrade to 1.0.1 or later.
+
 ## 1.0.0 — 2026-07-15
 
 First stable release of the reference implementation. The public API

@@ -11,7 +11,7 @@ function manifest(overrides: Partial<SkillManifest> = {}): SkillManifest {
     title: "Test",
     description: "Test skill",
     container_version: "1.0",
-    protocol_version: "0.5.0",
+    protocol_version: "1.0.0",
     entrypoint: "s1",
     inputs: [],
     outputs: [],

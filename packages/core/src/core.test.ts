@@ -101,7 +101,7 @@ function minimalPackage(): SkillPackageFiles {
       title: "Unit test skill",
       description: "Minimal package for core unit tests",
       container_version: "1",
-      protocol_version: "0.5.0",
+      protocol_version: "1.0.0",
       entrypoint: "s1",
       inputs: [],
       outputs: [],
@@ -192,7 +192,7 @@ test("PROTO-7: schema-check catches a knowledge item missing a required field", 
 function validContract(): SkillContract {
   return {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "knowledge",
     title: "Unit test contract",
     intent: "A minimal complete contract for mint/verify unit coverage.",

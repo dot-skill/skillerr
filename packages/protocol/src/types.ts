@@ -12,7 +12,7 @@ import type {
   VerificationAssertion,
 } from "./contract.js";
 
-export const PROTOCOL_VERSION = "0.5.0";
+export const PROTOCOL_VERSION = "1.0.0";
 export const CONTAINER_VERSION = "1.0";
 export const WORKFLOW_DIALECT_VERSION = "1.1";
 

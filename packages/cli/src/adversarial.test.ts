@@ -36,7 +36,7 @@ import {
 function validContract(): SkillContract {
   return {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "knowledge",
     title: "Adversarial fixture",
     intent: "A minimal complete contract used as the base for tampering fixtures.",

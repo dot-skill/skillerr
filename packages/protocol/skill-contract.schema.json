@@ -28,7 +28,7 @@
   ],
   "properties": {
     "kind": { "const": "skill_contract" },
-    "contract_version": { "const": "0.5" },
+    "contract_version": { "const": "1.0" },
     "skill_kind": { "enum": ["knowledge", "procedure", "integration"] },
     "title": { "type": "string", "minLength": 1 },
     "intent": { "type": "string", "minLength": 1 },

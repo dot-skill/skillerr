@@ -3,7 +3,7 @@
 ```text
 .skill/
   config.json      # title, journey_summary, default_stage_all
-  contract.json    # optional authored SkillContract (0.5 native semantics)
+  contract.json    # optional authored SkillContract (1.0 native semantics)
   sections/*.json  # agent-proposed units
   index.json       # staged ids
   HEAD.json        # last compile
@@ -38,9 +38,10 @@ skill compile -m "…" --approve --mint
 
 ## Contract authoring (`.skill/contract.json`)
 
-A workspace compile only reaches the native 0.5 path — the one that can ever
-produce a **release** package — when `.skill/contract.json` exists, parses as
-JSON, and has `kind: "skill_contract"` / `contract_version: "0.5"`. Without
+A workspace compile only reaches the native contract path — the one that can
+ever produce a **release** package — when `.skill/contract.json` exists,
+parses as JSON, and has `kind: "skill_contract"` / `contract_version: "1.0"`.
+Without
 it, `compileWorkspace()` falls back to the legacy text-section adapter, which
 is **continuity-only and lossy**: `skill compile --profile release` always
 refuses with `missing: ["semantic_contract"]`.

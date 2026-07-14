@@ -340,7 +340,7 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
   const nowIso = now();
   const contract: SkillContract = {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "knowledge",
     title,
     intent: description || `Imported from SKILL.md at ${friendlyPath(skillMdPath)}; intent needs authoring.`,

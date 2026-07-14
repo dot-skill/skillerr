@@ -112,11 +112,11 @@ export function assessSkillContract(
     }
   };
 
-  if (contract.kind !== "skill_contract" || contract.contract_version !== "0.5") {
+  if (contract.kind !== "skill_contract" || contract.contract_version !== "1.0") {
     issues.push({
       field: "contract",
       code: "invalid",
-      message: "Expected kind=skill_contract and contract_version=0.5",
+      message: "Expected kind=skill_contract and contract_version=1.0",
       fix: "Start from scaffoldSkillContract() and preserve its kind/version fields.",
     });
   }
@@ -330,7 +330,7 @@ export function scaffoldSkillContract(): Record<string, unknown> {
   const declaration = { status: "__required__: specified|none|not_applicable", items: [] };
   return {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "__required__: knowledge|procedure|integration",
     title: "",
     intent: "",

@@ -96,6 +96,6 @@ not exposed as a CLI flag).
 
 ## Is this ready to use?
 
-Yes, for real use today — digests, validation, inspect-before-run, the runtime capability gate, and the adversarial security corpus are all real, tested code, not placeholders. The **protocol spec** is versioned Draft 0.5.0 and evolves in the open via [RFCs](./rfcs/) as more hosts and implementations adopt it — that's a normal spec-maturity stage, not a claim that the tooling is unreliable.
+Yes, for real use today — digests, validation, inspect-before-run, the runtime capability gate, and the adversarial security corpus are all real, tested code, not placeholders. The **protocol spec** is versioned 1.0.0 (Stable) — future changes go through the open [RFC process](./rfcs/), not silent revisions.
 
 For production trust, configure a real Ed25519 issuer key (`skill keygen` + `--signer-key`, see [KEY-CEREMONY.md](./KEY-CEREMONY.md)) so mints earn `verified_issuer` trust — the bundled zero-setup key (used when no `--signer-key` is given) is for trying the CLI, not for shipping. See [What is verifiable](./WHAT-IS-VERIFIABLE.md) for exactly what a signature does and doesn't prove either way.

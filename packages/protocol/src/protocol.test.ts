@@ -38,7 +38,7 @@ test("scaffoldSkillContract: placeholder values fail assessment on purpose", () 
 test("assessSkillContract: release requires triggers/steps/verification to be specified, not just none/not_applicable", () => {
   const bare = {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "knowledge",
     title: "x",
     intent: "x",
@@ -101,7 +101,7 @@ test("recipeToSkillSource: maps a legacy recipe into a protocol-native SkillSour
     visibility_intent: "private",
     baked_at: "2026-07-13T00:00:00.000Z",
     baker: { id: "test-agent" },
-    source_protocol_version: "0.5.0",
+    source_protocol_version: "1.0.0",
   };
   const source = recipeToSkillSource(recipe, { agent: { host: "cursor" } });
   assert.equal(source.kind, "skill_source");
@@ -149,7 +149,7 @@ test("PROTO-5: isValidPathPattern accepts absolute normalized paths, rejects tra
 test("PROTO-5: assessSkillContract rejects a malformed host/path permission pattern", () => {
   const contract = {
     kind: "skill_contract",
-    contract_version: "0.5",
+    contract_version: "1.0",
     skill_kind: "integration",
     title: "x",
     intent: "x",
