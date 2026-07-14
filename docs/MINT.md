@@ -68,4 +68,10 @@ Mint refuses denylisted hosts (`human`, `cli`, `shell`, `manual`, …). Exportin
 
 ## Anchors (optional)
 
-Use `skill registry …` for an optional local transparency log of package digests.
+Three independent, additive ways to anchor a mint — none required, none replacing the seal above:
+
+- `skill registry …` — an optional **local** transparency log of package digests, useful offline or before deciding to anchor publicly.
+- `skill mint --transparency` — logs the sealed digest to the **public** Rekor transparency log using the mint's own configured Ed25519 key, so a third party can independently confirm *when* it was first registered. See [TRANSPARENCY.md](./TRANSPARENCY.md).
+- `skill mint --keyless` — adds a second, independent anchor bound to an OIDC identity via Fulcio (e.g. a specific CI workflow) instead of a pinned key. Combines with any signer choice above, or none. CI-ambient only today (no interactive login yet) — see [TRANSPARENCY.md](./TRANSPARENCY.md).
+
+`skill verify-trust --claims` (or `skill inspect --trust --claims`) reports every claim — mint's own seal and any anchors — split into two structurally separate lists, `verified` and `self_reported`, so nothing here can be mistaken for the other. See [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md).
