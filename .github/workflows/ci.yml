@@ -30,6 +30,15 @@ jobs:
       - run: npm test
       - run: npm run test:examples
       - run: npm run pack:check
+      - name: Verify npm README is in sync with the root README
+        # Unlike the brand job's PNGs, this is pure text transformation —
+        # fully deterministic across OS, so a strict byte-diff is safe here.
+        run: |
+          node scripts/sync-npm-readme.mjs
+          git diff --exit-code packages/skillerr/README.md || {
+            echo "::error::packages/skillerr/README.md is out of sync with README.md — run 'node scripts/sync-npm-readme.mjs' and commit the result.";
+            exit 1;
+          }
 
   brand:
     # Proves scripts/build-brand.mjs actually runs end-to-end against the
