@@ -50,7 +50,9 @@ import {
   rekorSearchUrl,
   mintKeylessAnchor,
   verifyKeylessAnchor,
+  assessClaims,
 } from "@skillerr/core";
+import type { AnchorVerification, KeylessVerification } from "@skillerr/core";
 import type { GradeOverride } from "@skillerr/core";
 import { buildSkillAssessment } from "./score-adapter.js";
 import { runSkillArchive } from "@skillerr/runtime";
@@ -192,12 +194,23 @@ Ingest / run:
                                        if the (optional) scorer isn't
                                        installed. --emit seals a sealed
                                        provenance/score.json copy.
-  skill inspect <file.skill> [--trust] [--trust-store <path>]
+  skill inspect <file.skill> [--trust] [--trust-store <path>] [--claims]
                                        TrustView (no compile / no model body)
+                                       --claims (with --trust) adds a claims
+                                       block splitting every field into two
+                                       separate arrays — verified (crypto-
+                                       checked) and self_reported (env/signer-
+                                       asserted, never independently checked)
+                                       — so nothing can structurally present a
+                                       self-reported field as verified. Offline
+                                       only: any transparency_log/keyless_identity
+                                       anchor is not re-verified here, see
+                                       skill verify-trust --claims for that.
   skill validate <file.skill>          Structure + hash integrity
   skill unpack <file.skill>
   skill verify-trust <file.skill> [--profile minted] [--allow-development-issuer]
                      [--allow-self-reported] [--trust-store <path>] [--online]
+                     [--claims]
                                        Default trust store: ~/.skillerr/trust-store.json
                                        If the package has a transparency_log anchor,
                                        verifies its Rekor inclusion proof offline
@@ -214,6 +227,9 @@ Ingest / run:
                                        the package's own claim.
                                        --online additionally re-fetches the entry
                                        live from Rekor as an extra check
+                                       --claims adds the same verified/self_reported
+                                       split as skill inspect --trust --claims,
+                                       here including anchor verification results
   skill run <file.skill> [--mode execute] [--allow-untrusted]
                                        Dry-run by default; execute refuses
                                        unsigned/dev seals without --allow-untrusted
@@ -803,7 +819,16 @@ async function main() {
       const bytes = new Uint8Array(await readFile(resolve(file!)));
       if (flag(rest, "--trust")) {
         const trust_store = loadTrustStore(opt(rest, "--trust-store") ?? defaultTrustStorePath());
-        console.log(JSON.stringify(inspectTrustView(bytes, { trust_store }), null, 2));
+        const view = inspectTrustView(bytes, { trust_store });
+        if (flag(rest, "--claims")) {
+          // Offline only — inspect never touches the network, so
+          // transparency/keyless anchors aren't cryptographically verified
+          // here even if present (that's what verify-trust does). A claim
+          // this function can't check just doesn't appear as verified.
+          console.log(JSON.stringify({ ...view, claims: assessClaims(view) }, null, 2));
+        } else {
+          console.log(JSON.stringify(view, null, 2));
+        }
       } else {
         console.log(JSON.stringify(inspectSkill(bytes), null, 2));
       }
@@ -1149,6 +1174,7 @@ async function main() {
       const anchors = unpackSkill(bytes).manifest.anchors ?? [];
       const tlogAnchor = anchors.find((a) => a.kind === "transparency_log");
       let transparency: unknown;
+      let transparencyOffline: AnchorVerification | undefined;
       if (tlogAnchor && result.attestation?.sealed_manifest_digest) {
         const pinnedKey = trust_store.keys.find((k) => k.key_id === tlogAnchor.issuer);
         if (!pinnedKey) {
@@ -1159,6 +1185,7 @@ async function main() {
             result.attestation.sealed_manifest_digest,
             pinnedKey.public_key_pem,
           );
+          transparencyOffline = offline;
           // Independently checkable on sigstore's own UI — don't just take
           // our word for it. undefined (not a guessed link) unless the
           // anchor verified AND lives on the public Rekor instance.
@@ -1178,8 +1205,10 @@ async function main() {
       // a trust-store-pinned key — see verifyKeylessAnchor.
       const keylessAnchor = anchors.find((a) => a.kind === "keyless_identity");
       let keyless: unknown;
+      let keylessOffline: KeylessVerification | undefined;
       if (keylessAnchor && result.attestation?.sealed_manifest_digest) {
         const offline = await verifyKeylessAnchor(keylessAnchor, result.attestation.sealed_manifest_digest);
+        keylessOffline = offline;
         const withUrl = offline.ok
           ? { ...offline, rekor_url: rekorSearchUrl(keylessAnchor, offline.log_index) }
           : offline;
@@ -1190,12 +1219,21 @@ async function main() {
           keyless = withUrl;
         }
       }
+      let claims: unknown;
+      if (flag(rest, "--claims")) {
+        // inspectTrustView is a second, cheap, fully-offline call here —
+        // verifyMintTrust's own return shape doesn't carry everything
+        // assessClaims needs (agent.*, host_claim_binding, etc).
+        const view = inspectTrustView(bytes, { trust_store });
+        claims = assessClaims(view, { transparency: transparencyOffline, keyless: keylessOffline });
+      }
       console.log(
         JSON.stringify(
           {
             ...result,
             ...(transparency ? { transparency } : {}),
             ...(keyless ? { keyless } : {}),
+            ...(claims ? { claims } : {}),
             docs: "https://github.com/dot-skill/skillerr/blob/main/docs/WHAT-IS-VERIFIABLE.md",
           },
           null,

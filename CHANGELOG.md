@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.9.8 — 2026-07-15
+
+Phase E2: per-claim assurance model. `docs/WHAT-IS-VERIFIABLE.md` has
+always drawn a line in prose between what's cryptographically checked
+and what's merely self-reported — but nothing stopped a UI or an agent
+parsing TrustView's JSON from displaying a self-reported field (like
+`agent.host`) next to a "verified" badge, since both kinds of claim
+sat in the same flat object with no machine-readable assurance tag.
+
+New `assessClaims()` in `@skillerr/core` fixes that structurally: every
+claim goes into exactly one of two separate arrays, `verified` and
+`self_reported` — never a single array with an easy-to-ignore boolean
+flag. A consumer that only ever reads `.verified` cannot end up
+displaying self-reported data, because it's never in that array to
+begin with. Performs no new cryptography — it only organizes results
+that `inspectTrustView`/`verifyRekorAnchor`/`verifyKeylessAnchor`
+already computed.
+
+Found and fixed a real bug while wiring this up: `TrustView.issuer` is
+actually `attestation.agent.runtime` (which tool minted the package),
+not the signer's `key_id` — a naming trap in the existing type that
+would have made `assessClaims` classify the wrong field as the
+trust-store-checked issuer. The real pinned key identifier is
+`agent.key_id`; fixed before this shipped, caught by a test that
+compared the classified value against the actual key_id used to mint.
+
+`skill inspect --trust --claims` (offline; anchors not re-verified) and
+`skill verify-trust --claims` (includes transparency/keyless anchor
+verification results when present) both expose this.
+
 ## 0.9.7 — 2026-07-14
 
 Fulcio keyless mint: `skill mint --keyless` adds a second, independent

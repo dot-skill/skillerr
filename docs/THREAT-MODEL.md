@@ -1,7 +1,7 @@
 # Threat model (PROTO-10)
 
 Status: **living document** — describes threats against the reference
-implementation as of protocol Draft 0.5.0 / reference packages 0.9.7. Update
+implementation as of protocol Draft 0.5.0 / reference packages 0.9.8. Update
 this file in the same commit as any change to trust semantics, container
 parsing, or the runtime capability gate (same rule as
 [PROTOCOL.md](./PROTOCOL.md)).

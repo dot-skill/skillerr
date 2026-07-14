@@ -4,9 +4,11 @@ This is the single most important page in this repo's docs if you're deciding wh
 
 ## The one-sentence guarantee
 
-**As of protocol Draft 0.5.0 / reference packages 0.9.3:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest — those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
+**As of protocol Draft 0.5.0 / reference packages 0.9.8:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest — those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
 
 If a package was minted with `--transparency` (see [TRANSPARENCY.md](./TRANSPARENCY.md)), that guarantee extends further: a public, independently-checkable Rekor transparency log entry means a third party — not just you — can confirm *when* it was first registered, without trusting your local trust store alone. Anchoring is opt-in, not automatic — a package without an anchor is exactly as verifiable as described above (verifiable by you, using your own pinned trust store), which is still the common case today.
+
+**This page is the human-readable version of a machine-readable split.** `skill inspect --trust --claims` / `skill verify-trust --claims` return a `claims` object with two separate arrays, `verified` and `self_reported`, built from `assessClaims()` in `@skillerr/core` — every table row below maps to an entry in exactly one of those two arrays, never both, and never a single flat list with a flag that's easy to ignore. Any UI or agent consuming this output structurally cannot end up displaying a `self_reported` claim next to a "verified" badge, because they're never in the same array to begin with. `www.skillerr.com`'s verify page (`/verify`) uses this same split.
 
 ## What's actually cryptographic
 

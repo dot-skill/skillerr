@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/core",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "description": "Compile, pack, validate, and mint portable .skill packages",
   "license": "MIT",
   "author": {
@@ -48,7 +48,7 @@
     "build": "rimraf dist && tsc",
     "prepack": "npm run build",
     "clean": "rimraf dist",
-    "test": "node --test dist/core.test.js dist/ingest.test.js dist/eval.test.js dist/transparency.test.js"
+    "test": "node --test dist/core.test.js dist/ingest.test.js dist/eval.test.js dist/transparency.test.js dist/claims.test.js"
   },
   "dependencies": {
     "@sigstore/bundle": "^5.0.0",
@@ -56,7 +56,7 @@
     "@sigstore/sign": "^5.0.0",
     "@sigstore/tuf": "^4.0.2",
     "@sigstore/verify": "^4.1.0",
-    "@skillerr/protocol": "^0.9.7",
+    "@skillerr/protocol": "^0.9.8",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "fflate": "^0.8.2"

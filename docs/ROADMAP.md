@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: protocol **Draft 0.5.0**; reference packages **0.9.7**.
+Status: protocol **Draft 0.5.0**; reference packages **0.9.8**.
 
 ## Now (done in this repo)
 
@@ -71,6 +71,13 @@ Status: protocol **Draft 0.5.0**; reference packages **0.9.7**.
       sketched here — that would need a hosted registry to look digests
       up against, which doesn't exist; this shipped as upload-based
       instead
+- [x] Per-claim assurance model (`assessClaims`) — `skill inspect --trust
+      --claims` / `skill verify-trust --claims` return a `claims` object
+      with two structurally separate arrays, `verified` and
+      `self_reported`, so no UI or agent consuming the JSON can end up
+      showing a self-reported field next to a "verified" badge — they're
+      never in the same array. Built from already-verified TrustView/
+      anchor-verification output, not new cryptography
 
 ## Next (great contribution targets)
 
@@ -82,9 +89,6 @@ Status: protocol **Draft 0.5.0**; reference packages **0.9.7**.
 - [ ] Interactive/browser-login OIDC provider for `skill mint --keyless`
       run locally (outside CI) — the CI-ambient path already shipped, see
       the "Now" section above
-- [ ] Per-claim assurance model (`VerifiedClaims[]`) so no UI or agent can
-      structurally present a self-reported field as verified — see the
-      Launch Readiness plan's Phase E2
 - [ ] Stronger `verify` assertion language + fixtures — would also enrich
       `skill score`'s validationEvidence beyond contains:/not_contains:/regex:
 - [ ] Host adapters: local OpenAI-compatible, Cursor, Claude Code, Codex —

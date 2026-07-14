@@ -76,3 +76,5 @@ export type {
   KeylessAnchorResult,
   KeylessVerification,
 } from "./transparency.js";
+export { assessClaims } from "./claims.js";
+export type { VerifiedClaim, SelfReportedClaim, ClaimsAssurance, AssessClaimsOptions } from "./claims.js";
