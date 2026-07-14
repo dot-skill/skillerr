@@ -539,6 +539,85 @@ test("CLI score: missing optional @skillerr/skill-score is a graceful notice, no
   assert.match(result.notice, /not installed/i);
 });
 
+test("CLI validate/inspect/score never print ajv's unknown-format noise (PHASE B-3)", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const { mkdtempSync } = await import("node:fs");
+  const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
+  const sourcePath = fileURLToPath(
+    new URL("../../../examples/contract-foundation/source.json", import.meta.url),
+  );
+  const dir = mkdtempSync(join(tmpdir(), "skill-ajv-noise-"));
+  const packageFile = join(dir, "out.skill");
+
+  execFileSync(
+    process.execPath,
+    [cliPath, "pack", sourcePath, "-o", packageFile, "--profile", "release", "--host", "cursor"],
+    { encoding: "utf8", env: { ...process.env, SKILL_HOST: "cursor" } },
+  );
+
+  for (const args of [
+    ["validate", packageFile],
+    ["inspect", packageFile, "--trust"],
+    ["score", packageFile, "-o", join(dir, "assessment.json")],
+  ]) {
+    const run = spawnSync(process.execPath, [cliPath, ...args], { encoding: "utf8" });
+    assert.doesNotMatch(
+      run.stdout + run.stderr,
+      /unknown format/i,
+      `skill ${args.join(" ")} printed ajv format noise`,
+    );
+  }
+});
+
+test("CLI score --emit without -o writes a sibling copy, never overwrites the original (PHASE B-5)", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+  const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
+  const sourcePath = fileURLToPath(
+    new URL("../../../examples/contract-foundation/source.json", import.meta.url),
+  );
+  const dir = mkdtempSync(join(tmpdir(), "skill-score-emit-"));
+  const packageFile = join(dir, "out.skill");
+
+  execFileSync(
+    process.execPath,
+    [cliPath, "pack", sourcePath, "-o", packageFile, "--profile", "release", "--host", "cursor"],
+    { encoding: "utf8", env: { ...process.env, SKILL_HOST: "cursor" } },
+  );
+  const originalBytes = readFileSync(packageFile);
+
+  // @skillerr/skill-score is a real optional peer that isn't installed in
+  // this monorepo (by design — PHASE A-2). Stub it in the monorepo root's
+  // node_modules just for this test's dynamic import() to resolve, so the
+  // scored (not fallback) branch actually runs, then remove it.
+  const stubDir = fileURLToPath(new URL("../../../node_modules/@skillerr/skill-score", import.meta.url));
+  let stubbed = false;
+  try {
+    mkdirSync(stubDir, { recursive: true });
+    writeFileSync(
+      join(stubDir, "package.json"),
+      JSON.stringify({ name: "@skillerr/skill-score", version: "0.0.0-test", type: "module", main: "index.js" }),
+    );
+    writeFileSync(
+      join(stubDir, "index.js"),
+      "export function scoreSkill(assessment, profile) { return { score: 42, profile }; }\n",
+    );
+    stubbed = true;
+
+    const result = JSON.parse(
+      execFileSync(process.execPath, [cliPath, "score", packageFile, "--emit"], { encoding: "utf8" }),
+    ) as { ok: boolean; out: string; score: unknown };
+
+    assert.equal(result.ok, true);
+    assert.equal(result.out, `${packageFile.slice(0, -".skill".length)}.scored.skill`);
+    // Original must be byte-identical — --emit without -o must not touch it.
+    assert.deepEqual(readFileSync(packageFile), originalBytes);
+    const sealed = unpackSkill(new Uint8Array(readFileSync(result.out)));
+    assert.deepEqual((sealed.raw.provenance as { score?: unknown })?.score, { score: 42, profile: "release" });
+  } finally {
+    if (stubbed) rmSync(stubDir, { recursive: true, force: true });
+  }
+});
+
 test("CLI exposes machine-readable contract template and field assessment", () => {
   const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
   const template = JSON.parse(

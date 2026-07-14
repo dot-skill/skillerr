@@ -2,6 +2,11 @@ import type { ValidateFunction } from "ajv";
 // The base "ajv" export only understands draft-07; our schemas declare
 // $schema: draft/2020-12, which needs the dedicated 2020-12 build.
 import { Ajv2020 } from "ajv/dist/2020.js";
+// ajv-formats' CJS default export doesn't resolve as callable under
+// NodeNext without esModuleInterop (a known ajv-formats/TS interop gap) —
+// the `.default` indirection is the documented workaround, not a typo.
+import addFormatsImport from "ajv-formats";
+const addFormats = addFormatsImport as unknown as typeof addFormatsImport.default;
 import type { SkillManifest, Workflow } from "@skillerr/protocol";
 import {
   assessSkillContract,
@@ -33,6 +38,9 @@ let schemaValidators:
 function getSchemaValidators(): NonNullable<typeof schemaValidators> {
   if (!schemaValidators) {
     const ajv = new Ajv2020({ allErrors: true, strict: false });
+    // Schemas declare format: "date-time" (provenance timestamps); without
+    // this, ajv logs "unknown format ... ignored" noise on every validate.
+    addFormats(ajv);
     ajv.addSchema(loadSchema("skill-contract"));
     schemaValidators = {
       manifest: ajv.compile(loadSchema("skill-manifest")),

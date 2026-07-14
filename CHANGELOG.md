@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.8.0 — 2026-07-14
+
+Every package back to lockstep versioning (all 7 at the same number, all
+internal `@skillerr/*` ranges matching) — fixes real version drift where
+`core`/`runtime`/`skillerr` had quietly diverged from the rest. Bundles
+Launch Readiness Phases A and B:
+
+**Phase A — launch blockers:**
+- `skill ingest` printed a stale `package_digest` — computed before
+  resources/assets were merged into the compiled package, so it never
+  matched what was actually written to disk. Now re-finalizes the
+  manifest after the merge, before packing.
+- `skill score` returned `ok:false` when the optional `@skillerr/skill-score`
+  peer isn't installed, even though the mapped `assessment.json` was
+  written successfully — not an error. Now `ok:true, scored:false` with
+  a `notice` field.
+
+**Phase B — first-run polish:**
+- Registered `ajv-formats` so `validate`/`inspect --trust`/`score` stop
+  printing `unknown format "date-time" ignored` noise.
+- `skill score --emit` without `-o` silently overwrote the *original*
+  input file — contradicting the CLI's own usage text, which promises
+  "a sealed copy." Now defaults to a `<name>.scored.skill` sibling
+  instead of touching the input.
+- `skill_id` was already a content digest (stable across re-ingests of
+  identical source) but this wasn't verified by a test or documented;
+  `package_digest` is *not* stable across real-world re-ingests, because
+  each run's `created_at` is a genuine distinct timestamp — that's
+  correct provenance, not a bug. Both now locked in by a regression test
+  and documented in docs/FAQ.md.
+
 ## 0.7.1 — 2026-07-14
 
 `skillerr`, `@skillerr/core`, `@skillerr/runtime` only — README fixes.

@@ -933,7 +933,13 @@ async function main() {
           ...unpacked.raw,
           provenance: { ...unpacked.raw.provenance, score: scoreResult },
         };
-        const out = opt(rest, "-o") ?? file!;
+        // Usage text promises "a sealed copy" — silently overwriting the
+        // original input file when -o isn't given would break that promise
+        // and destroy the caller's original package. Derive a sibling path
+        // instead of defaulting to `file!`.
+        const out =
+          opt(rest, "-o") ??
+          (file!.endsWith(".skill") ? `${file!.slice(0, -".skill".length)}.scored.skill` : `${file!}.scored.skill`);
         await writeFile(resolve(out), packSkill(sealed));
         console.log(JSON.stringify({ ok: true, out, score: scoreResult }, null, 2));
       } else {

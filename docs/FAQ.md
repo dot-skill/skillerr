@@ -63,10 +63,11 @@ Yes — public install is unscoped `skillerr` (no org required). Install: `npm i
 ## How do I convert an existing SKILL.md?
 
 ```text
-I have a SKILL.md at ./SKILL.md (or a skill-creator folder). Install skillerr
-if needed (npm i -g skillerr), set SKILL_HOST, then `skill ingest` it into a
-portable .skill. Show me the output path and what's still missing before it
-can be a release. Don't invent contract fields.
+Run: npm i -g skillerr (skip if `skill --version` already works), then
+export SKILL_HOST=<your-tool-name>. I have a SKILL.md at ./SKILL.md (or a
+skill-creator folder) — run `skill ingest` on it into a portable .skill.
+Show me the output path and what's still missing before it can be a
+release. Don't invent contract fields.
 ```
 
 `skill ingest <path> [-o out.skill]` reads a `SKILL.md` file or a
@@ -79,6 +80,17 @@ It never fabricates completeness: the output always names exactly which
 fields (usually just recorded human review) still need attention before a
 release compile. See [examples/ingest-skill-md/](../examples/ingest-skill-md/)
 for a worked example.
+
+**Determinism:** `skill_id` is derived from the SKILL.md content itself
+(a digest of the raw file), so re-ingesting byte-identical source always
+produces the same `skill_id` — it's a stable identity for "this source",
+not a fresh instance id per run. The overall `package_digest` is **not**
+identical across repeated ingests of the same source, because each ingest
+records its own real `created_at` timestamp in provenance — that's
+accurate provenance (this ingest genuinely happened now), not
+non-determinism to fix. If you need byte-identical output for testing,
+pass a fixed clock via the `now` option to `ingestSkillMd()` (core API;
+not exposed as a CLI flag).
 
 ## Is this production-final?
 

@@ -181,7 +181,7 @@ Full container spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 ## Status
 
 Specification: Draft **0.5.0** ([docs/PROTOCOL.md](./docs/PROTOCOL.md))  
-Reference CLI: `skillerr` @ **0.7.0**  
+Reference CLI: `skillerr` @ **0.8.0**  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**

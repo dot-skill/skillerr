@@ -62,6 +62,24 @@ test("PHASE 1: re-ingesting the same folder is deterministic", () => {
   assert.equal(a.source.id, b.source.id);
 });
 
+// PHASE B-6: skill_id is a content digest (stable identity for "this
+// source"), independent of when ingest ran. package_digest is NOT
+// stable across real-world re-ingests of the same source, because each
+// run's `created_at` is a genuine, distinct timestamp in provenance —
+// that's honest provenance, not a determinism bug. Documented in
+// docs/FAQ.md's "Determinism" note; this test locks in both halves of
+// that claim so a future change can't silently flip either one.
+test("PHASE B-6: skill_id is stable across re-ingests with different timestamps; package_digest is not", () => {
+  const a = ingestSkillMd(FIXTURE, { host: "cursor", now: () => "2026-07-13T00:00:00.000Z" });
+  const b = ingestSkillMd(FIXTURE, { host: "cursor", now: () => "2026-08-01T12:34:56.000Z" });
+  assert.equal(a.source.id, b.source.id);
+
+  const compiledA = compileSkillSource(a.source, { profile: "continuity" });
+  const compiledB = compileSkillSource(b.source, { profile: "continuity" });
+  assert.equal(compiledA.files.manifest.id, compiledB.files.manifest.id);
+  assert.notEqual(compiledA.files.manifest.package_digest, compiledB.files.manifest.package_digest);
+});
+
 test("PHASE 1: passing the SKILL.md file directly (not its folder) still locates sibling scripts/references/evals", () => {
   const result = ingestSkillMd(join(FIXTURE, "SKILL.md"), { host: "cursor" });
   assert.equal(result.source.title, "changelog-writer");

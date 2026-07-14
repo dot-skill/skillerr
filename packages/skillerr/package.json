@@ -1,6 +1,6 @@
 {
   "name": "skillerr",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Easily create, inspect, and run portable .skill packages for AI agents. Bin: skill.",
   "license": "MIT",
   "author": {
@@ -41,7 +41,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@skillerr/cli": "^0.7.0"
+    "@skillerr/cli": "^0.8.0"
   },
   "scripts": {
     "prepack": "node -e \"require('fs').accessSync('bin/skill.js')\""
