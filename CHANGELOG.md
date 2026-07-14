@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.4 — 2026-07-14
+
+`www.skillerr.com` is now live (Vercel) — docs served at `/docs/`, the
+bare root reserved for a future product built on top of this protocol
+(decided now, while backlinks are minimal, rather than migrating URLs
+later). Every reference to the old `dot-skill.github.io/skillerr-com`
+URL updated, including one genuine user-facing bug: `skill --help`'s
+own footer was printing the stale docs URL to every CLI user. Also
+updated every package's `package.json` `homepage` field (shown on
+their npmjs.com pages) and all 3 GitHub repos' website metadata.
+
 ## 0.9.3 — 2026-07-14
 
 README content pass: the orange "0.5.0 draft" badge and a

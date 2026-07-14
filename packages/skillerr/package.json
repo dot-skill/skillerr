@@ -1,6 +1,6 @@
 {
   "name": "skillerr",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Easily create, inspect, and run portable .skill packages for AI agents. Bin: skill.",
   "license": "MIT",
   "author": {
@@ -33,7 +33,7 @@
     "url": "https://github.com/dot-skill/skillerr.git",
     "directory": "packages/skillerr"
   },
-  "homepage": "https://dot-skill.github.io/skillerr-com/",
+  "homepage": "https://www.skillerr.com/docs/",
   "bugs": {
     "url": "https://github.com/dot-skill/skillerr/issues"
   },
@@ -41,7 +41,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@skillerr/cli": "^0.9.3"
+    "@skillerr/cli": "^0.9.4"
   },
   "scripts": {
     "prepack": "node ../../scripts/sync-npm-readme.mjs && node -e \"require('fs').accessSync('bin/skill.js')\""

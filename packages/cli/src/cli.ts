@@ -209,7 +209,7 @@ Notes:
   development-only. human/cli/shell/manual hosts are denylisted for mint.
 
 Install:  npm i -g skillerr   →  skill --help
-Docs:     https://dot-skill.github.io/skillerr-com/
+Docs:     https://www.skillerr.com/docs/
 `);
   process.exit(exitCode);
 }

@@ -1,6 +1,6 @@
 {
   "name": "skillerr-monorepo",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "private": true,
   "description": "Easily create, inspect, and run portable .skill packages for AI agents",
   "license": "MIT",
@@ -42,7 +42,7 @@
     "type": "git",
     "url": "https://github.com/dot-skill/skillerr.git"
   },
-  "homepage": "https://dot-skill.github.io/skillerr-com/",
+  "homepage": "https://www.skillerr.com/docs/",
   "bugs": {
     "url": "https://github.com/dot-skill/skillerr/issues"
   }
