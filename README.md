@@ -212,7 +212,7 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 
 - [Protocol](./docs/PROTOCOL.md) · [Agent](./docs/AGENT.md) · [Prompts](./examples/prompts.md)
 - [Why structured packages](./docs/WHY.md) · [Continuity](./docs/CONTINUITY.md) · [Privacy](./docs/PRIVACY.md)
-- [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md)
+- [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md) · [Naming](./docs/NAMING.md)
 - [Ingest a SKILL.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [Eval / benchmark](./docs/EVAL.md) · [Bundled scripts / resources](./docs/RESOURCES.md)
 - [Security](./docs/SECURITY.md) · [Threat model](./docs/THREAT-MODEL.md) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
 - [Mint](./docs/MINT.md) · [Workspace](./docs/WORKSPACE.md) · [File type / OS registration](./docs/FILE-TYPE.md)
