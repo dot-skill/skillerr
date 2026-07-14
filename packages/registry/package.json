@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/registry",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Optional local transparency log for .skill package digests",
   "license": "MIT",
   "author": {
@@ -50,8 +50,8 @@
     "test": "node --test dist/registry.test.js"
   },
   "dependencies": {
-    "@skillerr/core": "^0.8.0",
-    "@skillerr/protocol": "^0.8.0"
+    "@skillerr/core": "^0.8.1",
+    "@skillerr/protocol": "^0.8.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

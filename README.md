@@ -181,7 +181,7 @@ Full container spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 ## Status
 
 Specification: Draft **0.5.0** ([docs/PROTOCOL.md](./docs/PROTOCOL.md))  
-Reference CLI: `skillerr` @ **0.8.0**  
+Reference CLI: `skillerr` @ **0.8.1**  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**
@@ -210,12 +210,14 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 
 ## Documentation
 
+**Before you run someone else's `.skill` file, read [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md).** It states plainly what a signature does and doesn't prove — most trust confusion comes from skipping this.
+
 - [Protocol](./docs/PROTOCOL.md) · [Agent](./docs/AGENT.md) · [Prompts](./examples/prompts.md)
 - [Why structured packages](./docs/WHY.md) · [Continuity](./docs/CONTINUITY.md) · [Privacy](./docs/PRIVACY.md)
 - [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md) · [Naming](./docs/NAMING.md)
-- [Ingest a SKILL.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [Eval / benchmark](./docs/EVAL.md) · [Bundled scripts / resources](./docs/RESOURCES.md)
-- [Security](./docs/SECURITY.md) · [Threat model](./docs/THREAT-MODEL.md) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
-- [Mint](./docs/MINT.md) · [Workspace](./docs/WORKSPACE.md) · [File type / OS registration](./docs/FILE-TYPE.md)
+- [Ingest a SKILL.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [From skill-creator](./docs/FROM-SKILL-CREATOR.md) · [Eval / benchmark](./docs/EVAL.md) · [Bundled scripts / resources](./docs/RESOURCES.md)
+- [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md) · [Trust model](./docs/TRUST-MODEL.md) · [Security](./docs/SECURITY.md) · [Threat model](./docs/THREAT-MODEL.md) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
+- [Mint](./docs/MINT.md) · [Runtime](./docs/RUNTIME.md) · [Workspace](./docs/WORKSPACE.md) · [File type / OS registration](./docs/FILE-TYPE.md)
 - [RFCs](./docs/rfcs/) — protocol design proposals, spec-only and implemented
 - Site guides: [skillerr.com](https://dot-skill.github.io/skillerr-com/)
 

@@ -1,5 +1,7 @@
 # FAQ
 
+**Before you run someone else's `.skill` file:** read [What is verifiable](./WHAT-IS-VERIFIABLE.md) — it states plainly what a signature does and doesn't prove.
+
 ## What is the `.skill` Protocol?
 
 An open format for **portable AI skills**: typed inputs, workflow, pinned knowledge, redacted journey provenance, optional token usage, integrity digests, and mint attestation. Home: [skillerr.com](https://dot-skill.github.io/skillerr-com/).
@@ -94,4 +96,4 @@ not exposed as a CLI flag).
 
 ## Is this production-final?
 
-Public **draft** (0.5.0). Reference mint HMAC is **development-only** — replace with real keys in production issuers. Digests and inspect-before-run are real; do not treat the bundled signer as production identity proof.
+Public **draft** (0.5.0). Default mint (no `--signer-key`) uses a **development-only** HMAC — replace with a configured Ed25519 issuer key (`skill keygen` + `--signer-key`, see [KEY-CEREMONY.md](./KEY-CEREMONY.md)) for `verified_issuer` trust in production. Digests and inspect-before-run are real either way; see [What is verifiable](./WHAT-IS-VERIFIABLE.md) for exactly what a signature does and doesn't prove.

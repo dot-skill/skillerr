@@ -1038,13 +1038,17 @@ async function main() {
       if (!file) usage();
       const profile = (opt(rest, "--profile") ?? "minted") as "open" | "minted" | "anchored";
       const trust_store = loadTrustStore(opt(rest, "--trust-store") ?? defaultTrustStorePath());
+      const result = verifyMintTrust(new Uint8Array(await readFile(resolve(file!))), profile, {
+        allow_development_issuer: flag(rest, "--allow-development-issuer"),
+        allow_self_reported: flag(rest, "--allow-self-reported"),
+        trust_store,
+      });
       console.log(
         JSON.stringify(
-          verifyMintTrust(new Uint8Array(await readFile(resolve(file!))), profile, {
-            allow_development_issuer: flag(rest, "--allow-development-issuer"),
-            allow_self_reported: flag(rest, "--allow-self-reported"),
-            trust_store,
-          }),
+          {
+            ...result,
+            docs: "https://github.com/dot-skill/skillerr/blob/main/docs/WHAT-IS-VERIFIABLE.md",
+          },
           null,
           2,
         ),

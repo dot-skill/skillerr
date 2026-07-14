@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.8.1 — 2026-07-14
+
+Launch Readiness Phase D — plain-language trust/threat/verifiability docs.
+No behavior changes except one additive field.
+
+- New `docs/TRUST-MODEL.md` — plain-language explanation of the four
+  `trust_state` values, explicit that `development`/`self_reported` are
+  not safe to run blindly, why `SKILL_HOST` alone is `self_reported`, why
+  the bundled key is dev-only, and exactly when `execute` refuses.
+- New `docs/WHAT-IS-VERIFIABLE.md` — attribute-by-attribute breakdown of
+  what's cryptographically proven vs. key-bound-but-not-publicly-verifiable
+  vs. purely self-reported. Linked prominently from README, FAQ, and
+  `skill verify-trust`'s own JSON output (new `docs` field).
+- New `docs/FROM-SKILL-CREATOR.md` — the exact `skill ingest` mapping
+  table and what's always left for a human to complete before release.
+- `docs/RUNTIME.md` gained a step-kind support matrix: all 12
+  `WorkflowStepKind`s, executed vs. dry-run-only vs. always-refuses, with
+  exact refusal messages for `delegate`/`subskill`/unsupported `tool`/
+  `transform` cases.
+- Fixed two more stale "reference mint is unconditionally dev-only HMAC"
+  claims in `docs/FAQ.md` that earlier passes missed (same class of fix
+  as 0.7.1/0.8.0, just a different file).
+
 ## 0.8.0 — 2026-07-14
 
 Every package back to lockstep versioning (all 7 at the same number, all

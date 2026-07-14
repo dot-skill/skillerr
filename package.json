@@ -1,6 +1,6 @@
 {
   "name": "skillerr-monorepo",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "description": "Easily create, inspect, and run portable .skill packages for AI agents",
   "license": "MIT",
