@@ -38,6 +38,8 @@ import {
   defaultTrustStorePath,
   ingestSkillMd,
   packSkill,
+  buildFileMap,
+  finalizeManifest,
   runEvalCase,
   buildBenchmarkReport,
 } from "@skillerr/core";
@@ -746,6 +748,13 @@ async function main() {
       const compiled = compileSkillSource(source, { profile: "continuity" });
       compiled.files.resources = { ...compiled.files.resources, ...resources };
       compiled.files.assets = { ...compiled.files.assets, ...assets };
+      // Resources/assets are merged in after compileSkillSource already
+      // finalized the manifest, so its package_digest is stale (computed
+      // over the pre-merge content index). Re-finalize before packing so
+      // the digest we print below matches what's actually in the archive —
+      // same finalize-then-pack order compile.ts already uses.
+      const fileMap = buildFileMap(compiled.files);
+      compiled.files.manifest = finalizeManifest(compiled.files.manifest, fileMap);
       const packageBytes = packSkill(compiled.files);
       await writeFile(resolve(out), packageBytes);
 
@@ -896,13 +905,18 @@ async function main() {
         const skillScore = await import("@skillerr/skill-score");
         scoreResult = skillScore.scoreSkill(assessment, profile);
       } catch {
+        // @skillerr/skill-score is an optional peer, not installed here.
+        // This is expected, not a failure: ok stays true (the mapped
+        // assessment was written successfully), scored is false so a
+        // caller can tell "no score" apart from "something broke".
         const assessmentOut = opt(rest, "-o") ?? "assessment.json";
         await writeFile(resolve(assessmentOut), JSON.stringify(assessment, null, 2) + "\n");
         console.log(
           JSON.stringify(
             {
-              ok: false,
-              error: "@skillerr/skill-score is not installed.",
+              ok: true,
+              scored: false,
+              notice: "@skillerr/skill-score is not installed — wrote the mapped assessment instead of a score.",
               assessment_out: assessmentOut,
               next: `npm i -D @skillerr/skill-score, then re-run — or score it directly: skill-score ${assessmentOut} ${profile}`,
               evidence_count: assessment.evidence.length,

@@ -483,6 +483,62 @@ test("CLI mint works standalone on an explicit file, outside any workspace — c
   assert.equal(result.mint_status, "minted");
 });
 
+test("CLI ingest: printed package_digest matches the digest actually inside the written .skill (PHASE A-1)", async () => {
+  const { mkdtempSync } = await import("node:fs");
+  const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
+  // This fixture has resources/scripts/ — ingestSkillMd merges those into
+  // compiled.files *after* compileSkillSource already finalized the
+  // manifest, which previously left the printed digest stale.
+  const skillMdPath = fileURLToPath(
+    new URL("../../../examples/ingest-skill-md/SKILL.md", import.meta.url),
+  );
+  const dir = mkdtempSync(join(tmpdir(), "skill-ingest-digest-"));
+  const packageFile = join(dir, "out.skill");
+
+  const result = JSON.parse(
+    execFileSync(
+      process.execPath,
+      [cliPath, "ingest", skillMdPath, "-o", packageFile, "--host", "cursor"],
+      { encoding: "utf8", env: { ...process.env, SKILL_HOST: "cursor" } },
+    ),
+  ) as { ok: boolean; package_digest: string };
+
+  const written = unpackSkill(new Uint8Array(readFileSync(packageFile)));
+  assert.equal(result.package_digest, written.manifest.package_digest);
+});
+
+test("CLI score: missing optional @skillerr/skill-score is a graceful notice, not ok:false (PHASE A-2)", async () => {
+  const { mkdtempSync } = await import("node:fs");
+  const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
+  const sourcePath = fileURLToPath(
+    new URL("../../../examples/contract-foundation/source.json", import.meta.url),
+  );
+  const dir = mkdtempSync(join(tmpdir(), "skill-score-notice-"));
+  const packageFile = join(dir, "out.skill");
+  const assessmentOut = join(dir, "assessment.json");
+
+  execFileSync(
+    process.execPath,
+    [cliPath, "pack", sourcePath, "-o", packageFile, "--profile", "release", "--host", "cursor"],
+    { encoding: "utf8", env: { ...process.env, SKILL_HOST: "cursor" } },
+  );
+
+  const result = JSON.parse(
+    execFileSync(
+      process.execPath,
+      [cliPath, "score", packageFile, "-o", assessmentOut],
+      { encoding: "utf8" },
+    ),
+  ) as { ok: boolean; scored: boolean; notice: string };
+
+  // @skillerr/skill-score is not installed in this monorepo's node_modules
+  // (confirmed optional, never a required dependency) — this exercises the
+  // real fallback path, not a mock.
+  assert.equal(result.ok, true);
+  assert.equal(result.scored, false);
+  assert.match(result.notice, /not installed/i);
+});
+
 test("CLI exposes machine-readable contract template and field assessment", () => {
   const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
   const template = JSON.parse(
