@@ -1,6 +1,10 @@
 # Open `.skill` Protocol
 
 <p align="center">
+  <img src="./assets/skillerr-banner.png" alt=".skill — identity, instructions, capabilities, seal, and assets inside a portable skill package" width="100%" />
+</p>
+
+<p align="center">
   <img src="./assets/skillerr-mark.png" alt="Skillerr .skill mark" width="128" height="128" />
 </p>
 
@@ -69,6 +73,12 @@ the install + `SKILL_HOST` steps explicitly since they're usually the first
 thing you paste. The prompts below assume you already ran those two steps
 once in this environment — if `skill --version` fails, run `npm i -g
 skillerr` and `export SKILL_HOST=<your-tool-name>` first.
+
+New to the vocabulary the prompts use? "Journey" is the redacted record of
+what you and the agent did; "checkpoint" is a partial, in-progress save
+(continuity draft); "release-complete" means every required contract field
+is filled in and human-reviewed, not just "looks done." The output either
+way is a sealed `.skill` file, not a chat export.
 
 ### Create a skill from this chat
 
@@ -181,7 +191,7 @@ Full container spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 ## Status
 
 Specification: Draft **0.5.0** ([docs/PROTOCOL.md](./docs/PROTOCOL.md))  
-Reference CLI: `skillerr` @ **0.9.0**  
+Reference CLI: `skillerr` @ **0.9.1**  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**

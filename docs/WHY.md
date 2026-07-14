@@ -1,7 +1,8 @@
 # Structured `.skill` packages
 
-**Your `SKILL.md` still works.** Skillerr is not a competing skill format to
-replace it — it's the integrity and evaluation layer *above* it. Run
+**Your `SKILL.md` still works.** The `.skill` format is not a competing
+format meant to replace it — it's the integrity and evaluation layer
+*above* it. Run
 `skill ingest ./your-skill` and a Claude/skill-creator skill becomes a
 sealed, typed `.skill` superset in one command (see
 [FAQ.md](./FAQ.md#how-do-i-convert-an-existing-skillmd)). Everything below

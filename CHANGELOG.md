@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.9.1 — 2026-07-14
+
+Fixes the actual root cause behind repeated "npm README doesn't match
+GitHub" reports: `packages/skillerr/README.md` (npm) and root `README.md`
+(GitHub) were two independently hand-edited files with nothing forcing
+them to stay in sync — every prior "fix" (0.7.1, 0.8.0) patched the
+symptom for one release and then the files drifted apart again the next
+time either one was edited alone.
+
+- New `scripts/sync-npm-readme.mjs` generates `packages/skillerr/README.md`
+  from the root `README.md` (relative links/images rewritten to absolute
+  GitHub URLs, since the npm copy has no repo checkout backing it). Wired
+  into `packages/skillerr`'s `prepack` script, so it runs automatically
+  before every `npm publish`. `packages/skillerr/README.md` must never be
+  hand-edited again — edit `README.md` and re-run the sync.
+- New CI step (`Verify npm README is in sync`) fails the build if someone
+  edits one without the other — unlike the `brand` job's PNG check, this
+  is pure text transformation, fully deterministic across OS, so a strict
+  diff is safe here.
+- Fixed remaining brand-as-subject phrasing this pass's earlier sweeps
+  missed (`docs/WHY.md`): "Skillerr is not a competing format" reads as
+  a company pitching against a competitor; the actual claim is about the
+  `.skill` format, not a company.
+
 ## 0.9.0 — 2026-07-14
 
 Launch Readiness Phase E (partial) — optional public transparency-log
