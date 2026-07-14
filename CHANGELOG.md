@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2 — 2026-07-14
+
+Removed the banner image from the README (both GitHub and, via the sync
+script, npm) — a single mark image is the intended header, not a banner
+plus a mark.
+
 ## 0.9.1 — 2026-07-14
 
 Fixes the actual root cause behind repeated "npm README doesn't match

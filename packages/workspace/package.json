@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/workspace",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Local workspace for sections, stage, compile, checkpoint, and mint",
   "license": "MIT",
   "author": {
@@ -51,8 +51,8 @@
     "test": "node --test dist/workspace.test.js"
   },
   "dependencies": {
-    "@skillerr/core": "^0.9.1",
-    "@skillerr/protocol": "^0.9.1"
+    "@skillerr/core": "^0.9.2",
+    "@skillerr/protocol": "^0.9.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

@@ -3,10 +3,6 @@
 # Open `.skill` Protocol
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dot-skill/skillerr/main/assets/skillerr-banner.png" alt=".skill — identity, instructions, capabilities, seal, and assets inside a portable skill package" width="100%" />
-</p>
-
-<p align="center">
   <img src="https://raw.githubusercontent.com/dot-skill/skillerr/main/assets/skillerr-mark.png" alt="Skillerr .skill mark" width="128" height="128" />
 </p>
 
@@ -193,7 +189,7 @@ Full container spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/bl
 ## Status
 
 Specification: Draft **0.5.0** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md))  
-Reference CLI: `skillerr` @ **0.9.1**  
+Reference CLI: `skillerr` @ **0.9.2**  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**
