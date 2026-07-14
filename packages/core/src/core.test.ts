@@ -13,7 +13,7 @@ import { normalizePath, assertSafePaths, UnsafePathError } from "./paths.js";
 import { packSkill, unpackSkill } from "./pack.js";
 import { mintSkillPackage, verifyMintTrust } from "./mint.js";
 import { createEd25519Signer } from "./signer.js";
-import { validatePackageBytes } from "./validate.js";
+import { validatePackageBytes, inspectSkill } from "./validate.js";
 import { compileSkillSource, approveCompilation } from "./compile.js";
 import {
   DEFAULT_SKILL_POLICY,
@@ -278,6 +278,55 @@ test("mint/verify: a package minted with the public dev key verifies as developm
   // Without explicit opt-in, the public dev key must never pass as trusted.
   const strict = verifyMintTrust(sealed.packageBytes, "minted");
   assert.equal(strict.ok, false);
+});
+
+test("license: SkillSource.license/license_url flow through compile into the manifest and inspectSkill, self-reported like npm's package.json field", () => {
+  const contract = validContract();
+  const source: SkillSource = {
+    kind: "skill_source",
+    id: "src_license_unit",
+    hash: "sha256:" + "e".repeat(64),
+    title: contract.title,
+    contract,
+    sections: [],
+    steering: [],
+    prompts: [],
+    code_refs: [],
+    parents: [],
+    agent: { host: "cursor" },
+    journey: { summary: "License field unit fixture.", redacted: true, sensitivity: "private" },
+    inputs_declared: "none",
+    sensitivity: "private",
+    created_at: "2026-07-13T00:00:00.000Z",
+    actor: { id: "test-agent" },
+    source_protocol_version: PROTOCOL_VERSION,
+    license: "Apache-2.0",
+    license_url: "https://example.test/terms",
+  };
+  const compiled = compileSkillSource(source, {
+    profile: "release",
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+  });
+  assert.equal(compiled.files.manifest.license, "Apache-2.0");
+  assert.equal(compiled.files.manifest.license_url, "https://example.test/terms");
+
+  const approved = approveCompilation(compiled, { inputs: ["*"], permissions: true });
+  approved.files.manifest.needs_human_review = false;
+  const sealed = mintSkillPackage(approved.files, { host: "cursor" });
+
+  const inspected = inspectSkill(sealed.packageBytes);
+  assert.equal(inspected.summary.license, "Apache-2.0");
+  assert.equal(inspected.summary.license_url, "https://example.test/terms");
+
+  // opts.license overrides source.license, same pattern as opts.title.
+  const overridden = compileSkillSource(source, {
+    profile: "release",
+    approve_inferred_inputs: true,
+    approve_permissions: true,
+    license: "MIT",
+  });
+  assert.equal(overridden.files.manifest.license, "MIT");
 });
 
 function mintedEd25519Fixture(overrides?: { host?: string }) {

@@ -41,6 +41,7 @@
       }
     },
     "license": { "type": "string" },
+    "license_url": { "type": "string" },
     "container_version": { "type": "string" },
     "protocol_version": { "type": "string" },
     "entrypoint": { "type": "string", "minLength": 1 },

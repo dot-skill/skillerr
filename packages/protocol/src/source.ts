@@ -153,6 +153,9 @@ export interface SkillSource {
   source_protocol_version: string;
   /** Optional product-specific source refs (e.g. Skillerr recipe id). */
   source_refs?: Array<{ product: string; kind: string; id: string; hash?: string }>;
+  /** SPDX license identifier (e.g. "MIT") or "UNLICENSED" — carried through to the manifest, see its own doc comment for what this does and doesn't prove. */
+  license?: string;
+  license_url?: string;
 }
 
 /**

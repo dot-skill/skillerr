@@ -428,7 +428,10 @@ export interface SkillManifest {
   verification?: ExplicitDeclaration<VerificationAssertion>;
   corrections?: SkillContract["corrections"];
   authors?: Array<{ id: string; display_name?: string }>;
+  /** SPDX license identifier (e.g. "MIT", "Apache-2.0", "CC-BY-4.0") or "UNLICENSED" for all-rights-reserved. Self-reported by the author, like npm's package.json `license` field — not independently verified by anything in this protocol. */
   license?: string;
+  /** Full terms/license text, when a bare SPDX identifier doesn't capture custom terms. */
+  license_url?: string;
   container_version: string;
   protocol_version: string;
   entrypoint: string;

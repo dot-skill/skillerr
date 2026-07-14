@@ -410,6 +410,8 @@ export function inspectSkill(archive: Uint8Array): {
     title: string;
     description: string;
     intent?: string;
+    license?: string;
+    license_url?: string;
     inputs: string[];
     permissions: string[];
     capabilities: string[];
@@ -463,6 +465,8 @@ export function inspectSkill(archive: Uint8Array): {
       title: m.title,
       description: m.description,
       intent: m.intent,
+      license: m.license,
+      license_url: m.license_url,
       inputs: m.inputs.filter((i) => i.required).map((i) => i.name),
       permissions: m.permissions.map((p) => p.side_effect_class),
       capabilities: m.capabilities.map((c) => c.name),

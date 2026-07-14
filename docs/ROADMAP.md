@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: protocol **Draft 0.5.0**; reference packages **0.9.8**.
+Status: protocol **Draft 0.5.0**; reference packages **0.9.9**.
 
 ## Now (done in this repo)
 
@@ -78,6 +78,16 @@ Status: protocol **Draft 0.5.0**; reference packages **0.9.8**.
       showing a self-reported field next to a "verified" badge — they're
       never in the same array. Built from already-verified TrustView/
       anchor-verification output, not new cryptography
+- [x] License/terms manifest slot (Phase F, scoped down) — `manifest.license`
+      (SPDX identifier) and `manifest.license_url`, set via
+      `SkillSource.license`/`.license_url`. Self-reported like npm's
+      `package.json` `license` field — see [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md).
+      The other two original Phase F pieces were already shipped elsewhere
+      by the time this was scoped: Fulcio-based publisher identity is
+      `--keyless`'s `owner_identity` (see [TRANSPARENCY.md](./TRANSPARENCY.md)),
+      and `skill score` already exists as a quality signal. No commerce
+      code lands in this repo — see Launch Readiness Phase F and
+      [TRANSPARENCY.md](./TRANSPARENCY.md)'s "What this is not"
 
 ## Next (great contribution targets)
 

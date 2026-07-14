@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.9.9 — 2026-07-15
+
+Phase F, scoped down to what actually belongs in this repo: a
+license/terms manifest slot. `manifest.license` already existed in the
+type and JSON schema but was completely dormant — never settable from
+`SkillSource`, never surfaced by any command, undocumented anywhere.
+Wired it up end to end: `SkillSource.license`/`.license_url` ->
+`compileSkillSource`/`compileRecipeToSkill` (with a `CompileOptions`
+override, same pattern as `title`/`description`) -> `manifest.license`/
+`.license_url` -> surfaced in `skill inspect`'s summary. New
+`license_url` field alongside the existing `license` (SPDX identifier)
+for terms a bare SPDX id can't capture. Self-reported like npm's
+`package.json` `license` field — documented as such in
+`WHAT-IS-VERIFIABLE.md`'s self-reported table, not implied to be
+verified.
+
+The other two pieces of the original "Phase F: commerce/publisher
+identity foundations" sketch were already shipped by the time this was
+scoped: Fulcio-based verified publisher identity is `--keyless`'s
+`owner_identity` (0.9.7), and `skill score` already exists as a
+quality signal. No commerce/payment/marketplace code lands in this
+repo — the protocol stays payment-agnostic, per `docs/TRANSPARENCY.md`'s
+"What this is not".
+
 ## 0.9.8 — 2026-07-15
 
 Phase E2: per-claim assurance model. `docs/WHAT-IS-VERIFIABLE.md` has

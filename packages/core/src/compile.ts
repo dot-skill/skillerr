@@ -186,6 +186,9 @@ export interface CompileOptions {
   version?: string;
   title?: string;
   description?: string;
+  /** Overrides source.license — see SkillManifest.license's doc comment. */
+  license?: string;
+  license_url?: string;
   /**
    * compilation_report.created_at. Defaults to source.created_at (not
    * wall-clock) so compiling the same source twice is byte-identical
@@ -638,6 +641,8 @@ function compileNativeContract(
       verification: structuredClone(contract.verification),
       corrections: structuredClone(contract.corrections),
       authors: source.actor ? [source.actor] : undefined,
+      license: opts.license ?? source.license,
+      license_url: opts.license_url ?? source.license_url,
       container_version: CONTAINER_VERSION,
       protocol_version: PROTOCOL_VERSION,
       entrypoint,
@@ -1075,6 +1080,8 @@ export function compileSkillSource(
       intent: source.intent ?? source.summary,
       triggers: [{ id: "legacy_title", description: source.title }],
       authors: source.actor ? [source.actor] : undefined,
+      license: opts.license ?? source.license,
+      license_url: opts.license_url ?? source.license_url,
       container_version: CONTAINER_VERSION,
       protocol_version: PROTOCOL_VERSION,
       entrypoint,

@@ -4,7 +4,7 @@ This is the single most important page in this repo's docs if you're deciding wh
 
 ## The one-sentence guarantee
 
-**As of protocol Draft 0.5.0 / reference packages 0.9.8:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest — those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
+**As of protocol Draft 0.5.0 / reference packages 0.9.9:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest — those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
 
 If a package was minted with `--transparency` (see [TRANSPARENCY.md](./TRANSPARENCY.md)), that guarantee extends further: a public, independently-checkable Rekor transparency log entry means a third party — not just you — can confirm *when* it was first registered, without trusting your local trust store alone. Anchoring is opt-in, not automatic — a package without an anchor is exactly as verifiable as described above (verifiable by you, using your own pinned trust store), which is still the common case today.
 
@@ -45,6 +45,7 @@ This is real cryptography — you're not being lied to about signature validity 
 | **`human_approvals` / `provenance.human_review`** | Only counted as `attested: true` when actor evidence is actually present (a named actor, not just an empty claim) — but "an actor named X approved this" is still exactly as trustworthy as the signer's honesty. Nothing cryptographically ties a human to a specific approval event. |
 | **Declared behavior matching actual behavior** | Signing a package proves the *permissions/capabilities declarations* weren't altered after sealing (that's `manifest_digest`) — it does **not** prove the workflow steps actually do only what the capabilities describe. That's enforced separately, at execution time, by the consumer's own runtime capability gate (deny-by-default; see [SECURITY.md](./SECURITY.md)) — not something a signature can prove in advance. |
 | **Quality / correctness / safety of the content** | Entirely out of scope for trust_state. A `verified_issuer` package can still be poorly designed, buggy, or a bad fit for your use case. See `skill score` / [EVAL.md](./EVAL.md) for quality evidence — a completely separate axis from trust. |
+| **`license` / `license_url`** | Self-reported like npm's `package.json` `license` field. Signing the package doesn't verify the declared license matches the content's actual terms or that the declarer has the right to set it — just that *someone with the signing key* claimed it. |
 
 ## Quick reference: what to actually do with this
 
