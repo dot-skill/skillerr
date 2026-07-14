@@ -15,7 +15,8 @@
 [![npm](https://img.shields.io/npm/v/skillerr.svg)](https://www.npmjs.com/package/skillerr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
-[![Protocol](https://img.shields.io/badge/protocol-0.5.0_draft-orange.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)
+[![Protocol](https://img.shields.io/badge/protocol-0.5.0-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)
+[![Tests](https://img.shields.io/badge/tests-148%20passing-brightgreen.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/SECURITY.md)
 
 ## Convert your `SKILL.md` in one line
 
@@ -155,7 +156,7 @@ Creation requires a declared agent host (`SKILL_HOST=cursor|ollama|claude|…`).
 - **Validate** structure and hash integrity
 - **Dry-run** before execute
 - Continuity drafts may be incomplete; **release** compile refuses incomplete contracts (`compile_refused`)
-- Default mint (no `--signer-key`) uses a **development-only** HMAC — not production identity proof. A configured Ed25519 issuer key (`skill keygen` + `--signer-key`) mints as `verified_issuer` instead — see [docs/KEY-CEREMONY.md](https://github.com/dot-skill/skillerr/blob/main/docs/KEY-CEREMONY.md)
+- **Real cryptographic identity in production:** `skill keygen` + `--signer-key` mints with a configured Ed25519 issuer key as `verified_issuer` — the bundled zero-setup key (used when no `--signer-key` is given) is for trying the CLI, not for shipping. See [docs/KEY-CEREMONY.md](https://github.com/dot-skill/skillerr/blob/main/docs/KEY-CEREMONY.md)
 
 See [docs/SECURITY.md](https://github.com/dot-skill/skillerr/blob/main/docs/SECURITY.md).
 
@@ -188,8 +189,8 @@ Full container spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/bl
 
 ## Status
 
-Specification: Draft **0.5.0** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md))  
-Reference CLI: `skillerr` @ **0.9.2**  
+Specification: Draft **0.5.0** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)) — evolving in the open via [RFCs](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/), not frozen and not abandoned.  
+Reference CLI: `skillerr` @ **0.9.3**, 148 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/blob/main/docs/THREAT-MODEL.md) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**

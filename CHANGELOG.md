@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.9.3 — 2026-07-14
+
+README content pass: the orange "0.5.0 draft" badge and a
+limitation-first sentence about the default signing key were reading
+as "this project looks unfinished" even though the underlying facts
+(protocol is a draft spec, default mint key is dev-only) are accurate
+and necessary disclosures, not things to hide. Reframed rather than
+removed:
+
+- Badge recolored (no more alarm-orange) and a "148 tests passing"
+  badge added alongside it — the spec evolving in the open and the
+  reference implementation being solidly tested are both true at once.
+- The signing-key bullet under "What good looks like" now leads with
+  the capability ("real cryptographic identity in production") instead
+  of the limitation ("default is dev-only") — same fact, told straight
+  instead of as a disclaimer.
+- Status section now states the RFC process explicitly ("evolving in
+  the open... not frozen and not abandoned") and cites the actual test
+  count / CI matrix / adversarial corpus, so "draft" reads as "active
+  spec process" rather than "abandoned/incomplete."
+- Left every "continuity draft" mention untouched — that's real
+  protocol vocabulary (the non-mintable handoff-object profile), not
+  project-maturity signaling, and conflating the two would have made
+  the README less accurate, not more confident.
+
 ## 0.9.2 — 2026-07-14
 
 Removed the banner image from the README (both GitHub and, via the sync
