@@ -10,7 +10,7 @@
 
 **The integrity + evaluation layer for AI skills.** Your `SKILL.md` still works — `.skill` seals it, scores it, and makes it portable and inspectable before anyone runs it.
 
-**Site:** [skillerr.com](https://dot-skill.github.io/skillerr-com/) · **Artifact:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`) · **Repo:** [dot-skill/skillerr](https://github.com/dot-skill/skillerr)
+**Site:** [skillerr.com](https://www.skillerr.com/docs/) · **Artifact:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`) · **Repo:** [dot-skill/skillerr](https://github.com/dot-skill/skillerr)
 
 [![npm](https://img.shields.io/npm/v/skillerr.svg)](https://www.npmjs.com/package/skillerr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/LICENSE)
@@ -190,7 +190,7 @@ Full container spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/bl
 ## Status
 
 Specification: Draft **0.5.0** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)) — evolving in the open via [RFCs](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/), not frozen and not abandoned.  
-Reference CLI: `skillerr` @ **0.9.3**, 148 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/blob/main/docs/THREAT-MODEL.md) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
+Reference CLI: `skillerr` @ **0.9.4**, 148 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/blob/main/docs/THREAT-MODEL.md) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**
@@ -228,7 +228,7 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 - [What is verifiable](https://github.com/dot-skill/skillerr/blob/main/docs/WHAT-IS-VERIFIABLE.md) · [Trust model](https://github.com/dot-skill/skillerr/blob/main/docs/TRUST-MODEL.md) · [Transparency](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md) · [Security](https://github.com/dot-skill/skillerr/blob/main/docs/SECURITY.md) · [Threat model](https://github.com/dot-skill/skillerr/blob/main/docs/THREAT-MODEL.md) · [Key ceremony](https://github.com/dot-skill/skillerr/blob/main/docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](https://github.com/dot-skill/skillerr/blob/main/docs/CANONICALIZATION.md)
 - [Mint](https://github.com/dot-skill/skillerr/blob/main/docs/MINT.md) · [Runtime](https://github.com/dot-skill/skillerr/blob/main/docs/RUNTIME.md) · [Workspace](https://github.com/dot-skill/skillerr/blob/main/docs/WORKSPACE.md) · [File type / OS registration](https://github.com/dot-skill/skillerr/blob/main/docs/FILE-TYPE.md)
 - [RFCs](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/) — protocol design proposals, spec-only and implemented
-- Site guides: [skillerr.com](https://dot-skill.github.io/skillerr-com/)
+- Site guides: [skillerr.com](https://www.skillerr.com/docs/)
 
 ---
 

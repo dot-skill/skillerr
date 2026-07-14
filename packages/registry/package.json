@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/registry",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Optional local transparency log for .skill package digests",
   "license": "MIT",
   "author": {
@@ -26,7 +26,7 @@
     "url": "https://github.com/dot-skill/skillerr.git",
     "directory": "packages/registry"
   },
-  "homepage": "https://dot-skill.github.io/skillerr-com/",
+  "homepage": "https://www.skillerr.com/docs/",
   "bugs": {
     "url": "https://github.com/dot-skill/skillerr/issues"
   },
@@ -50,8 +50,8 @@
     "test": "node --test dist/registry.test.js"
   },
   "dependencies": {
-    "@skillerr/core": "^0.9.3",
-    "@skillerr/protocol": "^0.9.3"
+    "@skillerr/core": "^0.9.4",
+    "@skillerr/protocol": "^0.9.4"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

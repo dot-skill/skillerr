@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/protocol",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Types, schemas, and completeness rules for portable .skill packages",
   "license": "MIT",
   "author": {
@@ -27,7 +27,7 @@
     "url": "https://github.com/dot-skill/skillerr.git",
     "directory": "packages/protocol"
   },
-  "homepage": "https://dot-skill.github.io/skillerr-com/",
+  "homepage": "https://www.skillerr.com/docs/",
   "bugs": {
     "url": "https://github.com/dot-skill/skillerr/issues"
   },

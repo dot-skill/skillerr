@@ -31,7 +31,7 @@ skill extract examples/multi-skill-extract/journey.json -o /tmp/skillerr-extract
 
 ## Packed fixtures (validated)
 
-Pre-packed `.skill` downloads (also served from [skillerr.com/fixtures](https://dot-skill.github.io/skillerr-com/fixtures)):
+Pre-packed `.skill` downloads (also served from [skillerr.com/fixtures](https://www.skillerr.com/docs/fixtures)):
 
 | File | Profile |
 |------|---------|
