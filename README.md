@@ -45,7 +45,7 @@ See [docs/FAQ.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd).
 | **Trust before run** | None | Inspect seal/issuer/digests without executing (`skill inspect --trust`); `untrusted`/`development`/`self_reported`/`verified_issuer` states, never blurred together |
 | **Quality evidence** | None | Native eval/benchmark loop + an optional sealed score receipt (`skill eval`, `skill score`) — see [docs/EVAL.md](./docs/EVAL.md) |
 | **Handoff** | Copy the chat | Continuity draft — a real AI↔AI handoff object, partial-OK, privacy-scrubbed |
-| **Authenticity path** | None | An optional, extensible permanence-anchor slot (`skill registry`, more anchor kinds later) — the same sealed digest a future verification layer would check against, never a required dependency today |
+| **Authenticity path** | None | Optional public transparency-log anchoring (`skill mint --transparency`, built on the official sigstore/Rekor stack) plus a local transparency log (`skill registry`) — never a required dependency, see [docs/TRANSPARENCY.md](./docs/TRANSPARENCY.md) |
 
 Markdown remains a **lossy adapter only** — not the protocol. Full comparison: [docs/WHY.md](./docs/WHY.md).
 
@@ -181,7 +181,7 @@ Full container spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 ## Status
 
 Specification: Draft **0.5.0** ([docs/PROTOCOL.md](./docs/PROTOCOL.md))  
-Reference CLI: `skillerr` @ **0.8.1**  
+Reference CLI: `skillerr` @ **0.9.0**  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**
@@ -216,7 +216,7 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 - [Why structured packages](./docs/WHY.md) · [Continuity](./docs/CONTINUITY.md) · [Privacy](./docs/PRIVACY.md)
 - [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md) · [Naming](./docs/NAMING.md)
 - [Ingest a SKILL.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [From skill-creator](./docs/FROM-SKILL-CREATOR.md) · [Eval / benchmark](./docs/EVAL.md) · [Bundled scripts / resources](./docs/RESOURCES.md)
-- [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md) · [Trust model](./docs/TRUST-MODEL.md) · [Security](./docs/SECURITY.md) · [Threat model](./docs/THREAT-MODEL.md) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
+- [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md) · [Trust model](./docs/TRUST-MODEL.md) · [Transparency](./docs/TRANSPARENCY.md) · [Security](./docs/SECURITY.md) · [Threat model](./docs/THREAT-MODEL.md) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
 - [Mint](./docs/MINT.md) · [Runtime](./docs/RUNTIME.md) · [Workspace](./docs/WORKSPACE.md) · [File type / OS registration](./docs/FILE-TYPE.md)
 - [RFCs](./docs/rfcs/) — protocol design proposals, spec-only and implemented
 - Site guides: [skillerr.com](https://dot-skill.github.io/skillerr-com/)

@@ -46,7 +46,7 @@ export {
   SEAL_ALGORITHM,
 } from "./mint.js";
 export type { MintOptions, VerifyMintTrustOptions } from "./mint.js";
-export { createEd25519Signer, verifyEd25519Signature } from "./signer.js";
+export { createEd25519Signer, verifyEd25519Signature, derivePublicKeyPem } from "./signer.js";
 export type { IssuerSigner } from "./signer.js";
 export { loadTrustStore, defaultTrustStorePath } from "./trust-store.js";
 export type { TrustStore, TrustStoreKey } from "./trust-store.js";
@@ -59,3 +59,10 @@ export {
   CompileRefusalError,
 } from "./compile.js";
 export type { CompileOptions, CompileResult } from "./compile.js";
+export { anchorToRekor, verifyRekorAnchor, checkRekorOnline } from "./transparency.js";
+export type {
+  TransparencyOptions,
+  TransparencyAnchorResult,
+  VerifyAnchorOptions,
+  AnchorVerification,
+} from "./transparency.js";

@@ -1,7 +1,7 @@
 # Threat model (PROTO-10)
 
 Status: **living document** — describes threats against the reference
-implementation as of protocol Draft 0.5.0 / reference packages 0.8.1. Update
+implementation as of protocol Draft 0.5.0 / reference packages 0.9.0. Update
 this file in the same commit as any change to trust semantics, container
 parsing, or the runtime capability gate (same rule as
 [PROTOCOL.md](./PROTOCOL.md)).
@@ -114,6 +114,7 @@ self-reported fields.
 | A single attestation conflates "an agent authored this" and "a human reviewed this" under one signer — a compromised issuer key forges both claims at once | **not yet mitigated** | RFC 0002 (independent review countersignature) |
 | A compromised or since-revoked key's packages remain fully trusted forever after distribution | **not yet mitigated** — no revocation channel exists | RFC 0003 (revocation records, `expires_at`) |
 | `inspectSkill`'s summary conflated an unverified self-reported "sealed" claim with an actually-verified one, making a hand-edited `mint_status: "minted"` field read as trustworthy at a glance | `claimsSealed` logic fixed, relabeled `CLAIMS SEALED (unverified — run \`skill inspect --trust\`)` | `docs/SECURITY.md` "Inspect before run"; `core.test.ts` |
+| A public transparency-log anchor (Phase E, `--transparency`) is misread as elevated trust — "this is logged publicly" mistaken for "this is safe/verified" | `verify-trust`'s `transparency` field is structurally separate from `trust_state`; anchor presence never upgrades trust classification. Explicit "inclusion ≠ endorsement" framing throughout [docs/TRANSPARENCY.md](./TRANSPARENCY.md) | `transparency.test.ts`; CLI output shape (`trust_state` and `transparency` are sibling fields, never merged) |
 
 ### T4 — Runtime capability escalation (execute-time)
 

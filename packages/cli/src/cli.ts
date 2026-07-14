@@ -34,6 +34,7 @@ import {
   redactSecrets,
   CompileRefusalError,
   createEd25519Signer,
+  derivePublicKeyPem,
   loadTrustStore,
   defaultTrustStorePath,
   ingestSkillMd,
@@ -42,6 +43,10 @@ import {
   finalizeManifest,
   runEvalCase,
   buildBenchmarkReport,
+  addPermanenceAnchor,
+  anchorToRekor,
+  verifyRekorAnchor,
+  checkRekorOnline,
 } from "@skillerr/core";
 import type { GradeOverride } from "@skillerr/core";
 import { buildSkillAssessment } from "./score-adapter.js";
@@ -127,6 +132,7 @@ Create:
                                        Release refuses if incomplete
   skill load <file.skill>              Resume continuity in another AI
   skill mint [file.skill] [--host name] [--signer-key <pem>] [--key-id id]
+             [--transparency] [--rekor-url <url>]
                                        Seal release (host required). No file arg
                                        uses the current workspace's last compile;
                                        an explicit file works standalone, same as
@@ -135,6 +141,12 @@ Create:
                                        --signer-key for a configured Ed25519 issuer
                                        seal (verified_issuer-eligible) — see
                                        skill keygen and docs/KEY-CEREMONY.md
+                                       --transparency additionally logs the sealed
+                                       digest to a public Rekor transparency log
+                                       (requires --signer-key; default log is the
+                                       public rekor.sigstore.dev — PERMANENT and
+                                       WORLD-READABLE once logged, never anchor a
+                                       secret skill). See docs/TRANSPARENCY.md
   skill keygen [-o dir] [--key-id id]  Generate an Ed25519 issuer keypair for
                                        production signing (docs/KEY-CEREMONY.md)
 
@@ -170,8 +182,13 @@ Ingest / run:
   skill validate <file.skill>          Structure + hash integrity
   skill unpack <file.skill>
   skill verify-trust <file.skill> [--profile minted] [--allow-development-issuer]
-                     [--allow-self-reported] [--trust-store <path>]
+                     [--allow-self-reported] [--trust-store <path>] [--online]
                                        Default trust store: ~/.skillerr/trust-store.json
+                                       If the package has a transparency_log anchor,
+                                       verifies its Rekor inclusion proof offline
+                                       (no network) against the pinned issuer key.
+                                       --online additionally re-fetches the entry
+                                       live from Rekor as an extra check
   skill run <file.skill> [--mode execute] [--allow-untrusted]
                                        Dry-run by default; execute refuses
                                        unsigned/dev seals without --allow-untrusted
@@ -635,13 +652,11 @@ async function main() {
         throw new Error("Cannot mint continuity draft. Recompile with --profile release first.");
       }
       const signerKeyPath = opt(rest, "--signer-key");
-      const signer = signerKeyPath
-        ? createEd25519Signer(
-            await readFile(resolve(signerKeyPath), "utf8"),
-            opt(rest, "--key-id") ?? "configured-issuer",
-          )
+      const signerKeyPem = signerKeyPath ? await readFile(resolve(signerKeyPath), "utf8") : undefined;
+      const signer = signerKeyPem
+        ? createEd25519Signer(signerKeyPem, opt(rest, "--key-id") ?? "configured-issuer")
         : undefined;
-      const { packageBytes, files, attestation } = mintSkillPackage(unpacked.raw, {
+      const { packageBytes: mintedBytes, files, attestation } = mintSkillPackage(unpacked.raw, {
         host: requireAgentHost(opt(rest, "--host")),
         provider: process.env.SKILL_PROVIDER,
         model: process.env.SKILL_MODEL,
@@ -669,6 +684,29 @@ async function main() {
           ? { session_id: process.env.SKILL_SESSION_ID }
           : undefined,
       });
+      let packageBytes = mintedBytes;
+      let transparency: Record<string, unknown> | undefined;
+      if (flag(rest, "--transparency")) {
+        if (!signer) {
+          transparency = { ok: false, error: "--transparency requires --signer-key (public-dev HMAC isn't anchored)" };
+        } else {
+          try {
+            const publicKeyPem = derivePublicKeyPem(signerKeyPem!);
+            const { anchor } = await anchorToRekor(attestation.sealed_manifest_digest, signer, publicKeyPem, {
+              rekorUrl: opt(rest, "--rekor-url"),
+            });
+            packageBytes = addPermanenceAnchor(packageBytes, {
+              ...anchor,
+              package_digest: files.manifest.package_digest,
+            });
+            transparency = { ok: true, located_at: anchor.located_at, anchored_at: anchor.anchored_at };
+          } catch (e) {
+            // Anchoring is additive — a network/Rekor failure never discards
+            // an already-valid mint, it's just reported honestly.
+            transparency = { ok: false, error: e instanceof Error ? e.message : String(e) };
+          }
+        }
+      }
       const out = opt(rest, "-o") ?? file;
       await writeFile(resolve(out!), packageBytes);
       console.log(
@@ -680,6 +718,7 @@ async function main() {
             content_id: files.manifest.mint?.content_id,
             package_digest: files.manifest.package_digest,
             generation_usage: attestation.generation_usage,
+            ...(transparency ? { transparency } : {}),
           },
           null,
           2,
@@ -1038,15 +1077,41 @@ async function main() {
       if (!file) usage();
       const profile = (opt(rest, "--profile") ?? "minted") as "open" | "minted" | "anchored";
       const trust_store = loadTrustStore(opt(rest, "--trust-store") ?? defaultTrustStorePath());
-      const result = verifyMintTrust(new Uint8Array(await readFile(resolve(file!))), profile, {
+      const bytes = new Uint8Array(await readFile(resolve(file!)));
+      const result = verifyMintTrust(bytes, profile, {
         allow_development_issuer: flag(rest, "--allow-development-issuer"),
         allow_self_reported: flag(rest, "--allow-self-reported"),
         trust_store,
       });
+      // Transparency anchors are optional and orthogonal to trust_state
+      // (see docs/TRANSPARENCY.md) — checked here, additively, never
+      // replacing the mint trust check above.
+      const anchors = unpackSkill(bytes).manifest.anchors ?? [];
+      const tlogAnchor = anchors.find((a) => a.kind === "transparency_log");
+      let transparency: unknown;
+      if (tlogAnchor && result.attestation?.sealed_manifest_digest) {
+        const pinnedKey = trust_store.keys.find((k) => k.key_id === tlogAnchor.issuer);
+        if (!pinnedKey) {
+          transparency = { ok: false, error: `No trust-store entry for issuer "${tlogAnchor.issuer}" — cannot verify anchor` };
+        } else {
+          const offline = await verifyRekorAnchor(
+            tlogAnchor,
+            result.attestation.sealed_manifest_digest,
+            pinnedKey.public_key_pem,
+          );
+          if (flag(rest, "--online") && offline.log_index) {
+            const online = await checkRekorOnline(offline.log_index, tlogAnchor.located_at);
+            transparency = { ...offline, online_check: online };
+          } else {
+            transparency = offline;
+          }
+        }
+      }
       console.log(
         JSON.stringify(
           {
             ...result,
+            ...(transparency ? { transparency } : {}),
             docs: "https://github.com/dot-skill/skillerr/blob/main/docs/WHAT-IS-VERIFIABLE.md",
           },
           null,

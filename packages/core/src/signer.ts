@@ -63,3 +63,14 @@ export function verifyEd25519Signature(
     return false;
   }
 }
+
+/**
+ * Derives the SPKI PEM public key from a PKCS8 PEM private key — used when
+ * a caller only has `--signer-key` (private) but needs the public half too,
+ * e.g. for transparency-log anchoring (see transparency.ts).
+ */
+export function derivePublicKeyPem(privateKeyPem: string): string {
+  const privateKey = createPrivateKey(privateKeyPem);
+  const publicKey = createPublicKey(privateKey as unknown as string);
+  return publicKey.export({ format: "pem", type: "spki" }) as string;
+}

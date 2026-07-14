@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: protocol **Draft 0.5.0**; reference packages **0.8.1**.
+Status: protocol **Draft 0.5.0**; reference packages **0.9.0**.
 
 ## Now (done in this repo)
 
@@ -46,6 +46,11 @@ Status: protocol **Draft 0.5.0**; reference packages **0.8.1**.
       [docs/RESOURCES.md](./RESOURCES.md). Found and fixed a real gap in
       the process: `exec`-class capabilities had no deny-by-default gate
       at all (unlike read/write/destructive/network)
+- [x] Optional public transparency-log anchoring (`skill mint
+      --transparency`, `skill verify-trust --online`), built on the
+      official `@sigstore/*` client libraries against the public Rekor
+      log (or a self-hosted one via `--rekor-url`) — see
+      [docs/TRANSPARENCY.md](./TRANSPARENCY.md)
 
 ## Next (great contribution targets)
 
@@ -54,7 +59,15 @@ Status: protocol **Draft 0.5.0**; reference packages **0.8.1**.
       `assertCapabilityAllowed` — grammar-valid today (PROTO-5) but not yet
       functional; see the `scoped-npm-monorepo-publishing` gold example
 - [ ] Validate the published authoring schema with an independent implementation
-- [ ] HTTP transparency-log server (same log format as local registry)
+- [ ] Fulcio keyless mint (`skill mint --keyless`) — OIDC-bound identity
+      instead of a pinned key; zero setup in CI (ambient GitHub Actions
+      OIDC token, same as this repo's own `npm publish --provenance`),
+      interactive browser login when run locally. See docs/TRANSPARENCY.md
+- [ ] Public verify API + website utility (`GET /skill/{package_digest}`)
+      — needs real hosting, not part of the static docs site
+- [ ] Per-claim assurance model (`VerifiedClaims[]`) so no UI or agent can
+      structurally present a self-reported field as verified — see the
+      Launch Readiness plan's Phase E2
 - [ ] Stronger `verify` assertion language + fixtures — would also enrich
       `skill score`'s validationEvidence beyond contains:/not_contains:/regex:
 - [ ] Host adapters: local OpenAI-compatible, Cursor, Claude Code, Codex —

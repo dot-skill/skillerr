@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.9.0 — 2026-07-14
+
+Launch Readiness Phase E (partial) — optional public transparency-log
+anchoring via Rekor, built on the official `@sigstore/*` client libraries
+rather than a hand-rolled Merkle-proof implementation. See
+docs/TRANSPARENCY.md for what this proves and doesn't.
+
+- `skill mint --transparency [--rekor-url <url>]` — after signing (requires
+  `--signer-key`; the public-dev HMAC path is never anchored), submits the
+  sealed manifest digest to a Rekor transparency log and attaches the
+  result as a `transparency_log` PermanenceAnchor. A mint with no network
+  access still succeeds exactly as before, just without an anchor —
+  anchoring is additive, never a new failure mode for minting itself.
+- `skill verify-trust` now checks any `transparency_log` anchor's Rekor
+  inclusion proof offline (cached sigstore trusted root, no live query)
+  against the pinned issuer key. `--online` additionally re-fetches the
+  entry live from Rekor as an extra check.
+- Real architecture finding, not just a config knob: Rekor's hashedrekord
+  entry type requires Ed25519 signatures to be Ed25519ph (SHA-512
+  prehash) — confirmed against the live public instance — but
+  `@sigstore/sign`'s message-signature bundler hardcodes SHA-256 with no
+  override. Fixed by using a DSSE-envelope bundle instead, which Rekor
+  verifies directly without a hash-algorithm mismatch, and works with our
+  existing pure-Ed25519 signer unchanged.
+- Caught and fixed a real verification bug during testing: `@sigstore/verify`'s
+  DSSE signature content never compares the envelope's payload against the
+  digest being checked — only the signature's internal consistency.
+  Without an explicit payload comparison (now added), a validly-signed,
+  validly-logged anchor for a *different* digest would have incorrectly
+  verified as valid for any digest.
+- Tested against the real public Rekor end to end (`keygen` → `pack` →
+  `mint --transparency` → `verify-trust --online`), not just unit tests.
+  The automated suite itself runs fully offline: `anchorToRekor`'s tests
+  inject a stub witness, and `verifyRekorAnchor`'s positive-path test uses
+  a real bundle captured from a genuine (disposable-key) Rekor submission
+  — fixtures/transparency/rekor-anchor.json — not a synthetic mock of the
+  verification math.
+- Not yet done (tracked, not silently skipped): Fulcio keyless signing
+  (`--keyless`), the public verify API + website utility, and Phase E2's
+  per-claim assurance model. See ROADMAP.md.
+
 ## 0.8.1 — 2026-07-14
 
 Launch Readiness Phase D — plain-language trust/threat/verifiability docs.
