@@ -36,6 +36,7 @@ export type MintStatus = "draft" | "minted";
 export type PermanenceAnchorKind =
   | "registry"
   | "transparency_log"
+  | "keyless_identity"
   | "ledger"
   | "content_addressed_store"
   | "other";
@@ -382,6 +383,19 @@ export interface TrustView {
   issues: Array<{ severity: "error" | "warning"; code: string; message: string }>;
 }
 
+/**
+ * `issuer` means different things depending on `kind`:
+ * - `transparency_log`: our own trust-store `key_id` — the anchor was made
+ *   with a stable, pre-pinnable key, so this string is meant to be looked
+ *   up in a trust store.
+ * - `keyless_identity`: the OIDC issuer URL (e.g.
+ *   `https://token.actions.githubusercontent.com`) that vouched for the
+ *   ephemeral, one-time Fulcio-issued signing key — there is no stable
+ *   key_id to pin, since a fresh key is minted per anchor and thrown away.
+ *   The bound identity itself (e.g. a specific CI workflow ref) lives in
+ *   `extensions.owner_identity` and is re-derived from the certificate at
+ *   verify time, never trusted from the stored string alone.
+ */
 export interface PermanenceAnchor {
   kind: PermanenceAnchorKind;
   package_digest: string;

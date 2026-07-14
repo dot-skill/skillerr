@@ -48,6 +48,8 @@ import {
   verifyRekorAnchor,
   checkRekorOnline,
   rekorSearchUrl,
+  mintKeylessAnchor,
+  verifyKeylessAnchor,
 } from "@skillerr/core";
 import type { GradeOverride } from "@skillerr/core";
 import { buildSkillAssessment } from "./score-adapter.js";
@@ -133,7 +135,7 @@ Create:
                                        Release refuses if incomplete
   skill load <file.skill>              Resume continuity in another AI
   skill mint [file.skill] [--host name] [--signer-key <pem>] [--key-id id]
-             [--transparency] [--rekor-url <url>]
+             [--transparency] [--rekor-url <url>] [--keyless] [--fulcio-url <url>]
                                        Seal release (host required). No file arg
                                        uses the current workspace's last compile;
                                        an explicit file works standalone, same as
@@ -151,6 +153,15 @@ Create:
                                        link so anyone can check the entry
                                        independently, not just trust this tool's
                                        word. See docs/TRANSPARENCY.md
+                                       --keyless adds a second, independent
+                                       anchor via Fulcio + Rekor, bound to your
+                                       OIDC identity instead of --signer-key —
+                                       no interactive setup needed in CI (GitHub
+                                       Actions' ambient id-token: write, same
+                                       mechanism npm trusted publishing uses);
+                                       fails closed outside such an environment.
+                                       No local/interactive login yet. Combines
+                                       with any signer choice, or none.
   skill keygen [-o dir] [--key-id id]  Generate an Ed25519 issuer keypair for
                                        production signing (docs/KEY-CEREMONY.md)
 
@@ -194,6 +205,13 @@ Ingest / run:
                                        and (if verified, and logged to the public
                                        instance) prints a search.sigstore.dev link
                                        so you can check the same entry yourself.
+                                       A keyless_identity anchor (see --keyless
+                                       under skill mint) is verified the same
+                                       way, but against Fulcio's CA instead of a
+                                       pinned key, and reports owner_identity —
+                                       always re-derived from the certificate
+                                       during this check, never just echoed from
+                                       the package's own claim.
                                        --online additionally re-fetches the entry
                                        live from Rekor as an extra check
   skill run <file.skill> [--mode execute] [--allow-untrusted]
@@ -721,6 +739,33 @@ async function main() {
           }
         }
       }
+      let keyless: Record<string, unknown> | undefined;
+      if (flag(rest, "--keyless")) {
+        // Independent of --transparency/--signer-key entirely — this
+        // doesn't touch the container's own seal, it adds a second,
+        // separately-checkable claim: an OIDC identity (not our own key)
+        // attesting to this digest via Fulcio + Rekor. See docs/TRANSPARENCY.md.
+        try {
+          const { anchor, log_index, owner_identity } = await mintKeylessAnchor(attestation.sealed_manifest_digest, {
+            rekorUrl: opt(rest, "--rekor-url"),
+            fulcioUrl: opt(rest, "--fulcio-url"),
+          });
+          packageBytes = addPermanenceAnchor(packageBytes, {
+            ...anchor,
+            package_digest: files.manifest.package_digest,
+          });
+          keyless = {
+            ok: true,
+            owner_identity,
+            located_at: anchor.located_at,
+            anchored_at: anchor.anchored_at,
+            log_index,
+            rekor_url: rekorSearchUrl(anchor, log_index),
+          };
+        } catch (e) {
+          keyless = { ok: false, error: e instanceof Error ? e.message : String(e) };
+        }
+      }
       const out = opt(rest, "-o") ?? file;
       await writeFile(resolve(out!), packageBytes);
       console.log(
@@ -733,6 +778,7 @@ async function main() {
             package_digest: files.manifest.package_digest,
             generation_usage: attestation.generation_usage,
             ...(transparency ? { transparency } : {}),
+            ...(keyless ? { keyless } : {}),
           },
           null,
           2,
@@ -1127,11 +1173,29 @@ async function main() {
           }
         }
       }
+      // Same additive pattern as the transparency_log anchor above, but
+      // verified against Fulcio's CA (part of the trusted root) instead of
+      // a trust-store-pinned key — see verifyKeylessAnchor.
+      const keylessAnchor = anchors.find((a) => a.kind === "keyless_identity");
+      let keyless: unknown;
+      if (keylessAnchor && result.attestation?.sealed_manifest_digest) {
+        const offline = await verifyKeylessAnchor(keylessAnchor, result.attestation.sealed_manifest_digest);
+        const withUrl = offline.ok
+          ? { ...offline, rekor_url: rekorSearchUrl(keylessAnchor, offline.log_index) }
+          : offline;
+        if (flag(rest, "--online") && offline.log_index) {
+          const online = await checkRekorOnline(offline.log_index, keylessAnchor.located_at);
+          keyless = { ...withUrl, online_check: online };
+        } else {
+          keyless = withUrl;
+        }
+      }
       console.log(
         JSON.stringify(
           {
             ...result,
             ...(transparency ? { transparency } : {}),
+            ...(keyless ? { keyless } : {}),
             docs: "https://github.com/dot-skill/skillerr/blob/main/docs/WHAT-IS-VERIFIABLE.md",
           },
           null,

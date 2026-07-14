@@ -59,10 +59,20 @@ export {
   CompileRefusalError,
 } from "./compile.js";
 export type { CompileOptions, CompileResult } from "./compile.js";
-export { anchorToRekor, verifyRekorAnchor, checkRekorOnline, rekorSearchUrl } from "./transparency.js";
+export {
+  anchorToRekor,
+  verifyRekorAnchor,
+  checkRekorOnline,
+  rekorSearchUrl,
+  mintKeylessAnchor,
+  verifyKeylessAnchor,
+} from "./transparency.js";
 export type {
   TransparencyOptions,
   TransparencyAnchorResult,
   VerifyAnchorOptions,
   AnchorVerification,
+  KeylessIdentityOptions,
+  KeylessAnchorResult,
+  KeylessVerification,
 } from "./transparency.js";

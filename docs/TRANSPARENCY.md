@@ -40,20 +40,26 @@ Neither the CLI nor `www.skillerr.com`'s verify page ask you to trust their own 
 
 Follow the link and you're looking at the raw log entry on sigstore's own infrastructure, not anything this project runs or could quietly alter.
 
-## Optional keyless (Fulcio) signing — planned, not yet implemented
+## Optional keyless (Fulcio) signing
 
-The plan: `--keyless` would swap the signer — instead of your own `configured_ed25519` key, an ephemeral keypair generated locally and Fulcio issuing a short-lived certificate binding it to your OIDC identity (GitHub, Google, etc.) for the few seconds it takes to sign and log. The resulting `owner_identity` would then be a real, independently-checkable OIDC identity rather than an opaque key someone told you to trust — see [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md)'s "key-bound, but requires you to already trust the key" section for why this would be a meaningfully stronger claim than a bare pinned key.
+`skill mint --keyless` adds a **second, independent** anchor alongside (never instead of) whatever the container's own seal already is (public-dev HMAC or `configured_ed25519`) — a `PermanenceAnchor { kind: "keyless_identity" }`, not a change to `mintSkillPackage`'s own signing path. Instead of a stable, pre-pinned key, a fresh single-use keypair is generated and Fulcio issues a short-lived certificate binding it to your OIDC identity (GitHub Actions, Google, etc.) for the few seconds it takes to sign and log; that certificate + the Rekor entry are the anchor's `receipt`, same shape as a `--transparency` anchor's.
 
-The CI path (GitHub Actions with `id-token: write` permission, reusing the same ambient OIDC credential that already powers this repo's own `npm publish --provenance`) is the first target, since it needs no interactive setup; a local interactive-browser-login path (the same flow `cosign sign` uses) is a fast-follow. Neither exists yet — there is no `--keyless` flag today. Tracked in [ROADMAP.md](./ROADMAP.md).
+This is *why* it's a distinct anchor `kind` and not folded into `transparency_log`: a one-time ephemeral key has no stable `key_id` to pre-pin in a trust store, so it's a fundamentally different trust mechanism from `verified_issuer` — `--keyless` verification checks the certificate chains to Fulcio's CA (part of the sigstore trusted root), not that some `key_id` appears in a trust store a human curated in advance. `skill verify-trust` re-derives `owner_identity` (and the OIDC `issuer` that vouched for it) from the certificate itself during verification — never from the anchor's own stored `extensions.owner_identity`, which is mint-time convenience only, not a checked claim. See [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md)'s "key-bound, but requires you to already trust the key" section for why an OIDC-bound identity is a meaningfully stronger claim than a bare pinned key.
+
+**What's shipped:** the CI-ambient path — inside GitHub Actions with `id-token: write` permission, the same ambient OIDC credential that already powers this repo's own `npm publish --provenance` is reused automatically, no interactive setup needed. Run outside such an environment, it fails closed with a clear error rather than silently doing nothing or falling back to something weaker.
+
+**Not shipped yet:** an interactive/browser-login OIDC provider for local (non-CI) use — the same flow `cosign sign` uses. Tracked in [ROADMAP.md](./ROADMAP.md).
+
+Same permanence caveat as `--transparency`: the certificate and Rekor entry are logged to the public instance by default and are **permanent and world-readable** once logged.
 
 ## What this is not
 
 - Not a marketplace, not a payment rail, not a reputation score. See [ROADMAP.md](./ROADMAP.md) / Launch Readiness Phase F for where publisher identity (built on the same Fulcio OIDC identity) eventually connects to commerce concerns — deliberately kept separate from this transparency layer.
 - Not required. Every trust state and every CLI command that worked before this phase still works identically without `--transparency`/`--keyless`. This is purely additive.
-- Not a replacement for `verified_issuer`/trust-store semantics — see [TRUST-MODEL.md](./TRUST-MODEL.md). A transparency-anchored package can still be `development` or `self_reported` trust; anchoring and trust classification are orthogonal.
+- Not a replacement for `verified_issuer`/trust-store semantics — see [TRUST-MODEL.md](./TRUST-MODEL.md). An anchored package can still be `development` or `self_reported` trust; anchoring and trust classification are orthogonal.
 
 ## Related
 
-- [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md) — updated with `log_inclusion`/`log_timestamp` (cryptographic) and `owner_identity` (identity-bound when Fulcio-signed) once this phase lands
+- [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md) — `log_inclusion`/`log_timestamp` (cryptographic, either anchor kind) and `owner_identity` (identity-bound, `--keyless` only)
 - [TRUST-MODEL.md](./TRUST-MODEL.md) — the four `trust_state` values, unaffected by anchoring
-- [KEY-CEREMONY.md](./KEY-CEREMONY.md) — the non-keyless issuer key path this builds on
+- [KEY-CEREMONY.md](./KEY-CEREMONY.md) — the non-keyless issuer key path `--transparency` builds on

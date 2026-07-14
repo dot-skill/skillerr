@@ -32,8 +32,7 @@ This is real cryptography — you're not being lied to about signature validity 
 |---|---|
 | **Log inclusion** — this exact signed digest was submitted to a specific public Rekor log entry | `skill verify-trust` checks the entry's inclusion proof against the log's signed tree head — no live network call needed by default (`--online` re-fetches the entry as an extra check). See [TRANSPARENCY.md](./TRANSPARENCY.md). |
 | **Log timestamp** — when that entry was integrated into the log | The log's own `integratedTime`, not a self-claimed value — this is the one timestamp in this whole system that isn't just "whatever the signer's machine said." |
-
-This still doesn't identify *who* the signer is (see above) — Rekor anchoring proves *when and that* something was logged, not *who* logged it, unless the mint also used Fulcio keyless signing (not yet implemented — see "Related" below).
+| **`owner_identity`** — a real OIDC identity (e.g. a specific CI workflow ref), *only* when the package was minted with `skill mint --keyless` | `skill verify-trust` re-derives this from the Fulcio-issued certificate's chain-of-trust to Fulcio's CA during verification — never from the package's own stored claim. A `--transparency`-only anchor (no `--keyless`) has no `owner_identity` at all: it proves *when and that* something was logged, signed by *some* key, but not *whose* identity backs that key (see "key-bound" section above). |
 
 ## What's self-reported — NOT guaranteed by anything above
 
@@ -54,7 +53,7 @@ This still doesn't identify *who* the signer is (see above) — Rekor anchoring 
 
 ## Roadmap: what's still pending
 
-Optional keyless signing (Fulcio) is **not yet implemented**. When it ships, `owner_identity` becomes a real, independently-checkable OIDC identity instead of an opaque key you were told to trust — a genuinely stronger claim than anything in the "key-bound" section above. Log inclusion/timestamp (the previous item on this list) already shipped — see the section above, not a roadmap item anymore.
+Optional keyless signing (Fulcio) shipped for the CI-ambient case (`skill mint --keyless` inside GitHub Actions or similar, with no interactive setup needed) — see the `owner_identity` row above and [TRANSPARENCY.md](./TRANSPARENCY.md). What's still pending is an interactive/browser-login OIDC provider for running `--keyless` locally, outside CI — tracked in [ROADMAP.md](./ROADMAP.md).
 
 ## Related
 

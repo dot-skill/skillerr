@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/core",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "Compile, pack, validate, and mint portable .skill packages",
   "license": "MIT",
   "author": {
@@ -56,7 +56,7 @@
     "@sigstore/sign": "^5.0.0",
     "@sigstore/tuf": "^4.0.2",
     "@sigstore/verify": "^4.1.0",
-    "@skillerr/protocol": "^0.9.6",
+    "@skillerr/protocol": "^0.9.7",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "fflate": "^0.8.2"

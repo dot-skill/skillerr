@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/cli",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "CLI implementation for portable .skill packages (install skillerr for the skill bin)",
   "license": "MIT",
   "author": {
@@ -50,11 +50,11 @@
     "test": "node --test dist/conformance.test.js dist/adversarial.test.js dist/score-adapter.test.js"
   },
   "dependencies": {
-    "@skillerr/core": "^0.9.6",
-    "@skillerr/protocol": "^0.9.6",
-    "@skillerr/registry": "^0.9.6",
-    "@skillerr/runtime": "^0.9.6",
-    "@skillerr/workspace": "^0.9.6"
+    "@skillerr/core": "^0.9.7",
+    "@skillerr/protocol": "^0.9.7",
+    "@skillerr/registry": "^0.9.7",
+    "@skillerr/runtime": "^0.9.7",
+    "@skillerr/workspace": "^0.9.7"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

@@ -91,12 +91,21 @@ a signature that verifies against a *pinned* key with a live
 No entry, an expired entry, or a host not in `allowed_hosts` → falls back
 to `self_reported` at best, never silently upgraded.
 
-### `issuer_class=keyless` (reserved, future)
+### `issuer_class=keyless` (reserved, future) — superseded by what shipped
 
-Leave room for sigstore-style keyless signing (ephemeral key + transparency
-log + OIDC identity binding, no long-lived secret to manage or leak) as a
-later `issuer_class` value. Not specified further here — flagged so a
-future RFC doesn't have to renegotiate the `issuer_class` enum shape.
+This sketch assumed keyless signing would become a new `issuer_class`
+value on the container's own seal (`mintSkillPackage`'s signer). What
+actually shipped (`skill mint --keyless`, see
+[TRANSPARENCY.md](../TRANSPARENCY.md)) took a different, more
+conservative shape: a separate, additive `PermanenceAnchor { kind:
+"keyless_identity" }`, layered *alongside* whatever the container's own
+seal already is, not a new value of `issuer_class` itself. Reasoning:
+`issuer_class`/`verified_issuer` trust is fundamentally about a
+*pre-pinned, stable* key a human curated in a trust store in advance — a
+one-time Fulcio-issued ephemeral key has no stable `key_id` to ever pin,
+so conflating the two would have quietly weakened what `verified_issuer`
+means. Keeping them as two orthogonal claims (see
+[WHAT-IS-VERIFIABLE.md](../WHAT-IS-VERIFIABLE.md)) avoided that.
 
 ## Schema diff
 

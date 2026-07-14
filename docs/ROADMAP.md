@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: protocol **Draft 0.5.0**; reference packages **0.9.6**.
+Status: protocol **Draft 0.5.0**; reference packages **0.9.7**.
 
 ## Now (done in this repo)
 
@@ -51,6 +51,26 @@ Status: protocol **Draft 0.5.0**; reference packages **0.9.6**.
       official `@sigstore/*` client libraries against the public Rekor
       log (or a self-hosted one via `--rekor-url`) — see
       [docs/TRANSPARENCY.md](./TRANSPARENCY.md)
+- [x] Independent Rekor verification link (`rekorSearchUrl`) — both
+      `skill mint --transparency`/`--keyless` and `skill verify-trust`
+      print a `search.sigstore.dev` link to a verified anchor's log
+      entry, so a trust verdict is independently checkable, not just
+      this tool's word
+- [x] Fulcio keyless mint (`skill mint --keyless`) — OIDC-bound identity
+      instead of a pinned key, added as a second anchor alongside (not
+      replacing) the container's own seal. CI-ambient path shipped
+      (zero setup — reuses GitHub Actions' `id-token: write`, the same
+      mechanism this repo's own `npm publish --provenance` uses; fails
+      closed outside such an environment). Interactive browser login for
+      local use is not yet implemented. See
+      [docs/TRANSPARENCY.md](./TRANSPARENCY.md)
+- [x] Public verify utility on `www.skillerr.com` — upload a `.skill`
+      file, get back the same TrustView `skill inspect --trust` would
+      report, plus the transparency-log link above when applicable. Not
+      the digest-lookup `GET /skill/{package_digest}` API originally
+      sketched here — that would need a hosted registry to look digests
+      up against, which doesn't exist; this shipped as upload-based
+      instead
 
 ## Next (great contribution targets)
 
@@ -59,12 +79,9 @@ Status: protocol **Draft 0.5.0**; reference packages **0.9.6**.
       `assertCapabilityAllowed` — grammar-valid today (PROTO-5) but not yet
       functional; see the `scoped-npm-monorepo-publishing` gold example
 - [ ] Validate the published authoring schema with an independent implementation
-- [ ] Fulcio keyless mint (`skill mint --keyless`) — OIDC-bound identity
-      instead of a pinned key; zero setup in CI (ambient GitHub Actions
-      OIDC token, same as this repo's own `npm publish --provenance`),
-      interactive browser login when run locally. See docs/TRANSPARENCY.md
-- [ ] Public verify API + website utility (`GET /skill/{package_digest}`)
-      — needs real hosting, not part of the static docs site
+- [ ] Interactive/browser-login OIDC provider for `skill mint --keyless`
+      run locally (outside CI) — the CI-ambient path already shipped, see
+      the "Now" section above
 - [ ] Per-claim assurance model (`VerifiedClaims[]`) so no UI or agent can
       structurally present a self-reported field as verified — see the
       Launch Readiness plan's Phase E2

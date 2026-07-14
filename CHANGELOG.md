@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.9.7 — 2026-07-14
+
+Fulcio keyless mint: `skill mint --keyless` adds a second, independent
+anchor (`PermanenceAnchor { kind: "keyless_identity" }`) alongside
+whatever the container's own seal already is — an ephemeral, single-use
+keypair signed by a Fulcio-issued certificate bound to your OIDC
+identity, then logged to Rekor exactly like `--transparency`. Never
+replaces or weakens `mintSkillPackage`'s own signing path, and is
+deliberately kept as a separate trust mechanism from `verified_issuer`:
+a one-time key has no stable `key_id` to pre-pin in a trust store, so
+`skill verify-trust` checks a `keyless_identity` anchor by verifying
+the certificate chains to Fulcio's CA, not by trust-store lookup, and
+always re-derives `owner_identity` from the certificate at verify
+time — never from the anchor's own stored claim.
+
+Ships the CI-ambient OIDC path only (zero setup inside GitHub Actions'
+`id-token: write`, reusing the same mechanism this repo's own `npm
+publish --provenance` already depends on; fails closed outside such an
+environment). An interactive/browser-login path for local use is not
+yet implemented — tracked in `docs/ROADMAP.md`.
+
+New `mintKeylessAnchor`/`verifyKeylessAnchor` in `@skillerr/core`;
+`rekorSearchUrl` now also recognizes `keyless_identity` anchors on the
+public Rekor instance. Tested against a synthetic, checked-in test-only
+CA (`fixtures/transparency/keyless-test-pki.json`, generated once with
+openssl) covering `mintKeylessAnchor`'s certificate-parsing logic and
+`verifyKeylessAnchor`'s pre-crypto checks (digest match, anchor kind,
+certificate presence) — the full crypto positive path (real Fulcio
+cert chaining to the real trusted root, real Rekor inclusion proof)
+isn't fixture-tested here, the same way `verifyRekorAnchor`'s positive
+path needed a real captured bundle rather than a synthetic one; it
+would need an actual GitHub Actions run with `id-token: write` to
+capture, which is a separate live-infrastructure decision.
+
+Also fixed a design mismatch in `docs/rfcs/0001-asymmetric-signatures-
+trust-store.md`: the original RFC sketched keyless signing as a future
+`issuer_class` value on the container's own seal. What shipped is
+different (and more conservative) — a separate, additive anchor, never
+a change to `issuer_class` — documented as a superseded-by-what-shipped
+delta, matching this RFC's existing convention for PROTO-2.
+
 ## 0.9.6 — 2026-07-14
 
 Independent Rekor verification, everywhere a trust verdict is shown.

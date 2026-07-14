@@ -14,13 +14,18 @@ import {
   DSSEBundleBuilder,
   RekorWitness,
   DEFAULT_REKOR_URL,
+  DEFAULT_FULCIO_URL,
+  FulcioSigner,
+  CIContextProvider,
   type Signer as SigstoreSigner,
   type Signature as SigstoreSignature,
   type Witness,
+  type IdentityProvider,
 } from "@sigstore/sign";
 import { bundleToJSON, bundleFromJSON, type Bundle } from "@sigstore/bundle";
 import { toSignedEntity, Verifier, toTrustMaterial, type TrustMaterial } from "@sigstore/verify";
 import { getTrustedRoot } from "@sigstore/tuf";
+import { X509Certificate } from "@sigstore/core";
 import { PublicKeyDetails, type PublicKey as ProtoPublicKey } from "@sigstore/protobuf-specs";
 import type { PermanenceAnchor } from "@skillerr/protocol";
 import type { IssuerSigner } from "./signer.js";
@@ -104,6 +109,99 @@ export async function anchorToRekor(
   };
 }
 
+export interface KeylessIdentityOptions {
+  fulcioUrl?: string;
+  rekorUrl?: string;
+  /**
+   * Defaults to `CIContextProvider`, which only finds an ambient OIDC token
+   * in a CI environment that provides one (e.g. GitHub Actions' built-in
+   * `id-token: write` — the same mechanism npm's trusted publishing uses;
+   * no interactive setup needed there). Run outside such an environment, it
+   * fails closed with a clear error rather than silently doing nothing.
+   * There is no interactive/browser-login provider yet — see
+   * docs/TRANSPARENCY.md.
+   */
+  identityProvider?: IdentityProvider;
+  /** OIDC audience to request the token for — see `CIContextProvider`'s default. */
+  audience?: string;
+  /** Injectable for tests — bypasses the real Fulcio network call (and the identity provider entirely). */
+  signer?: SigstoreSigner;
+  /** Injectable for tests — bypasses the real Rekor network call. */
+  witness?: Witness;
+}
+
+export interface KeylessAnchorResult {
+  anchor: Omit<PermanenceAnchor, "package_digest">;
+  log_index: string;
+  /**
+   * Read directly off the Fulcio-issued certificate at mint time, for
+   * immediate feedback — not independently re-verified yet (that only
+   * happens once, cryptographically, in `verifyKeylessAnchor`). Treat this
+   * as "here's who Fulcio says you are," not as a trust claim in itself.
+   */
+  owner_identity?: string;
+}
+
+/**
+ * Fulcio counterpart to `anchorToRekor`: instead of signing with our own
+ * long-lived configured key, generates a fresh, single-use keypair and asks
+ * Fulcio to bind it to the caller's OIDC identity with a short-lived
+ * certificate, then anchors the same `sealedManifestDigest` to Rekor using
+ * that certificate. Additive, exactly like `anchorToRekor` — this never
+ * replaces the container's own seal (public-dev HMAC or `configured_ed25519`
+ * — see mint.ts); it's an independent, orthogonal claim: "a human/CI job
+ * with this OIDC identity attested to this digest at this time," verifiable
+ * against Fulcio's and Rekor's public infrastructure, not against anything
+ * this project controls.
+ *
+ * A one-time ephemeral key has no stable key_id to pre-pin in a trust
+ * store, so this is a fundamentally different trust mechanism from
+ * `verified_issuer` — never conflate the two (see the `PermanenceAnchor`
+ * doc comment in @skillerr/protocol).
+ */
+export async function mintKeylessAnchor(
+  sealedManifestDigest: string,
+  opts: KeylessIdentityOptions = {},
+): Promise<KeylessAnchorResult> {
+  const rekorUrl = opts.rekorUrl ?? DEFAULT_REKOR_URL;
+  const fulcioUrl = opts.fulcioUrl ?? DEFAULT_FULCIO_URL;
+  const witness = opts.witness ?? new RekorWitness({ rekorBaseURL: rekorUrl });
+  const signer =
+    opts.signer ??
+    new FulcioSigner({
+      identityProvider: opts.identityProvider ?? new CIContextProvider(opts.audience),
+      fulcioBaseURL: fulcioUrl,
+    });
+  const builder = new DSSEBundleBuilder({ signer, witnesses: [witness] });
+  const bundle = await builder.create({
+    data: Buffer.from(sealedManifestDigest, "utf8"),
+    type: DIGEST_PAYLOAD_TYPE,
+  });
+  const tlogEntry = bundle.verificationMaterial.tlogEntries[0];
+  if (!tlogEntry) {
+    throw new Error("Rekor witness returned no transparency log entry — anchoring failed silently, refusing to report success");
+  }
+  if (bundle.verificationMaterial.content.$case !== "certificate") {
+    throw new Error("Fulcio did not return a signing certificate — cannot complete a keyless anchor");
+  }
+  const leafCertDer = bundle.verificationMaterial.content.certificate.rawBytes;
+  const ownerIdentity = leafCertDer
+    ? X509Certificate.parse(leafCertDer as unknown as Buffer<ArrayBuffer>).subjectAltName
+    : undefined;
+  return {
+    anchor: {
+      kind: "keyless_identity",
+      located_at: rekorUrl,
+      anchored_at: new Date(Number(tlogEntry.integratedTime) * 1000).toISOString(),
+      issuer: fulcioUrl,
+      receipt: bundleToJSON(bundle),
+      ...(ownerIdentity ? { extensions: { owner_identity: ownerIdentity } } : {}),
+    },
+    log_index: String(tlogEntry.logIndex),
+    owner_identity: ownerIdentity,
+  };
+}
+
 export interface VerifyAnchorOptions {
   /** Skip fetching/caching the current sigstore trusted root (offline/test use). */
   trustedRoot?: Awaited<ReturnType<typeof getTrustedRoot>>;
@@ -174,6 +272,68 @@ export async function verifyRekorAnchor(
   }
 }
 
+export interface KeylessVerification {
+  ok: boolean;
+  log_index?: string;
+  integrated_time?: string;
+  log_id?: string;
+  /** Re-derived from the certificate during this verification, not read from the anchor's stored `extensions` — never trust a claim we didn't just crypto-check. */
+  owner_identity?: string;
+  owner_issuer?: string;
+  error?: string;
+}
+
+/**
+ * Verifies a `keyless_identity` anchor: same digest-match and Rekor
+ * inclusion checks as `verifyRekorAnchor`, but instead of looking up a
+ * pinned key in our own trust store, verifies the embedded certificate
+ * chain against Fulcio's CA (part of the sigstore trusted root) and
+ * extracts the bound OIDC identity from the now-verified certificate —
+ * never from the anchor's own `extensions.owner_identity`, which is only
+ * ever mint-time convenience, not a checked claim.
+ */
+export async function verifyKeylessAnchor(
+  anchor: PermanenceAnchor,
+  sealedManifestDigest: string,
+  opts: VerifyAnchorOptions = {},
+): Promise<KeylessVerification> {
+  if (anchor.kind !== "keyless_identity" || !anchor.receipt) {
+    return { ok: false, error: "Not a keyless_identity anchor with a receipt" };
+  }
+  try {
+    const bundle = bundleFromJSON(anchor.receipt) as Bundle;
+    if (bundle.content.$case !== "dsseEnvelope") {
+      return { ok: false, error: "Expected a DSSE-envelope bundle" };
+    }
+    const actualPayload = bundle.content.dsseEnvelope.payload.toString("utf8");
+    if (actualPayload !== sealedManifestDigest) {
+      return { ok: false, error: "Anchor payload does not match the digest being verified" };
+    }
+    if (bundle.verificationMaterial.content.$case !== "certificate" && bundle.verificationMaterial.content.$case !== "x509CertificateChain") {
+      return { ok: false, error: "Anchor's bundle has no certificate to verify" };
+    }
+    const signedEntity = toSignedEntity(bundle, Buffer.from(sealedManifestDigest, "utf8"));
+    const trustedRoot = opts.trustedRoot ?? (await getTrustedRoot());
+    // No pinned key map — a keyless anchor's trust comes from the cert
+    // chaining to Fulcio's CA (already part of the trusted root), not from
+    // any key this project pins.
+    const trustMaterial: TrustMaterial = toTrustMaterial(trustedRoot);
+    const verifier = new Verifier(trustMaterial, { tlogThreshold: 1 });
+    const signer = verifier.verify(signedEntity);
+    const tlogEntry = bundle.verificationMaterial.tlogEntries[0];
+    return {
+      ok: true,
+      log_index: tlogEntry?.logIndex !== undefined ? String(tlogEntry.logIndex) : undefined,
+      integrated_time: tlogEntry?.integratedTime !== undefined ? String(tlogEntry.integratedTime) : undefined,
+      log_id: tlogEntry?.logId?.keyId ? Buffer.from(tlogEntry.logId.keyId).toString("hex") : undefined,
+      owner_identity: signer.identity?.subjectAlternativeName,
+      owner_issuer: signer.identity?.extensions?.issuer,
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 /** The only Rekor instance `search.sigstore.dev` actually indexes. */
 const PUBLIC_REKOR_URL = "https://rekor.sigstore.dev";
 
@@ -193,7 +353,8 @@ export function rekorSearchUrl(
   anchor: Pick<PermanenceAnchor, "kind" | "located_at">,
   logIndex: string | undefined,
 ): string | undefined {
-  if (anchor.kind !== "transparency_log" || anchor.located_at !== PUBLIC_REKOR_URL || !logIndex) {
+  const isRekorAnchor = anchor.kind === "transparency_log" || anchor.kind === "keyless_identity";
+  if (!isRekorAnchor || anchor.located_at !== PUBLIC_REKOR_URL || !logIndex) {
     return undefined;
   }
   return `https://search.sigstore.dev/?logIndex=${encodeURIComponent(logIndex)}`;
