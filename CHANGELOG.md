@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.0.0 — 2026-07-15
+
+First stable release of the reference implementation. The public API
+across all seven `@skillerr/*` packages (and the `skillerr` CLI) is now
+considered stable: breaking changes to exported functions, types, CLI
+flags, or the `.skill` container format will land as a new major
+version, not silently inside a minor/patch release.
+
+This covers the **reference implementation's API**, not the protocol
+specification itself — the spec stays versioned separately (Draft
+0.5.0, evolving in the open via RFCs) and reaches Candidate/Stable
+only once independent conforming runtimes exist and pass the same
+adversarial/conformance corpus this repo already runs on every push.
+See `docs/ROADMAP.md`.
+
+What's shipped as of this release: the sealed `.skill` container with
+content-addressed digests; mint + creation attestation with both
+development (HMAC) and production (Ed25519 + trust store) signing
+paths; a deny-by-default runtime capability gate covering network,
+filesystem, destructive, and exec side effects; structured permission
+grammar; JSON Schema validation for every container file; an
+adversarial security corpus (zip bombs, path traversal, hash tampering,
+and more) running in CI on every push across mac/Linux/Windows × Node
+22/24; optional public transparency-log anchoring via Rekor
+(`--transparency`) and Fulcio keyless identity (`--keyless`), both with
+independently-checkable verification links back to sigstore's own
+infrastructure; a per-claim assurance model (`--claims`) that
+structurally separates cryptographically verified claims from
+self-reported ones; an eval/benchmark loop and quality-score
+integration; and a license/terms manifest field. 165 tests passing.
+
 ## 0.9.10 — 2026-07-15
 
 Found while doing end-to-end verification of 0.9.9's license field

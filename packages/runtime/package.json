@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/runtime",
-  "version": "0.9.10",
+  "version": "1.0.0",
   "description": "Inspect, dry-run, and execute portable .skill packages",
   "license": "MIT",
   "author": {
@@ -51,8 +51,8 @@
     "test": "node --test dist/runtime.test.js"
   },
   "dependencies": {
-    "@skillerr/core": "^0.9.10",
-    "@skillerr/protocol": "^0.9.10"
+    "@skillerr/core": "^1.0.0",
+    "@skillerr/protocol": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
