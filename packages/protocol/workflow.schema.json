@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://skillerr.com/schema/0.5/workflow.schema.json",
-  "title": "Open .skill 0.5 workflow (workflow.json)",
+  "$id": "https://skillerr.com/schema/1.0/workflow.schema.json",
+  "title": "Open .skill 1.0 workflow (workflow.json)",
   "type": "object",
   "required": ["kind", "dialect_version", "entrypoint", "steps"],
   "properties": {

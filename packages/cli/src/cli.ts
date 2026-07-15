@@ -234,7 +234,7 @@ Ingest / run:
                                        Dry-run by default; execute refuses
                                        unsigned/dev seals without --allow-untrusted
   skill pack <source.json> [-o out.skill] [--approve] [--profile release]
-  skill contract-template              0.5 authoring contract scaffold
+  skill contract-template              1.0 authoring contract scaffold
   skill contract-check <contract.json> Completeness + fixes
   skill registry list|lookup <digest>  Optional local transparency log
 
@@ -1267,9 +1267,14 @@ async function main() {
               `Pin the public key for verifiers — add an entry to ~/.skillerr/trust-store.json (or --trust-store <path>):`,
               JSON.stringify(
                 {
-                  key_id: keyId,
-                  public_key_pem: "<paste contents of " + pubPath + ">",
-                  algorithm: "ed25519",
+                  version: 1,
+                  keys: [
+                    {
+                      key_id: keyId,
+                      public_key_pem: "<paste contents of " + pubPath + ">",
+                      algorithm: "ed25519",
+                    },
+                  ],
                 },
                 null,
                 2,

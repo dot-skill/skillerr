@@ -4,7 +4,7 @@
  * Segmentation is an agent/adapter responsibility. This module does not invent
  * skills from free prose: the caller must supply candidate topics. It emits
  * incomplete SkillContract / SkillSource scaffolds plus completeness reports
- * so create flows stay coherent with SkillContract 0.5 and refuse incomplete
+ * so create flows stay coherent with SkillContract 1.0 and refuse incomplete
  * release compiles.
  */
 
@@ -214,7 +214,7 @@ function sourceScaffold(args: {
 const PROTOCOL_RULES = [
   "Identify distinct transferable skills from the redacted journey; do not collapse unrelated topics into one skill.",
   "One skill workspace per candidate (skill init in its own directory).",
-  "Fill a SkillContract 0.5 for each skill; section prose alone cannot satisfy release completeness.",
+  "Fill a SkillContract 1.0 for each skill; section prose alone cannot satisfy release completeness.",
   "Run skill status / skill contract-check; refuse release compile when incomplete.",
   "Never invent filler declarations to force a mint; use continuity checkpoint for partial handoff.",
   "Secrets stay as {{refs}} / env refs; journey text must stay redacted.",
@@ -299,7 +299,7 @@ export function extractSkillCandidates(
       missing,
       next_steps: [
         `mkdir -p ${workspace_slug} && cd ${workspace_slug} && export SKILL_HOST=${host === "__set_SKILL_HOST__" ? "cursor" : host} && skill init --title ${JSON.stringify(item.title)}`,
-        "Complete contract_scaffold into a real SkillContract 0.5 (every declaration explicit).",
+        "Complete contract_scaffold into a real SkillContract 1.0 (every declaration explicit).",
         `skill contract-check contract.json --profile ${profile}`,
         'skill journey --summary "…" && skill propose --json \'[…]\'',
         "skill status — refuse release compile until complete; use skill checkpoint for handoff.",
@@ -333,7 +333,7 @@ export function agentCreateGuide(): AgentGuide {
     kind: "skill_agent_guide",
     protocol_version: PROTOCOL_VERSION,
     purpose:
-      "Create portable .skill packages with SkillContract 0.5. Identify multiple skills from a conversation when warranted; enforce completeness; never fake a release.",
+      "Create portable .skill packages with SkillContract 1.0. Identify multiple skills from a conversation when warranted; enforce completeness; never fake a release.",
     rules: PROTOCOL_RULES,
     identify_multiple_skills: [
       "Read the redacted journey / work summary. List distinct transferable skills (separate intents, triggers, or runtimes).",
@@ -347,7 +347,7 @@ export function agentCreateGuide(): AgentGuide {
       "export SKILL_HOST=<your-host-id>",
       "skill init --title \"…\"",
       "skill journey --summary \"Redacted human+AI journey…\"",
-      "Complete SkillContract 0.5 (skill contract-template → edit → skill contract-check).",
+      "Complete SkillContract 1.0 (skill contract-template → edit → skill contract-check).",
       "skill propose --json '[{\"title\":\"…\",\"body\":\"…\",\"type\":\"decision|integration|…\"}]' for evidence sections",
       "skill status — inspect completeness / missing",
       "Partial handoff: skill checkpoint -m \"WIP\"",

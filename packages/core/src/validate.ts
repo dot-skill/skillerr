@@ -209,7 +209,7 @@ export function validateManifestShape(manifest: SkillManifest): ValidationIssue[
       issues.push({
         severity: "error",
         code: "release_contract_missing",
-        message: "Release packages require a native 0.5 authoring contract",
+        message: "Release packages require a native 1.0 authoring contract",
       });
     } else {
       for (const issue of assessSkillContract(manifest.contract, "release").issues) {
