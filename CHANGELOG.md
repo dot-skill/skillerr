@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.0.2 — 2026-07-15
+
+Fixes leftover `"0.5"` strings that 1.0.1's protocol-version bump missed —
+found by testing the published CLI end-to-end rather than only grepping docs:
+
+- `skill agent-guide`'s printed onboarding steps (the guide agents actually
+  read to learn the create/mint protocol) referenced "SkillContract 0.5"
+  five times; now "SkillContract 1.0".
+- `skill --help`'s `contract-template` line said "0.5 authoring contract
+  scaffold"; now "1.0".
+- The five protocol JSON Schema files (`skill-contract`, `knowledge-item`,
+  `workflow`, `creation-attestation`, `skill-manifest`) still had `$id`s
+  and `title`s under `/schema/0.5/`; now `/schema/1.0/`. These `$id`s are
+  identifiers, not live-fetched URLs, so this is not a breaking change.
+- `skill validate`'s `release_contract_missing` error message said "native
+  0.5 authoring contract"; now "1.0".
+- `skill keygen`'s printed trust-store setup snippet was missing the
+  required `{"version": 1, "keys": [...]}` wrapper, so following it
+  verbatim produced a trust store `skill verify-trust` rejects as invalid.
+  Fixed to match the actual schema (`packages/core/src/trust-store.ts`).
+
+Also adds automatic GitHub Release creation on tag push, so the repo's
+Releases page reflects what's actually published to npm instead of staying
+empty.
+
 ## 1.0.1 — 2026-07-15
 
 **Protocol specification is now versioned 1.0.0 and marked Stable.**

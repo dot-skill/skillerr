@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://skillerr.com/schema/0.5/creation-attestation.schema.json",
-  "title": "Open .skill 0.5 creation attestation (signatures/creation.dsse.json)",
+  "$id": "https://skillerr.com/schema/1.0/creation-attestation.schema.json",
+  "title": "Open .skill 1.0 creation attestation (signatures/creation.dsse.json)",
   "type": "object",
   "required": ["payloadType", "payload_digest", "signatures", "attestation"],
   "properties": {

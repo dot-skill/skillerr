@@ -190,7 +190,7 @@ Full container spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/bl
 ## Status
 
 Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)) — future changes go through the open [RFC process](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/), not silent revisions.  
-Reference CLI: `skillerr` @ **1.0.1** — a stable public API, backed by 165 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/blob/main/docs/THREAT-MODEL.md) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
+Reference CLI: `skillerr` @ **1.0.2** — a stable public API, backed by 165 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/blob/main/docs/THREAT-MODEL.md) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**
