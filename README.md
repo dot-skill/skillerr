@@ -4,9 +4,13 @@
   <img src="./assets/skillerr-mark.png" alt="Skillerr .skill mark" width="128" height="128" />
 </p>
 
-<p align="center"><em>Sealed <code>.skill</code> packages for AI agents</em></p>
+<p align="center"><em>The trust layer for Agent Skills</em></p>
 
-**Create, inspect, and run portable `.skill` packages for AI agents — typed, sealed, and verifiable before anyone runs them.** Your `SKILL.md` still works — `.skill` seals it, scores it, and makes it portable and inspectable before anyone runs it.
+**The trust layer for Agent Skills.** Seal, verify, and prove provenance for the skills your agents run.
+
+```bash
+npm i -g skillerr
+```
 
 **Site:** [skillerr.com](https://www.skillerr.com/docs/) · **Format:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`) · **Repo:** [dot-skill/skillerr](https://github.com/dot-skill/skillerr)
 
@@ -17,6 +21,24 @@
 [![Tests](https://img.shields.io/badge/tests-180%20passing-brightgreen.svg)](./docs/SECURITY.md)
 
 **Contributing:** see [CONTRIBUTING.md](./CONTRIBUTING.md) for the DCO/PR checklist, or jump straight to a scoped task in [docs/GOOD-FIRST-ISSUES.md](./docs/GOOD-FIRST-ISSUES.md).
+
+## Where skillerr fits
+
+The Agent Skills ecosystem has three layers. skillerr owns the third, and is complementary to the other two, not a competitor to either:
+
+| Layer | What it does | Who does it |
+|---|---|---|
+| **Authoring** | Defines the `SKILL.md` format itself: frontmatter, body, `scripts/`/`references`/`assets/` | The [Agent Skills spec](https://agentskills.io/specification) |
+| **Distribution** | Installers and directories that get a skill onto your machine | [`vercel-labs/skills`](https://github.com/vercel-labs/skills) (`npx skills add owner/repo`), [skills.sh](https://skills.sh) |
+| **Trust / integrity** | Seals, signs, records provenance, and lets you inspect a skill before you run it | **skillerr** |
+
+The concrete gap this closes: `npx skills add owner/repo` installs unverified instructions and executable scripts from any repo, with no integrity or provenance check built in. skillerr adds the missing step: inspect and verify a skill before you run it, not after.
+
+**Agent Skills / `SKILL.md`** is the open authoring format. **`.skill`** is a sealed, signed package *of* one. `.skill` doesn't replace your `SKILL.md`, `skill ingest` reads a standard Agent Skills folder and wraps it in a typed contract, an integrity seal, and provenance, so the same skill keeps working everywhere Agent Skills are supported, and gains inspect-before-run trust on top.
+
+Distribution tools install a skill; skillerr lets you verify one, its integrity, issuer, and provenance, before you run it.
+
+**No telemetry, no tracking.** skillerr makes no network calls unless you explicitly ask it to (`--transparency`, `--keyless`, `--online`, all opt-in). Nothing about what skills you create, ingest, or run is ever reported anywhere.
 
 ## Convert your `SKILL.md` in one line
 
@@ -168,6 +190,20 @@ See [docs/SECURITY.md](./docs/SECURITY.md).
 
 ---
 
+## Agent hosts and provenance
+
+Set `SKILL_HOST` to the agent recording the skill, any string, self-reported unless a configured issuer key plus real agent-runtime evidence bind it as `verified_issuer` (see [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md)). Commonly seen values, not an exhaustive or gated list:
+
+| `SKILL_HOST` | Notes |
+|---|---|
+| `cursor`, `claude-code`, `codex` | IDE / coding-agent hosts |
+| `ollama`, `lmstudio`, `llama.cpp` | Local/offline model runtimes |
+| `custom` (or any other name) | Anything else, `human`/`cli`/`shell`/`manual` are the only denylisted values |
+
+Exporting a sealed `.skill` back into an agent's own skill directory (`.claude/skills/`, `.cursor/skills/`, `.agents/skills/`, …) is on the [roadmap](./docs/ROADMAP.md), not shipped yet, `skill to-skill-md` today produces a single lossy markdown file, not an installable folder.
+
+---
+
 ## What’s in a `.skill`
 
 ```text
@@ -229,6 +265,8 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 - [Mint](./docs/MINT.md) · [Runtime](./docs/RUNTIME.md) · [Workspace](./docs/WORKSPACE.md) · [File type / OS registration](./docs/FILE-TYPE.md)
 - [RFCs](./docs/rfcs/) — protocol design proposals, spec-only and implemented
 - Site guides: [skillerr.com](https://www.skillerr.com/docs/)
+
+**Agent Skills ecosystem:** [Agent Skills specification](https://agentskills.io/specification) (the authoring format) · [vercel-labs/skills](https://github.com/vercel-labs/skills) (`npx skills add`, distribution) · [skills.sh](https://skills.sh) (directory) · [Claude Code skills docs](https://code.claude.com/docs/en/skills)
 
 ---
 

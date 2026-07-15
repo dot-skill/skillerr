@@ -1,13 +1,24 @@
-# Structured `.skill` packages
+# The trust layer for Agent Skills
 
-**Your `SKILL.md` still works.** The `.skill` format is not a competing
-format meant to replace it — it's the integrity and evaluation layer
-*above* it. Run
-`skill ingest ./your-skill` and a Claude/skill-creator skill becomes a
+**Your `SKILL.md` still works.** skillerr is not a competing authoring
+format, it's the trust layer that sits above the one you already use. Run
+`skill ingest ./your-skill` and a standard Agent Skills folder becomes a
 sealed, typed `.skill` superset in one command (see
 [FAQ.md](./FAQ.md#how-do-i-convert-an-existing-skillmd)). Everything below
-describes what that superset adds — none of it requires abandoning
+describes what that superset adds, none of it requires abandoning
 `SKILL.md` as your authoring format.
+
+## Where this fits in the Agent Skills ecosystem
+
+Three layers, three separate concerns:
+
+| Layer | Job | Example |
+|---|---|---|
+| Authoring | Define what a skill *is*: frontmatter, body, `scripts/`/`references`/`assets/` | [Agent Skills spec](https://agentskills.io/specification), `SKILL.md` |
+| Distribution | Get a skill onto your machine | [`vercel-labs/skills`](https://github.com/vercel-labs/skills), [skills.sh](https://skills.sh) |
+| Trust / integrity | Seal it, sign it, record provenance, let you inspect it before you run it | **skillerr** |
+
+`npx skills add owner/repo` installs unverified instructions and executable scripts from any repo, with no integrity or provenance check. skillerr is the missing verification step: inspect and verify a skill before you run it, not after. **Agent Skills / `SKILL.md`** is the open authoring format; **`.skill`** is a sealed, signed package of one, not a replacement for it.
 
 Markdown `SKILL.md` files do not provide package structure, integrity metadata, or portable execution semantics.
 

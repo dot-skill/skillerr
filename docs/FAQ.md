@@ -20,6 +20,10 @@ Prompts: [examples/prompts.md](../examples/prompts.md). Agent contract: [AGENT.m
 
 See [WHY.md](./WHY.md). Short version: structured package + digests + mint + continuity handoff + compile gates. Markdown is a lossy adapter only.
 
+## How is skillerr different from `npx skills add` or a skills directory?
+
+They solve different problems and are meant to be used together, not as alternatives. `vercel-labs/skills` and directories like [skills.sh](https://skills.sh) get a skill *onto your machine*; they don't check its integrity or provenance before you run it. skillerr is the verification layer: `skill ingest` wraps a standard Agent Skills folder in a typed contract, an integrity seal, and provenance, so you (or your agent) can inspect and verify a skill, whether you wrote it or installed it from somewhere else, before running it. See [WHY.md](./WHY.md) "Where this fits in the Agent Skills ecosystem".
+
 ## Continuity vs release?
 
 - **Continuity** — AI↔AI work handoff (partial OK, not mintable).

@@ -29,6 +29,19 @@ than it is.
 
 Every one of these mappings is reported back to you in `report.found` / `report.notes` — `skill ingest`'s JSON output always says exactly what it found and what it guessed, never silently.
 
+### Not yet mapped (honest gap, not a silent drop)
+
+The Agent Skills spec's frontmatter has a few fields `skill ingest` doesn't act on today:
+
+| Frontmatter field | Current behavior |
+|---|---|
+| `license` | Parsed, then dropped. Not written to `SkillSource.license`/`manifest.license` yet |
+| `compatibility` | Parsed, then dropped |
+| `allowed-tools` | Parsed, then dropped. Not recorded as a proposed permission yet |
+| `metadata` (nested map) | Not parseable at all: the frontmatter reader is intentionally scoped to flat `key: value` lines, so a nested `metadata:` block (e.g. `metadata:\n  author: x`) is silently invisible to it, not "dropped after reading," never read in the first place |
+
+This is a real, tracked gap, not a design decision to ignore these fields forever, see [docs/ROADMAP.md](./ROADMAP.md) "Agent Skills ecosystem compatibility" and [docs/GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
+
 ## What ingest never fabricates
 
 `skill ingest` always produces a **continuity** draft, never a release. In every case observed, the one thing standing between an ingested draft and a release compile is `provenance.human_review`:
