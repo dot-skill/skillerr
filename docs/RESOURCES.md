@@ -71,7 +71,7 @@ comment in `packages/runtime/src/index.ts` and the regression test in
 `exec`-class capability with no matching permission is denied with a
 distinct, machine-readable message, the same as an unauthorized file read
 or network call — see [SECURITY.md](./SECURITY.md) and
-[THREAT-MODEL.md](./THREAT-MODEL.md).
+[Threat Model](https://github.com/dot-skill/skillerr/wiki/Threat-Model).
 
 ### What "runs" actually means in the reference runtime
 

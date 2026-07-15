@@ -46,8 +46,8 @@ Go or Rust are natural choices — that reproduces, byte-for-byte:
   byte-identical `package_digest` (see the pack/unpack tests in
   [`packages/core/src/core.test.ts`](./packages/core/src/core.test.ts)).
 
-Ed25519 signature verification (`docs/rfcs/0001-asymmetric-signatures-trust-store.md`,
-now implemented — see [docs/KEY-CEREMONY.md](./docs/KEY-CEREMONY.md)) uses
+Ed25519 signature verification ([RFC 0001](https://github.com/dot-skill/skillerr/wiki/RFC-0001-Asymmetric-Signatures-Trust-Store),
+now implemented — see [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony)) uses
 standard PKCS8/SPKI PEM and raw Ed25519 signing with no protocol-specific
 framing beyond the DSSE envelope shape in
 [docs/PROTOCOL.md](./docs/PROTOCOL.md) — any language with an Ed25519
@@ -82,8 +82,8 @@ npm run skill -- --help
 
 ## Spec changes (RFCs)
 
-1. Open an issue with label `rfc` (or PR `docs/rfcs/NNNN-title.md`)
-2. Motivation, schema diff, migration, fixtures
+1. Open an issue with label `rfc` describing motivation, schema diff, migration, fixtures
+2. Discuss before a maintainer adds it to the [wiki](https://github.com/dot-skill/skillerr/wiki/RFCs)
 3. Discuss before merging breaks
 
 

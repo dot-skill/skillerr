@@ -27,8 +27,8 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.0.2**.
       `skill validate` via `@skillerr/protocol`'s `loadSchema()`
 - [x] Production-grade signing: pluggable Ed25519 issuer signer + local
       trust store (`configured_ed25519`), replacing dev-HMAC-only trust —
-      see [docs/KEY-CEREMONY.md](./KEY-CEREMONY.md)
-- [x] Public RFC folder (`docs/rfcs/`) — six RFCs; PROTO-2 (asymmetric
+      see [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony)
+- [x] Public [RFCs](https://github.com/dot-skill/skillerr/wiki/RFCs) — six RFCs; PROTO-2 (asymmetric
       signing) has since shipped as real code, the rest remain spec-only
 - [x] Forward `SKILL.md` -> `.skill` ingest (`skill ingest`), distinct from
       the existing lossy `to-skill-md` export — see
