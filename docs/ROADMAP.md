@@ -98,6 +98,17 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.1.0**. The package n
       (`anchor_subject_mismatch` on a mismatch); anchors minted before this
       shipped have no `statement_version` and keep verifying via the exact
       legacy bare-digest path, forever. See [TRANSPARENCY.md](./TRANSPARENCY.md).
+- [x] Agent Skills ecosystem compatibility ([RFC 0008](./rfcs/0008-agent-skills-ecosystem-compatibility.md)):
+      `skill ingest` now maps the full [Agent Skills](https://agentskills.io/specification)
+      frontmatter (`license`, `compatibility`, nested/dotted `metadata`,
+      `allowed-tools`, never auto-authorized), not just name/description;
+      recognizes multi-skill folders via the same plugin-manifest and
+      catalog conventions [`vercel-labs/skills`](https://github.com/vercel-labs/skills)
+      uses; and a new `skill export-skill` reverses a sealed `.skill` back
+      into a spec-valid, installable folder (`--agent claude`/`cursor`
+      computes the standard install dir). `skill verify-skill` checks a
+      plain, never-ingested folder honestly, with or without a sealed
+      sidecar. See [docs/AGENT-SKILLS.md](./AGENT-SKILLS.md).
 
 ## Next (great contribution targets)
 
@@ -137,6 +148,12 @@ A curated, verified-against-real-behavior list of smaller contribution targets l
 - [ ] `skill load` materialize a resumable `.skill/` workspace (or be
       renamed/documented as a read-only handoff view, since it isn't one
       today). See [GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
+- [ ] Round-trip `evals/evals.json` and unrecognized frontmatter keys on
+      `skill export-skill`, not just `skill ingest`, both currently map
+      forward into the contract/`extensions.agentskills.*` but aren't
+      re-emitted on export. See [docs/AGENT-SKILLS.md](./AGENT-SKILLS.md)
+      "What's not yet a full round trip" and
+      [GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
 
 ## Later
 

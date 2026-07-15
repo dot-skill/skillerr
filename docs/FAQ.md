@@ -18,7 +18,7 @@ Prompts: [examples/prompts.md](../examples/prompts.md). Agent contract: [AGENT.m
 
 ## How is this different from `SKILL.md`?
 
-See [WHY.md](./WHY.md). Short version: structured package + digests + mint + continuity handoff + compile gates. Markdown is a lossy adapter only.
+See [WHY.md](./WHY.md). Short version: structured package + digests + mint + continuity handoff + compile gates. `skill to-skill-md` (single file, quick) is a lossy adapter; `skill export-skill` (a full folder) preserves frontmatter (license/compatibility/metadata/allowed-tools) and `scripts/`/`references/`/`assets/`, see [AGENT-SKILLS.md](./AGENT-SKILLS.md).
 
 ## How is skillerr different from `npx skills add` or a skills directory?
 
@@ -82,10 +82,17 @@ skill-creator-style folder (`SKILL.md` + optional `scripts/`, `references/`,
 frontmatter maps to intent/triggers, `##` sections become knowledge, bundled
 scripts become stub capabilities (never auto-authorized to execute), and
 `evals/evals.json` assertions map into the contract's verification items.
-It never fabricates completeness: the output always names exactly which
-fields (usually just recorded human review) still need attention before a
-release compile. See [examples/ingest-skill-md/](../examples/ingest-skill-md/)
-for a worked example.
+The full Agent Skills frontmatter is mapped, not just name/description:
+`license`, `compatibility`, `metadata` (nested or dotted), and
+`allowed-tools` (recorded as proposed permissions requiring explicit human
+consent, never auto-authorized) all land in the contract or
+`extensions.agentskills.*`. If `<path>` has no direct `SKILL.md` but a
+plugin manifest or a `skills/<name>/` catalog, `ingest` lists the
+candidates instead of failing. It never fabricates completeness: the
+output always names exactly which fields (usually just recorded human
+review) still need attention before a release compile. See
+[examples/ingest-skill-md/](../examples/ingest-skill-md/) for a worked
+example and [AGENT-SKILLS.md](./AGENT-SKILLS.md) for the full mapping.
 
 **Determinism:** `skill_id` is derived from the SKILL.md content itself
 (a digest of the raw file), so re-ingesting byte-identical source always
@@ -97,6 +104,35 @@ accurate provenance (this ingest genuinely happened now), not
 non-determinism to fix. If you need byte-identical output for testing,
 pass a fixed clock via the `now` option to `ingestSkillMd()` (core API;
 not exposed as a CLI flag).
+
+## How do I get a plain Agent Skills folder back out of a `.skill`?
+
+```text
+Run: skill export-skill ./file.skill --agent claude
+(or -o <dir> for a specific location, or --agent cursor / any other host name)
+```
+
+`skill export-skill` is the reverse of `ingest`: it materializes a
+spec-valid `SKILL.md` folder (frontmatter + `scripts/`/`references/`/
+`assets/`) from a sealed `.skill`, restoring license/compatibility/
+metadata/allowed-tools from where `ingest` stored them. `--agent <name>`
+computes the standard install directory for you (e.g.
+`.claude/skills/<name>/`); plain `-o <dir>` uses the exact path given. It
+validates the result with `skills-ref validate` if that's installed,
+otherwise enforces the name/description constraints itself and fails
+loudly rather than writing an invalid folder. See
+[AGENT-SKILLS.md](./AGENT-SKILLS.md).
+
+## Can I check a plain Agent Skills folder I didn't create with skillerr?
+
+Yes: `skill verify-skill <dir>` reports a content digest and flags any
+`scripts/*` as executable surface, even with no seal at all, and says so
+honestly if there's nothing cryptographic to check. If you point it at a
+sealed `.skill` (via a sibling `<dir>.skill` file or `--attestation
+<file.skill>`), it also reports that attestation's own signing integrity,
+which is a real, useful check, but not proof the folder's current files
+are byte-identical to what was sealed (see the command's own output for
+why). See [AGENT-SKILLS.md](./AGENT-SKILLS.md).
 
 ## Is this ready to use?
 

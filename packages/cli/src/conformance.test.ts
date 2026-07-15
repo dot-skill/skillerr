@@ -507,6 +507,86 @@ test("CLI ingest: printed package_digest matches the digest actually inside the 
   assert.equal(result.package_digest, written.manifest.package_digest);
 });
 
+test("PART B2: CLI ingest on a folder with no direct SKILL.md but a skills/<name>/ catalog lists candidates instead of failing", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+  const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
+  const dir = mkdtempSync(join(tmpdir(), "skill-ingest-catalog-"));
+  mkdirSync(join(dir, "skills", "alpha"), { recursive: true });
+  writeFileSync(join(dir, "skills", "alpha", "SKILL.md"), "---\nname: alpha\ndescription: d\n---\nbody\n");
+
+  const result = JSON.parse(
+    execFileSync(process.execPath, [cliPath, "ingest", dir, "--host", "cursor"], {
+      encoding: "utf8",
+      env: { ...process.env, SKILL_HOST: "cursor" },
+    }),
+  ) as { ok: boolean; multi_skill: boolean; candidates: Array<{ path: string; source: string }> };
+
+  assert.equal(result.multi_skill, true);
+  assert.equal(result.candidates.length, 1);
+  assert.equal(result.candidates[0]!.source, "catalog");
+});
+
+test("PART B3/B4: CLI export-skill materializes a spec-valid folder from a minted package, and verify-skill checks it against its own sidecar", async () => {
+  const { mkdtempSync } = await import("node:fs");
+  const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));
+  const sourcePath = fileURLToPath(
+    new URL("../../../examples/contract-foundation/source.json", import.meta.url),
+  );
+  const dir = mkdtempSync(join(tmpdir(), "skill-export-cli-"));
+  const packageFile = join(dir, "out.skill");
+  const env = { ...process.env, SKILL_HOST: "cursor" };
+
+  execFileSync(
+    process.execPath,
+    [cliPath, "pack", sourcePath, "-o", packageFile, "--profile", "release", "--host", "cursor"],
+    { encoding: "utf8", env },
+  );
+  execFileSync(process.execPath, [cliPath, "mint", packageFile, "--host", "cursor"], {
+    encoding: "utf8",
+    env,
+  });
+
+  // --agent writes a *relative* standard install dir (.claude/skills/<name>)
+  // resolved against cwd, pin cwd to the tmp dir so this test never
+  // touches the real repo checkout.
+  const exportResult = JSON.parse(
+    execFileSync(
+      process.execPath,
+      [cliPath, "export-skill", packageFile, "--agent", "claude"],
+      { encoding: "utf8", env, cwd: dir },
+    ),
+  ) as { ok: boolean; out: string; report: { name: string; scripts: number } };
+
+  assert.equal(exportResult.ok, true);
+  assert.ok(exportResult.out.endsWith(join(".claude", "skills", exportResult.report.name)));
+  assert.ok(readFileSync(join(exportResult.out, "SKILL.md"), "utf8").includes(`name: ${exportResult.report.name}`));
+
+  // No sidecar yet, verify-skill must say so honestly, not imply a check happened.
+  const noSidecar = JSON.parse(
+    execFileSync(process.execPath, [cliPath, "verify-skill", exportResult.out], { encoding: "utf8", env }),
+  ) as { attestation: { found: boolean } };
+  assert.equal(noSidecar.attestation.found, false);
+
+  // With an explicit --attestation pointing at the minted package, it reports attestation integrity.
+  const withAttestation = JSON.parse(
+    execFileSync(
+      process.execPath,
+      [
+        cliPath,
+        "verify-skill",
+        exportResult.out,
+        "--attestation",
+        packageFile,
+        "--allow-development-issuer",
+        "--allow-self-reported",
+      ],
+      { encoding: "utf8", env },
+    ),
+  ) as { attestation: { found: boolean; trust_state?: string } };
+  assert.equal(withAttestation.attestation.found, true);
+  assert.equal(withAttestation.attestation.trust_state, "development");
+});
+
 test("CLI score: missing optional @skillerr/skill-score is a graceful notice, not ok:false (PHASE A-2)", async () => {
   const { mkdtempSync } = await import("node:fs");
   const cliPath = fileURLToPath(new URL("./cli.js", import.meta.url));

@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assessSkillContract } from "@skillerr/protocol";
-import { ingestSkillMd } from "./ingest.js";
+import { ingestSkillMd, discoverSkillMdCandidates } from "./ingest.js";
 import { compileSkillSource } from "./compile.js";
 import { packSkill } from "./pack.js";
 import { unpackSkill } from "./pack.js";
@@ -106,6 +106,170 @@ test("PHASE 1: scripts/references/assets/evals are all optional — a bare SKILL
 
     const continuity = assessSkillContract(result.contract, "continuity");
     assert.equal(continuity.complete, true, JSON.stringify(continuity.issues));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("PART B1: license, compatibility, metadata, and allowed-tools frontmatter are mapped, never silently dropped", () => {
+  const result = ingestSkillMd(FIXTURE, { host: "cursor" });
+
+  assert.equal(result.source.license, "MIT");
+  assert.ok(result.source.license_url?.endsWith("LICENSE"), `expected license_url to point at the bundled LICENSE, got ${result.source.license_url}`);
+  assert.equal(result.report.found.license, true);
+  assert.equal(result.report.found.compatibility, true);
+  assert.equal(result.report.found.metadata_keys, 3);
+  assert.equal(result.report.found.allowed_tools, 2);
+  assert.equal(result.report.found.assets, 1);
+
+  assert.equal(result.contract.preconditions.status, "specified");
+  if (result.contract.preconditions.status === "specified") {
+    assert.equal(result.contract.preconditions.items.length, 1);
+    assert.equal(result.contract.preconditions.items[0]!.check, "human");
+  }
+
+  assert.equal(result.contract.permissions.status, "specified");
+  if (result.contract.permissions.status === "specified") {
+    assert.equal(result.contract.permissions.items.length, 2);
+    for (const item of result.contract.permissions.items) {
+      assert.equal(item.consent, "explicit_human", "allowed-tools must never be auto-authorized");
+    }
+  }
+
+  assert.equal(result.source.extensions?.agentskills?.compatibility, "Requires read access to the repository's git history.");
+  assert.deepEqual(result.source.extensions?.agentskills?.allowed_tools, ["Bash", "Read"]);
+  const metadata = result.source.extensions?.agentskills?.metadata as Record<string, unknown> | undefined;
+  assert.equal(metadata?.author, "skillerr-examples");
+  assert.equal(metadata?.version, "1.0");
+  assert.equal(metadata?.internal, "true");
+
+  assert.ok(
+    result.report.notes.some((n) => n.includes("allowed-tools")),
+    "expected a note explaining the allowed-tools mapping",
+  );
+});
+
+test("PART B1: nested metadata:\\n  key: value block form parses", () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillerr-ingest-nested-meta-"));
+  try {
+    writeFileSync(
+      join(dir, "SKILL.md"),
+      [
+        "---",
+        "name: nested-meta-skill",
+        "description: Use when testing nested metadata parsing.",
+        "metadata:",
+        "  author: jane",
+        "  team: platform",
+        "---",
+        "",
+        "One paragraph of guidance.",
+        "",
+      ].join("\n"),
+    );
+    const result = ingestSkillMd(dir, { host: "cursor" });
+    assert.equal(result.report.found.metadata_keys, 2);
+    const metadata = result.source.extensions?.agentskills?.metadata as Record<string, unknown> | undefined;
+    assert.equal(metadata?.author, "jane");
+    assert.equal(metadata?.team, "platform");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("PART B1: dotted metadata.key: value flat form parses into the same nested slot", () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillerr-ingest-dotted-meta-"));
+  try {
+    writeFileSync(
+      join(dir, "SKILL.md"),
+      [
+        "---",
+        "name: dotted-meta-skill",
+        "description: Use when testing dotted metadata parsing.",
+        "metadata.internal: true",
+        "metadata.owner: platform-team",
+        "---",
+        "",
+        "One paragraph of guidance.",
+        "",
+      ].join("\n"),
+    );
+    const result = ingestSkillMd(dir, { host: "cursor" });
+    assert.equal(result.report.found.metadata_keys, 2);
+    const metadata = result.source.extensions?.agentskills?.metadata as Record<string, unknown> | undefined;
+    assert.equal(metadata?.internal, "true");
+    assert.equal(metadata?.owner, "platform-team");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("PART B1: unrecognized frontmatter keys pass through to extensions.agentskills.* verbatim, never interpreted", () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillerr-ingest-passthrough-"));
+  try {
+    writeFileSync(
+      join(dir, "SKILL.md"),
+      [
+        "---",
+        "name: passthrough-skill",
+        "description: Use when testing unrecognized-key passthrough.",
+        "context: fork",
+        "---",
+        "",
+        "One paragraph of guidance.",
+        "",
+      ].join("\n"),
+    );
+    const result = ingestSkillMd(dir, { host: "cursor" });
+    assert.equal(result.source.extensions?.agentskills?.context, "fork");
+    assert.ok(result.report.notes.some((n) => n.includes("context")));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("PART B2: discoverSkillMdCandidates finds skills via a .claude-plugin manifest", () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillerr-discover-manifest-"));
+  try {
+    mkdirSync(join(dir, ".claude-plugin"), { recursive: true });
+    writeFileSync(
+      join(dir, ".claude-plugin", "marketplace.json"),
+      JSON.stringify({
+        plugins: [{ name: "demo", source: ".", skills: ["./skills/review", "./skills/missing"] }],
+      }),
+    );
+    mkdirSync(join(dir, "skills", "review"), { recursive: true });
+    writeFileSync(join(dir, "skills", "review", "SKILL.md"), "---\nname: review\ndescription: d\n---\nbody\n");
+
+    const candidates = discoverSkillMdCandidates(dir);
+    assert.equal(candidates.length, 1, "the manifest's second entry has no SKILL.md and must not be listed");
+    assert.equal(candidates[0]!.source, "manifest");
+    assert.ok(candidates[0]!.path.endsWith(join("skills", "review", "SKILL.md")));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("PART B2: discoverSkillMdCandidates falls back to a flat skills/<name>/SKILL.md catalog", () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillerr-discover-catalog-"));
+  try {
+    mkdirSync(join(dir, "skills", "alpha"), { recursive: true });
+    mkdirSync(join(dir, "skills", "beta"), { recursive: true });
+    writeFileSync(join(dir, "skills", "alpha", "SKILL.md"), "---\nname: alpha\ndescription: d\n---\nbody\n");
+    writeFileSync(join(dir, "skills", "beta", "SKILL.md"), "---\nname: beta\ndescription: d\n---\nbody\n");
+
+    const candidates = discoverSkillMdCandidates(dir);
+    assert.equal(candidates.length, 2);
+    assert.ok(candidates.every((c) => c.source === "catalog"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("PART B2: discoverSkillMdCandidates returns empty (not throw) for a folder with neither convention", () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillerr-discover-empty-"));
+  try {
+    assert.deepEqual(discoverSkillMdCandidates(dir), []);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -29,18 +29,19 @@ than it is.
 
 Every one of these mappings is reported back to you in `report.found` / `report.notes` — `skill ingest`'s JSON output always says exactly what it found and what it guessed, never silently.
 
-### Not yet mapped (honest gap, not a silent drop)
+### Full frontmatter fidelity
 
-The Agent Skills spec's frontmatter has a few fields `skill ingest` doesn't act on today:
+The rest of the Agent Skills spec's frontmatter is mapped too, not dropped:
 
-| Frontmatter field | Current behavior |
-|---|---|
-| `license` | Parsed, then dropped. Not written to `SkillSource.license`/`manifest.license` yet |
-| `compatibility` | Parsed, then dropped |
-| `allowed-tools` | Parsed, then dropped. Not recorded as a proposed permission yet |
-| `metadata` (nested map) | Not parseable at all: the frontmatter reader is intentionally scoped to flat `key: value` lines, so a nested `metadata:` block (e.g. `metadata:\n  author: x`) is silently invisible to it, not "dropped after reading," never read in the first place |
+| Frontmatter field | Maps to | Notes |
+|---|---|---|
+| `license` | `SkillSource.license` | If a bundled `LICENSE`/`LICENSE.md`/`LICENSE.txt` file exists in the folder root, its path is also recorded as `license_url` |
+| `compatibility` | One `ContractPrecondition` (`check: "human"`) + `extensions.agentskills.compatibility` | Surfaced as something a human should check before running the skill on a given host, not machine-enforced |
+| `metadata` | `extensions.agentskills.metadata.*`, verbatim | Both the nested-block form (`metadata:\n  key: value`) and the flat dotted form (`metadata.key: value`) parse into the same slot. Never interpreted or acted on, it's a pass-through |
+| `allowed-tools` | `extensions.agentskills.allowed_tools` + one `ContractPermission` per tool (`consent: "explicit_human"`) | Same deny-by-default posture as bundled `scripts/*`, ingest records these as *proposed* permissions, it never auto-authorizes them |
+| Any other key (`context`, `hooks`, ...) | `extensions.agentskills.<key>`, verbatim | Unrecognized frontmatter is preserved, not silently discarded, but never interpreted |
 
-This is a real, tracked gap, not a design decision to ignore these fields forever, see [docs/ROADMAP.md](./ROADMAP.md) "Agent Skills ecosystem compatibility" and [docs/GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
+`skill export-skill` is the reverse of this table: given a sealed `.skill`, it restores `license`/`compatibility`/`metadata`/`allowed-tools` from `extensions.agentskills.*` back into a spec-valid `SKILL.md`'s frontmatter, plus `scripts/`/`references/`/`assets/` back onto disk, see [docs/AGENT-SKILLS.md](./AGENT-SKILLS.md) for the full round trip and the `--agent` install-dir shortcut. `skill verify-skill <dir>` checks a plain (never-ingested) Agent Skills folder: a content digest and its `scripts/*` executable surface always, and, if you point it at a sealed `.skill` sidecar, that attestation's own signing integrity.
 
 ## What ingest never fabricates
 
@@ -65,7 +66,8 @@ This is intentional, not a gap to work around. No amount of re-running `ingest` 
 
 ## Related
 
-- [examples/ingest-skill-md/](../examples/ingest-skill-md/) — a worked example fixture (frontmatter, sections, one script, evals)
+- [examples/ingest-skill-md/](../examples/ingest-skill-md/): a worked example fixture (frontmatter, sections, one script, evals, license, compatibility, metadata, allowed-tools)
+- [AGENT-SKILLS.md](./AGENT-SKILLS.md): the full compatibility matrix, `export-skill`/`verify-skill`, and the `--agent` install-dir shortcut
 - [RESOURCES.md](./RESOURCES.md) — bundled-script and progressive-disclosure semantics in detail
 - [EVAL.md](./EVAL.md) — running the mapped verification items as a real eval/benchmark
 - [FAQ.md](./FAQ.md#how-do-i-convert-an-existing-skillmd) — the short version of this page

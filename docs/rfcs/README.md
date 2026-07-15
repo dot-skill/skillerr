@@ -11,3 +11,4 @@ Spec-level proposals for gaps identified in the [threat model](https://github.co
 | [0005](./0005-media-type-magic-identification.md) | Media type + magic identification | Draft, spec only |
 | [0006](./0006-lineage-chain.md) | Lineage chain | Draft, spec only |
 | [0007](./0007-subject-bearing-transparency-anchor.md) | Subject-bearing transparency anchor | **Implemented** |
+| [0008](./0008-agent-skills-ecosystem-compatibility.md) | Agent Skills ecosystem compatibility | **Implemented** |

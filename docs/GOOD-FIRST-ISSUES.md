@@ -10,9 +10,6 @@ Concrete, scoped contribution targets found by testing the shipped CLI end to en
 **`skill run` has no `--trust-store` flag.**
 `skill inspect` and `skill verify-trust` both accept `--trust-store <path>` to point at a non-default pinned-key file; `skill run` doesn't, so a `verified_issuer` package signed with a key pinned somewhere other than `~/.skillerr/trust-store.json` can't reach `execute` mode without first copying that key into the default location. Fix: thread `--trust-store` through to `runSkillArchive`'s trust check the same way the other two commands do.
 
-**`skill to-skill-md`'s title falls back to the compile message before the workspace's own title.**
-`compileWorkspace` resolves a package's title as `opts.title ?? opts.message ?? (await loadConfig(root)).title ?? st.staged[0]!.title` (`packages/workspace/src/index.ts:561`). If a workspace was created with `skill init --title "Real Title"` and later compiled with `skill compile -m "final polish"` (no `--title`), the compile message wins over the workspace's actual configured title, so the exported `SKILL.md`'s `# ` heading (and the manifest's own `title` field) becomes the commit-style message instead. Fix: drop `opts.message` from this fallback chain, or move it to the very end, after the workspace's own title.
-
 **`skill add`/`skill unstage`/`skill discard` silently no-op on an id that doesn't exist.**
 `add`/`unstage` just call `stage`/`unstage` with whatever ids were passed and print the resulting staged list; there's no check that a given id actually matched a real section, so a typo'd id is indistinguishable from "already staged." Fix: report `found`/`not_found` (or a changed-count) alongside the resulting list.
 
@@ -31,6 +28,9 @@ A fresh `npm i -g skillerr` on a stable (non-bleeding-edge) Node release prints 
 
 **`skill load` returns a read-only handoff summary, not a resumable workspace.**
 `loadSkillHandoff` (`packages/workspace/src/index.ts`) unpacks a continuity/release package and returns a curated summary (journey, knowledge titles, completeness), but doesn't materialize a `.skill/` working tree a receiving agent could actually `skill add`/`skill propose` into. Today "resume" means "read the handoff and re-author from scratch." Fix: either add real workspace materialization, or rename the command/its docs to be explicit that it's a read-only handoff view, not a resume.
+
+**`skill export-skill` doesn't round-trip `evals/evals.json` or unrecognized frontmatter keys.**
+`skill ingest` maps `evals/evals.json` assertions into `contract.verification.items`, and passes unrecognized frontmatter keys (`context`, `hooks`, ...) through to `extensions.agentskills.<key>` verbatim. `exportAgentSkillFolder` (`packages/core/src/export.ts`) restores `license`/`compatibility`/`metadata`/`allowed-tools` from `extensions.agentskills.*`, but doesn't currently regenerate `evals/evals.json` from `contract.verification.items`, or re-emit the passthrough keys as frontmatter. Fix: extend `exportAgentSkillFolder` to write `evals/evals.json` when `contract.evals`/verification items with an eval-sourced provenance ref exist, and to emit any `extensions.agentskills.<key>` entries not already handled by a named field back into the frontmatter block.
 
 ## `second-runtime` ⭐ (hard, highest-leverage)
 

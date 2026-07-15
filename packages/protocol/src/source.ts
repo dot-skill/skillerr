@@ -156,6 +156,8 @@ export interface SkillSource {
   /** SPDX license identifier (e.g. "MIT") or "UNLICENSED" — carried through to the manifest, see its own doc comment for what this does and doesn't prove. */
   license?: string;
   license_url?: string;
+  /** Vendor/ecosystem-specific fields, e.g. extensions.agentskills.* from SKILL.md frontmatter ingest. Carried through to SkillManifest.extensions verbatim, never interpreted by the compiler. */
+  extensions?: Record<string, Record<string, unknown>>;
 }
 
 /**

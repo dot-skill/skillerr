@@ -557,8 +557,12 @@ export async function compileWorkspace(
     );
   }
 
+  // opts.message is a compile message, not a title, it must never silently
+  // override a title the workspace already has configured (loadConfig).
+  // It only stands in for a title when neither an explicit opts.title nor
+  // a configured workspace title exists.
   const title =
-    opts.title ?? opts.message ?? (await loadConfig(root)).title ?? st.staged[0]!.title;
+    opts.title ?? (await loadConfig(root)).title ?? opts.message ?? st.staged[0]!.title;
 
   if (opts.summary) {
     await setJourney(root, { summary: opts.summary, open_questions: undefined });

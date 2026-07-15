@@ -2,6 +2,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, extname, join, relative } from "node:path";
 import type {
   ContractCapability,
+  ContractPermission,
+  ContractPrecondition,
   ContractTrigger,
   SkillContract,
   VerificationAssertion,
@@ -36,6 +38,10 @@ export interface IngestReport {
     references: number;
     assets: number;
     evals: number;
+    license: boolean;
+    compatibility: boolean;
+    metadata_keys: number;
+    allowed_tools: number;
   };
   /** Human-readable notes on every heuristic/lossy decision this pass made. */
   notes: string[];
@@ -50,18 +56,24 @@ export interface IngestResult {
   report: IngestReport;
 }
 
+export type FrontmatterValue = string | Record<string, string>;
+
 interface ParsedSkillMd {
-  frontmatter: Record<string, string>;
+  frontmatter: Record<string, FrontmatterValue>;
   body: string;
 }
 
 /**
- * Minimal frontmatter parser scoped to how skill-creator SKILL.md files
- * actually use YAML: flat `key: value` pairs, optionally a block scalar
- * (`key: |` / `key: >`) for a long description. This is intentionally not
- * a general YAML parser (no anchors, no nested maps/lists, no multi-doc) —
- * scope matched to the real input shape rather than adding a dependency
- * for generality this format never needs.
+ * Minimal frontmatter parser scoped to how skill-creator/Agent Skills
+ * SKILL.md files actually use YAML: flat `key: value` pairs, a block
+ * scalar (`key: |` / `key: >`) for a long description, one level of
+ * nested `key:\n  child: value` maps (the `metadata` field in the wild),
+ * and dotted top-level keys (`metadata.internal: true`, an alternate form
+ * some tools emit for the same thing), both land in the same nested slot.
+ * This is intentionally not a general YAML parser (no anchors, no lists,
+ * no multi-doc, no depth beyond one level), scope matched to the real
+ * input shape rather than adding a dependency for generality this format
+ * never needs.
  */
 function parseFrontmatter(raw: string): ParsedSkillMd {
   const normalized = raw.replace(/\r\n/g, "\n");
@@ -75,14 +87,41 @@ function parseFrontmatter(raw: string): ParsedSkillMd {
   const block = normalized.slice(4, closeIdx);
   const body = normalized.slice(closeIdx + (end !== -1 ? 5 : 4)).replace(/^\n/, "");
 
-  const frontmatter: Record<string, string> = {};
+  const frontmatter: Record<string, FrontmatterValue> = {};
+  const asNestedMap = (key: string): Record<string, string> => {
+    const existing = frontmatter[key];
+    if (existing && typeof existing === "object") return existing;
+    const created: Record<string, string> = {};
+    frontmatter[key] = created;
+    return created;
+  };
   const lines = block.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
-    const m = line.match(/^([A-Za-z_][A-Za-z0-9_-]*):\s?(.*)$/);
+    const m = line.match(/^([A-Za-z_][A-Za-z0-9_.-]*):\s?(.*)$/);
     if (!m) continue;
-    const key = m[1]!;
+    const rawKey = m[1]!;
     const rest = m[2]!.trim();
+    const dot = rawKey.indexOf(".");
+
+    if (rest === "") {
+      // Nested-block form: `metadata:` followed by 2-space-indented `key: value` children.
+      const children: Record<string, string> = {};
+      let j = i + 1;
+      while (j < lines.length && /^ {2}\S/.test(lines[j]!)) {
+        const cm = lines[j]!.match(/^ {2}([A-Za-z_][A-Za-z0-9_.-]*):\s?(.*)$/);
+        if (cm) children[cm[1]!] = cm[2]!.trim().replace(/^["']|["']$/g, "");
+        j++;
+      }
+      if (Object.keys(children).length > 0) {
+        i = j - 1;
+        const target = dot === -1 ? asNestedMap(rawKey) : asNestedMap(rawKey.slice(0, dot));
+        Object.assign(target, children);
+        continue;
+      }
+      // Empty value, no indented children, fall through to plain-key handling below.
+    }
+
     if (rest === "|" || rest === ">") {
       const collected: string[] = [];
       let j = i + 1;
@@ -91,13 +130,20 @@ function parseFrontmatter(raw: string): ParsedSkillMd {
         j++;
       }
       i = j - 1;
-      frontmatter[key] =
-        rest === "|" ? collected.join("\n").trim() : collected.join(" ").trim();
+      const value = rest === "|" ? collected.join("\n").trim() : collected.join(" ").trim();
+      if (dot === -1) frontmatter[rawKey] = value;
+      else asNestedMap(rawKey.slice(0, dot))[rawKey.slice(dot + 1)] = value;
     } else {
-      frontmatter[key] = rest.replace(/^["']|["']$/g, "");
+      const value = rest.replace(/^["']|["']$/g, "");
+      if (dot === -1) frontmatter[rawKey] = value;
+      else asNestedMap(rawKey.slice(0, dot))[rawKey.slice(dot + 1)] = value;
     }
   }
   return { frontmatter, body };
+}
+
+function asString(v: FrontmatterValue | undefined): string | undefined {
+  return typeof v === "string" ? v : undefined;
 }
 
 /**
@@ -193,6 +239,63 @@ function parseEvalsJson(raw: string): EvalEntry[] {
   return arr as EvalEntry[];
 }
 
+export interface SkillMdCandidate {
+  path: string;
+  source: "manifest" | "catalog";
+}
+
+interface PluginManifestShape {
+  plugins?: Array<{ name?: string; source?: string; skills?: string[] }>;
+}
+
+/**
+ * Multi-skill discovery for a folder that has no direct SKILL.md of its
+ * own. Read-only, no ingest side effects, callers pick a candidate and
+ * re-run `ingestSkillMd` on it directly. Scoped to the two conventions
+ * verified against vercel-labs/skills' real docs: a plugin manifest
+ * (`.claude-plugin/marketplace.json` or `plugin.json`, `skills` entries are
+ * directory paths with `/SKILL.md` implied) and a flat `skills/<name>/`
+ * catalog folder. Deliberately does not walk `.curated/`/`.experimental/`/
+ * `.system/` nested catalog variants, out of scope here.
+ */
+export function discoverSkillMdCandidates(inputPath: string): SkillMdCandidate[] {
+  if (!existsSync(inputPath) || !statSync(inputPath).isDirectory()) return [];
+
+  for (const manifestName of ["marketplace.json", "plugin.json"]) {
+    const manifestPath = join(inputPath, ".claude-plugin", manifestName);
+    if (!existsSync(manifestPath)) continue;
+    try {
+      const data = JSON.parse(readFileSync(manifestPath, "utf8")) as PluginManifestShape;
+      const candidates: SkillMdCandidate[] = [];
+      for (const plugin of data.plugins ?? []) {
+        for (const skillDir of plugin.skills ?? []) {
+          if (typeof skillDir !== "string") continue;
+          const skillMdPath = join(inputPath, skillDir, "SKILL.md");
+          if (existsSync(skillMdPath)) candidates.push({ path: skillMdPath, source: "manifest" });
+        }
+      }
+      return candidates;
+    } catch {
+      // Malformed manifest, treat as no candidates rather than throwing;
+      // the caller falls back to the bare "no SKILL.md found" error.
+      return [];
+    }
+  }
+
+  const skillsDir = join(inputPath, "skills");
+  if (existsSync(skillsDir) && statSync(skillsDir).isDirectory()) {
+    const candidates: SkillMdCandidate[] = [];
+    for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const skillMdPath = join(skillsDir, entry.name, "SKILL.md");
+      if (existsSync(skillMdPath)) candidates.push({ path: skillMdPath, source: "catalog" });
+    }
+    return candidates;
+  }
+
+  return [];
+}
+
 export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): IngestResult {
   const now = opts.now ?? (() => new Date().toISOString());
   const notes: string[] = [];
@@ -206,13 +309,14 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
   const raw = readFileSync(skillMdPath, "utf8");
   const { frontmatter, body } = parseFrontmatter(raw);
 
-  const nameFound = typeof frontmatter.name === "string" && frontmatter.name.trim().length > 0;
-  const descriptionFound =
-    typeof frontmatter.description === "string" && frontmatter.description.trim().length > 0;
+  const nameValue = asString(frontmatter.name);
+  const descriptionValue = asString(frontmatter.description);
+  const nameFound = !!nameValue && nameValue.trim().length > 0;
+  const descriptionFound = !!descriptionValue && descriptionValue.trim().length > 0;
 
   const h1Match = body.match(/^#\s+(.+)$/m);
   const title = nameFound
-    ? frontmatter.name!.trim()
+    ? nameValue!.trim()
     : h1Match
       ? h1Match[1]!.trim()
       : basename(folder);
@@ -222,7 +326,7 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
     );
   }
 
-  const description = descriptionFound ? frontmatter.description!.trim() : "";
+  const description = descriptionFound ? descriptionValue!.trim() : "";
   if (!descriptionFound) {
     notes.push('No frontmatter "description" — intent and triggers need manual authoring.');
   }
@@ -294,6 +398,91 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
     assets[rel] = readFileSync(file);
   }
 
+  // license -> SkillSource.license/license_url (+ a bundled LICENSE* file, if any).
+  const licenseValue = asString(frontmatter.license);
+  let licenseUrl: string | undefined;
+  for (const candidate of ["LICENSE", "LICENSE.md", "LICENSE.txt"]) {
+    const p = join(folder, candidate);
+    if (existsSync(p)) {
+      licenseUrl = friendlyPath(p);
+      break;
+    }
+  }
+  if (licenseValue) {
+    notes.push(
+      `Frontmatter "license: ${licenseValue}" mapped to SkillSource.license${licenseUrl ? ` (license_url set from bundled ${licenseUrl})` : ", no bundled LICENSE/LICENSE.md/LICENSE.txt found for license_url"}.`,
+    );
+  }
+
+  // compatibility -> one human-check precondition + extensions.agentskills.compatibility, verbatim.
+  const compatibilityValue = asString(frontmatter.compatibility);
+  const preconditionItems: ContractPrecondition[] = [];
+  if (compatibilityValue) {
+    preconditionItems.push({
+      id: "p1",
+      assertion: `Agent Skills "compatibility" constraint from source SKILL.md: ${compatibilityValue}`,
+      check: "human",
+      on_failure:
+        "Do not run this skill on a host outside the declared compatibility constraint without human review.",
+    });
+    notes.push(
+      'Frontmatter "compatibility" mapped to one precondition (check=human) and extensions.agentskills.compatibility.',
+    );
+  }
+
+  // allowed-tools -> extensions.agentskills.allowed_tools + one proposed permission per tool, never auto-authorized.
+  const allowedToolsValue = asString(frontmatter["allowed-tools"]);
+  const allowedTools = allowedToolsValue ? allowedToolsValue.split(/\s+/).filter(Boolean) : [];
+  const permissionItems: ContractPermission[] = allowedTools.map((tool, i) => ({
+    id: `perm_${i + 1}`,
+    side_effect_class: "exec",
+    description: `Agent Skills "allowed-tools" entry "${tool}" imported from SKILL.md frontmatter. Requires explicit human consent before use, ingest never auto-authorizes it, same deny-by-default posture as bundled scripts/*.`,
+    consent: "explicit_human",
+  }));
+  if (allowedTools.length) {
+    notes.push(
+      `Imported ${allowedTools.length} allowed-tools entr${allowedTools.length === 1 ? "y" : "ies"} as proposed permission(s) (consent=explicit_human) and extensions.agentskills.allowed_tools, none are auto-authorized.`,
+    );
+  }
+
+  // metadata (nested map) -> extensions.agentskills.metadata.*, verbatim, unactioned.
+  const metadataMap =
+    frontmatter.metadata && typeof frontmatter.metadata === "object" ? frontmatter.metadata : undefined;
+  const metadataKeyCount = metadataMap ? Object.keys(metadataMap).length : 0;
+  if (metadataKeyCount) {
+    notes.push(
+      `Imported ${metadataKeyCount} metadata ${metadataKeyCount === 1 ? "key" : "keys"} to extensions.agentskills.metadata.* verbatim, not interpreted or acted on by ingest.`,
+    );
+  }
+
+  // Any other unrecognized frontmatter key (context, hooks, ...) -> extensions.agentskills.<key>, passthrough only.
+  const knownFrontmatterKeys = new Set([
+    "name",
+    "description",
+    "license",
+    "compatibility",
+    "allowed-tools",
+    "metadata",
+  ]);
+  const passthroughExtensions: Record<string, FrontmatterValue> = {};
+  for (const [key, value] of Object.entries(frontmatter)) {
+    if (knownFrontmatterKeys.has(key)) continue;
+    passthroughExtensions[key] = value;
+  }
+  if (Object.keys(passthroughExtensions).length) {
+    notes.push(
+      `Passed through unrecognized frontmatter key(s) [${Object.keys(passthroughExtensions).join(", ")}] to extensions.agentskills.* verbatim, never interpreted or acted on.`,
+    );
+  }
+
+  const agentskillsExtensions: Record<string, unknown> = { ...passthroughExtensions };
+  if (compatibilityValue) agentskillsExtensions.compatibility = compatibilityValue;
+  if (allowedTools.length) agentskillsExtensions.allowed_tools = allowedTools;
+  if (metadataMap && metadataKeyCount) agentskillsExtensions.metadata = metadataMap;
+  const extensions = Object.keys(agentskillsExtensions).length
+    ? { agentskills: agentskillsExtensions }
+    : undefined;
+
   // evals/evals.json -> contract.verification.items.
   const evalsPath = join(folder, "evals", "evals.json");
   const verificationItems: VerificationAssertion[] = [
@@ -351,10 +540,12 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
       reason:
         "SKILL.md has no structured input schema. Declare inputs manually if this skill needs runtime inputs from the caller.",
     },
-    preconditions: {
-      status: "none",
-      reason: "Not specified in SKILL.md; add explicit preconditions if this skill requires prerequisite state.",
-    },
+    preconditions: preconditionItems.length
+      ? { status: "specified", items: preconditionItems }
+      : {
+          status: "none",
+          reason: "Not specified in SKILL.md; add explicit preconditions if this skill requires prerequisite state.",
+        },
     steps: {
       status: "specified",
       items: [
@@ -373,11 +564,13 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
     capabilities: capabilities.length
       ? { status: "specified", items: capabilities }
       : { status: "none", reason: "No bundled scripts found under scripts/." },
-    permissions: {
-      status: "none",
-      reason:
-        "No permissions declared by ingest. If imported capabilities require network/filesystem/secret access, author explicit permissions before release — ingest never infers or auto-authorizes them.",
-    },
+    permissions: permissionItems.length
+      ? { status: "specified", items: permissionItems }
+      : {
+          status: "none",
+          reason:
+            "No permissions declared by ingest. If imported capabilities require network/filesystem/secret access, author explicit permissions before release, ingest never infers or auto-authorizes them.",
+        },
     forbidden_actions: { status: "none", reason: "Not specified in SKILL.md." },
     outputs: {
       status: "specified",
@@ -442,6 +635,9 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
     created_at: nowIso,
     actor: { id: "skill-ingest" },
     source_protocol_version: PROTOCOL_VERSION,
+    license: licenseValue,
+    license_url: licenseUrl,
+    extensions,
     // A structured, reliably-detectable marker that this source came from
     // automated SKILL.md ingest — not free text buried in
     // provenance.limitations. Downstream evidence/scoring tooling (e.g.
@@ -463,6 +659,10 @@ export function ingestSkillMd(inputPath: string, opts: IngestOptions = {}): Inge
       references: referenceFiles.length,
       assets: assetFiles.length,
       evals: evalsFound,
+      license: !!licenseValue,
+      compatibility: !!compatibilityValue,
+      metadata_keys: metadataKeyCount,
+      allowed_tools: allowedTools.length,
     },
     notes,
   };

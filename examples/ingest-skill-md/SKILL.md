@@ -5,6 +5,12 @@ description: >
   summarizing a pull request for release notes, or turning a raw commit
   log into user-facing prose.
 license: MIT
+compatibility: Requires read access to the repository's git history.
+allowed-tools: Bash Read
+metadata:
+  author: skillerr-examples
+  version: "1.0"
+  internal: true
 ---
 
 # Changelog Writer

@@ -4,8 +4,11 @@
 format, it's the trust layer that sits above the one you already use. Run
 `skill ingest ./your-skill` and a standard Agent Skills folder becomes a
 sealed, typed `.skill` superset in one command (see
-[FAQ.md](./FAQ.md#how-do-i-convert-an-existing-skillmd)). Everything below
-describes what that superset adds, none of it requires abandoning
+[FAQ.md](./FAQ.md#how-do-i-convert-an-existing-skillmd)). `skill
+export-skill` reverses it: a spec-valid `SKILL.md` folder back out, ready
+to install into an agent's skills directory (see
+[AGENT-SKILLS.md](./AGENT-SKILLS.md)). Everything below describes what the
+sealed superset adds in between, none of it requires abandoning
 `SKILL.md` as your authoring format.
 
 ## Where this fits in the Agent Skills ecosystem
@@ -32,6 +35,7 @@ Markdown `SKILL.md` files do not provide package structure, integrity metadata, 
 | Thin fake skills ship easily | **Release compile refuses** if required parts missing |
 | No cost trail | Optional **generation_usage** (tokens) sealed at mint |
 | No upgrade path from an existing `SKILL.md` skill | `skill ingest` — one command, never fabricates completeness |
+| No way back to a plain, installable folder | `skill export-skill` reverses ingest into a spec-valid `SKILL.md` + `scripts/`/`references/`/`assets/`, optionally straight into `.claude/skills/<name>/` and similar |
 
 ## Two profiles
 

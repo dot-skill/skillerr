@@ -34,10 +34,19 @@ export {
 } from "./validate.js";
 export type { ValidationIssue, ValidationResult } from "./validate.js";
 export { migrateLegacySkill, toSkillMdAdapter } from "./migrate.js";
-export { ingestSkillMd } from "./ingest.js";
+export { ingestSkillMd, discoverSkillMdCandidates } from "./ingest.js";
 export { gradeAssertion, runEvalCase, buildBenchmarkReport } from "./eval.js";
 export type { GradeOverride, RunEvalCaseOptions } from "./eval.js";
-export type { IngestOptions, IngestResult, IngestReport } from "./ingest.js";
+export type { IngestOptions, IngestResult, IngestReport, SkillMdCandidate } from "./ingest.js";
+export {
+  exportAgentSkillFolder,
+  deriveAgentSkillName,
+  resolveAgentSkillsDir,
+  AGENT_SKILLS_INSTALL_DIRS,
+} from "./export.js";
+export type { ExportReport, ExportResult } from "./export.js";
+export { verifySkillFolder } from "./verify-skill.js";
+export type { VerifySkillReport, VerifySkillOptions } from "./verify-skill.js";
 export {
   mintSkillPackage,
   addPermanenceAnchor,

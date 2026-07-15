@@ -15,8 +15,9 @@
  *   skill load ./file.skill          # resume handoff in another AI
  */
 
+import { execFileSync } from "node:child_process";
 import { generateKeyPairSync } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import {
@@ -38,6 +39,11 @@ import {
   loadTrustStore,
   defaultTrustStorePath,
   ingestSkillMd,
+  discoverSkillMdCandidates,
+  exportAgentSkillFolder,
+  deriveAgentSkillName,
+  resolveAgentSkillsDir,
+  verifySkillFolder,
   packSkill,
   buildFileMap,
   finalizeManifest,
@@ -178,7 +184,35 @@ Ingest / run:
                                        Import a SKILL.md or skill-creator-style
                                        folder into a continuity .skill (never
                                        fabricates release completeness — prints
-                                       exactly what still needs authoring)
+                                       exactly what still needs authoring).
+                                       Reads license/compatibility/metadata/
+                                       allowed-tools frontmatter, never auto-
+                                       authorizing allowed-tools. If <path> has
+                                       no direct SKILL.md but a plugin manifest
+                                       (.claude-plugin/marketplace.json or
+                                       plugin.json) or a skills/<name>/ catalog,
+                                       lists candidates instead of failing.
+  skill export-skill <file.skill> -o <dir> [--agent claude|cursor|<host>]
+                                       Reverse of ingest: materializes a spec-
+                                       valid Agent Skills folder (SKILL.md +
+                                       scripts/references/assets) from a sealed
+                                       .skill. --agent computes the standard
+                                       install dir (e.g. .claude/skills/<name>/)
+                                       automatically. Validates with skills-ref
+                                       validate if installed, otherwise enforces
+                                       name/description constraints internally.
+  skill verify-skill <dir> [--attestation <file.skill>] [--trust-store <path>]
+                                       Check a plain (unsealed) Agent Skills
+                                       folder: reports a content digest and
+                                       flags scripts/* as executable surface.
+                                       If a sidecar <dir>.skill (or
+                                       --attestation) exists, also verifies
+                                       ITS attestation integrity, this does
+                                       not prove the folder's current files
+                                       match the sealed package byte-for-byte,
+                                       see the report's own note. With no
+                                       attestation at all, says so honestly:
+                                       nothing cryptographic to check.
   skill eval <workspace|file.skill> [--host] [--responses f.json]
              [--grade f.json] [--usage f.json] [-o benchmark.json] [--attach]
                                        Run contract.evals, grade what's
@@ -879,7 +913,34 @@ async function main() {
       if (!inputPath) usage();
       const host = requireAgentHost(opt(rest, "--host"));
       const out = opt(rest, "-o") ?? "out.skill";
-      const { source, contract, resources, assets, report } = ingestSkillMd(resolve(inputPath!), {
+
+      const resolvedInput = resolve(inputPath!);
+      const hasDirectSkillMd =
+        existsSync(resolvedInput) &&
+        (statSync(resolvedInput).isDirectory()
+          ? existsSync(join(resolvedInput, "SKILL.md"))
+          : true);
+      if (!hasDirectSkillMd) {
+        const candidates = discoverSkillMdCandidates(resolvedInput);
+        if (candidates.length > 0) {
+          console.log(
+            JSON.stringify(
+              {
+                ok: true,
+                multi_skill: true,
+                source_path: resolvedInput,
+                candidates,
+                next: "No single SKILL.md at this path, re-run `skill ingest <candidate path>` for one of the candidates above.",
+              },
+              null,
+              2,
+            ),
+          );
+          break;
+        }
+      }
+
+      const { source, contract, resources, assets, report } = ingestSkillMd(resolvedInput, {
         host,
       });
       const compiled = compileSkillSource(source, { profile: "continuity" });
@@ -1374,6 +1435,89 @@ async function main() {
           2,
         ),
       );
+      break;
+    }
+    case "export-skill": {
+      const file = rest[0];
+      if (!file) usage();
+      const agent = opt(rest, "--agent");
+      let outDir = opt(rest, "-o");
+
+      const unpacked = unpackSkill(new Uint8Array(await readFile(resolve(file!))));
+
+      if (agent && !outDir) {
+        outDir = resolveAgentSkillsDir(agent, deriveAgentSkillName(unpacked.raw));
+      }
+      if (!outDir) {
+        console.error("export-skill requires -o <dir> or --agent <host> (e.g. claude, cursor).\n");
+        usage();
+      }
+      const resolvedOut = resolve(outDir!);
+
+      const { report } = exportAgentSkillFolder(unpacked.raw, resolvedOut);
+
+      let validation: { tool: "skills-ref" | "internal-only"; ok: boolean; output?: string } = {
+        tool: "internal-only",
+        ok: true,
+      };
+      try {
+        const stdout = execFileSync("skills-ref", ["validate", resolvedOut], {
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        validation = { tool: "skills-ref", ok: true, output: stdout.trim() };
+      } catch (e) {
+        const err = e as NodeJS.ErrnoException & { stdout?: Buffer | string; stderr?: Buffer | string };
+        if (err.code === "ENOENT") {
+          // skills-ref not on PATH, exportAgentSkillFolder already
+          // guarantees a valid name/description by construction, so
+          // internal-only validation is a real (if narrower) check, not a
+          // silent skip. Reflected honestly in `validation.tool` above.
+        } else {
+          const output = [err.stdout, err.stderr]
+            .filter(Boolean)
+            .map(String)
+            .join("\n")
+            .trim();
+          console.error(
+            JSON.stringify(
+              {
+                ok: false,
+                out: resolvedOut,
+                error: "skills-ref validate reported this folder as invalid",
+                output: output || err.message,
+              },
+              null,
+              2,
+            ),
+          );
+          process.exit(2);
+        }
+      }
+
+      console.log(
+        JSON.stringify(
+          { ok: true, out: resolvedOut, report, validation },
+          null,
+          2,
+        ),
+      );
+      break;
+    }
+    case "verify-skill": {
+      const dir = rest[0];
+      if (!dir) usage();
+      const attestationPath = opt(rest, "--attestation");
+      const trust_store = loadTrustStore(opt(rest, "--trust-store") ?? defaultTrustStorePath());
+      const report = verifySkillFolder(resolve(dir!), {
+        attestationPath: attestationPath ? resolve(attestationPath) : undefined,
+        trustOptions: {
+          allow_development_issuer: flag(rest, "--allow-development-issuer"),
+          allow_self_reported: flag(rest, "--allow-self-reported"),
+          trust_store,
+        },
+      });
+      console.log(JSON.stringify({ ok: true, ...report }, null, 2));
       break;
     }
     case "help":
