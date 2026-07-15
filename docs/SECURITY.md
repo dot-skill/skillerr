@@ -1,6 +1,6 @@
 # Security
 
-For the full threat/mitigation map (what's defended, what's explicitly out of scope, and which RFC tracks each open gap), see [THREAT-MODEL.md](./THREAT-MODEL.md). For a plain-language breakdown of what any given trust state does and does not prove, see [TRUST-MODEL.md](./TRUST-MODEL.md) and [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md).
+For the full threat/mitigation map (what's defended, what's explicitly out of scope, and which RFC tracks each open gap), see [Threat Model](https://github.com/dot-skill/skillerr/wiki/Threat-Model). For a plain-language breakdown of what any given trust state does and does not prove, see [TRUST-MODEL.md](./TRUST-MODEL.md) and [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md).
 
 ## Practice
 

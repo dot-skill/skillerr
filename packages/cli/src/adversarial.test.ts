@@ -322,7 +322,7 @@ test("adversarial: dev-HMAC-minted package (trust_state=development) still refus
 test("adversarial: Ed25519-sealed package (issuer_class=configured_ed25519) presenting to a verifier with no matching trust-store pin is untrusted, not silently accepted", () => {
   // Complements the HMAC dev-key case above: a *correctly formed, real*
   // asymmetric seal is still worthless to a verifier who never pinned that
-  // specific key — see PROTO-2 / RFC 0001 and docs/KEY-CEREMONY.md. This is
+  // specific key — see PROTO-2 / RFC 0001 and the wiki's Key Ceremony page. This is
   // a distinct threat from a forged signature (attestation_sig_invalid,
   // covered in packages/core/src/core.test.ts): here the signature is
   // perfectly valid, the verifier just has no reason to trust it yet.

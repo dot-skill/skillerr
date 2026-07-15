@@ -1,6 +1,6 @@
 # Trust model (plain language)
 
-This explains what `trust_state` actually means when you see it in `skill inspect --trust` output, without assuming you've read [THREAT-MODEL.md](./THREAT-MODEL.md) or the protocol spec first. If you only read one doc before running a `.skill` file someone else gave you, read this one.
+This explains what `trust_state` actually means when you see it in `skill inspect --trust` output, without assuming you've read [Threat Model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) or the protocol spec first. If you only read one doc before running a `.skill` file someone else gave you, read this one.
 
 ## The four states
 
@@ -21,7 +21,7 @@ If you take away nothing else: **`trust_state` tells you about the signature, no
 
 ## Why `SKILL_HOST` alone is `self_reported`
 
-Setting `export SKILL_HOST=cursor` before running `skill compile`/`skill mint` tells the tooling "an agent named cursor made this." That's it — it's an environment variable, exactly as spoofable as any other environment variable. It cannot, by itself, produce `verified_issuer` trust, no matter what value you set it to. Stronger provenance requires actual agent-runtime evidence (a real session id, agent-invocation markers) *and* a signer key that's pinned in a trust store — see [KEY-CEREMONY.md](./KEY-CEREMONY.md) for what that setup actually involves.
+Setting `export SKILL_HOST=cursor` before running `skill compile`/`skill mint` tells the tooling "an agent named cursor made this." That's it — it's an environment variable, exactly as spoofable as any other environment variable. It cannot, by itself, produce `verified_issuer` trust, no matter what value you set it to. Stronger provenance requires actual agent-runtime evidence (a real session id, agent-invocation markers) *and* a signer key that's pinned in a trust store — see [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony) for what that setup actually involves.
 
 ## Why the bundled key is dev-only
 
@@ -34,6 +34,6 @@ Every install of this CLI ships the same public development HMAC key (`dot-skill
 ## Related
 
 - [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md) — which specific claims (content, timestamp, identity, host, human approval) are cryptographic vs. self-reported, attribute by attribute
-- [THREAT-MODEL.md](./THREAT-MODEL.md) — the full threat/mitigation map this trust model sits inside
+- [Threat Model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) — the full threat/mitigation map this trust model sits inside
 - [SECURITY.md](./SECURITY.md) — practice-level rules ("inspect before run", deny-by-default runtime)
-- [KEY-CEREMONY.md](./KEY-CEREMONY.md) — what it actually takes to mint as `verified_issuer` in production
+- [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony) — what it actually takes to mint as `verified_issuer` in production

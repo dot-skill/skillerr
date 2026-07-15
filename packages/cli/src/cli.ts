@@ -145,7 +145,7 @@ Create:
                                        HMAC (development trust only). Pass
                                        --signer-key for a configured Ed25519 issuer
                                        seal (verified_issuer-eligible) — see
-                                       skill keygen and docs/KEY-CEREMONY.md
+                                       skill keygen and the wiki's Key Ceremony page
                                        --transparency additionally logs the sealed
                                        digest to a public Rekor transparency log
                                        (requires --signer-key; default log is the
@@ -165,7 +165,7 @@ Create:
                                        No local/interactive login yet. Combines
                                        with any signer choice, or none.
   skill keygen [-o dir] [--key-id id]  Generate an Ed25519 issuer keypair for
-                                       production signing (docs/KEY-CEREMONY.md)
+                                       production signing (wiki: Key Ceremony)
 
 Multi-skill identify:
   skill agent-guide [--json]           Exact create/identify protocol steps
@@ -1262,7 +1262,7 @@ async function main() {
             private_key: privPath,
             public_key: pubPath,
             next_steps: [
-              `Keep ${privPath} offline/secret — see docs/KEY-CEREMONY.md.`,
+              `Keep ${privPath} offline/secret — see the wiki's Key Ceremony page.`,
               `Mint with it: skill mint --host <agent-host> --signer-key ${privPath} --key-id ${keyId}`,
               `Pin the public key for verifiers — add an entry to ~/.skillerr/trust-store.json (or --trust-store <path>):`,
               JSON.stringify(

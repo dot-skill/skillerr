@@ -154,7 +154,7 @@ Creation requires a declared agent host (`SKILL_HOST=cursor|ollama|claude|…`).
 - **Validate** structure and hash integrity
 - **Dry-run** before execute
 - Continuity drafts may be incomplete; **release** compile refuses incomplete contracts (`compile_refused`)
-- **Real cryptographic identity in production:** `skill keygen` + `--signer-key` mints with a configured Ed25519 issuer key as `verified_issuer` — the bundled zero-setup key (used when no `--signer-key` is given) is for trying the CLI, not for shipping. See [docs/KEY-CEREMONY.md](./docs/KEY-CEREMONY.md)
+- **Real cryptographic identity in production:** `skill keygen` + `--signer-key` mints with a configured Ed25519 issuer key as `verified_issuer` — the bundled zero-setup key (used when no `--signer-key` is given) is for trying the CLI, not for shipping. See [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony)
 
 See [docs/SECURITY.md](./docs/SECURITY.md).
 
@@ -187,13 +187,13 @@ Full container spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 
 ## Status
 
-Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](./docs/PROTOCOL.md)) — future changes go through the open [RFC process](./docs/rfcs/), not silent revisions.  
-Reference CLI: `skillerr` @ **1.0.2** — a stable public API, backed by 165 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](./docs/THREAT-MODEL.md) and a live-tested [transparency-log integration](./docs/TRANSPARENCY.md).  
+Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](./docs/PROTOCOL.md)) — future changes go through the open [RFC process](https://github.com/dot-skill/skillerr/wiki/RFCs), not silent revisions.  
+Reference CLI: `skillerr` @ **1.0.2** — a stable public API, backed by 165 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](./docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**
 
-- The container is protocol-defined, not tied to this CLI — any conforming implementation can read/write it (see [docs/rfcs/](./docs/rfcs/) for how the spec evolves in the open)
+- The container is protocol-defined, not tied to this CLI — any conforming implementation can read/write it (see [RFCs](https://github.com/dot-skill/skillerr/wiki/RFCs) for how the spec evolves in the open)
 - The optional permanence-anchor slot (`skill registry`) is an extension point, not a required dependency — new anchor kinds can be added later without breaking existing packages
 - Trust states are explicit and versioned in the manifest, so a package minted today stays verifiable under future trust-store/issuer changes instead of silently degrading
 
@@ -221,11 +221,11 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 
 - [Protocol](./docs/PROTOCOL.md) · [Agent](./docs/AGENT.md) · [Prompts](./examples/prompts.md)
 - [Why structured packages](./docs/WHY.md) · [Continuity](./docs/CONTINUITY.md) · [Privacy](./docs/PRIVACY.md)
-- [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md) · [Naming](./docs/NAMING.md)
+- [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md) · [Naming](https://github.com/dot-skill/skillerr/wiki/Naming)
 - [Ingest a SKILL.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [From skill-creator](./docs/FROM-SKILL-CREATOR.md) · [Eval / benchmark](./docs/EVAL.md) · [Bundled scripts / resources](./docs/RESOURCES.md)
-- [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md) · [Trust model](./docs/TRUST-MODEL.md) · [Transparency](./docs/TRANSPARENCY.md) · [Security](./docs/SECURITY.md) · [Threat model](./docs/THREAT-MODEL.md) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
+- [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md) · [Trust model](./docs/TRUST-MODEL.md) · [Transparency](./docs/TRANSPARENCY.md) · [Security](./docs/SECURITY.md) · [Threat model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) · [Key ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
 - [Mint](./docs/MINT.md) · [Runtime](./docs/RUNTIME.md) · [Workspace](./docs/WORKSPACE.md) · [File type / OS registration](./docs/FILE-TYPE.md)
-- [RFCs](./docs/rfcs/) — protocol design proposals, spec-only and implemented
+- [RFCs](https://github.com/dot-skill/skillerr/wiki/RFCs) — protocol design proposals, spec-only and implemented
 - Site guides: [skillerr.com](https://www.skillerr.com/docs/)
 
 ---
