@@ -2,6 +2,18 @@
 
 Contributions are **welcome**. This protocol only becomes real if independent people implement, break, and improve it.
 
+**Start here:** a curated list of concrete, scoped contribution targets, from quick fixes to the second-runtime call, lives in [docs/GOOD-FIRST-ISSUES.md](./docs/GOOD-FIRST-ISSUES.md). Labels: `good first issue`, `help wanted`, `second-runtime`, `rfc`, `adapter`, `documentation`, `spec`.
+
+## Maturity
+
+| Level | Meaning |
+|-------|---------|
+| Stable | Passes the reference conformance corpus; breaking changes require an RFC |
+| Candidate | Feature-complete; breaking changes need RFC |
+| Preview | Real, shipped, but the interface or scoring may still change without a major version bump |
+
+The protocol is **1.0.0 (Stable)**. `@skillerr/skill-score` (`skill score`) is **Preview**; everything else in the reference packages is Stable. See [GOVERNANCE.md](./GOVERNANCE.md) for the full definition.
+
 ## DCO (required)
 
 Every commit must be signed off (Developer Certificate of Origin):
@@ -27,35 +39,30 @@ change under the MIT License.
 
 ## Wanted: a second independent runtime
 
-The protocol cannot be marked **Stable** (see [ROADMAP.md](./docs/ROADMAP.md))
-on the strength of one implementation agreeing with itself. The single
-highest-leverage contribution right now is a second, independent runtime —
-Go or Rust are natural choices — that reproduces, byte-for-byte:
+The protocol is Stable against the reference implementation's own corpus today, not gated on a second runtime. A second, independent runtime is still the single highest-leverage contribution available: it independently validates the spec against a hostile-input and canonicalization corpus no single implementation can fully self-certify, and it's what grows this from "one CLI" into an actual ecosystem. Go or Rust are natural choices. To count, it needs to reproduce, byte-for-byte:
 
 - [`packages/cli/src/adversarial.test.ts`](./packages/cli/src/adversarial.test.ts)'s
   hostile-input corpus (path traversal, zip bombs, duplicate entries,
-  tampered digests, stripped `issuer_class`, dev-HMAC-vs-untrusted) — every
+  tampered digests, stripped `issuer_class`, dev-HMAC-vs-untrusted). Every
   case must refuse with an equivalent distinct code, never a crash, never a
   silent accept.
 - [`fixtures/canonicalization/vectors.json`](./fixtures/canonicalization/)'s
   RFC 8785 (JCS) test vectors, including the UTF-16-vs-code-point
   surrogate-pair case documented in
-  [docs/CANONICALIZATION.md](./docs/CANONICALIZATION.md) — this is the
+  [docs/CANONICALIZATION.md](./docs/CANONICALIZATION.md). This is the
   gotcha most re-implementations get wrong first.
 - The determinism property: compiling the same `SkillSource` twice yields a
   byte-identical `package_digest` (see the pack/unpack tests in
   [`packages/core/src/core.test.ts`](./packages/core/src/core.test.ts)).
 
-Ed25519 signature verification ([RFC 0001](https://github.com/dot-skill/skillerr/wiki/RFC-0001-Asymmetric-Signatures-Trust-Store),
-now implemented — see [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony)) uses
+Ed25519 signature verification ([RFC 0001](./docs/rfcs/0001-asymmetric-signatures-trust-store.md),
+now implemented, see [Key Ceremony](./docs/KEY-CEREMONY.md)) uses
 standard PKCS8/SPKI PEM and raw Ed25519 signing with no protocol-specific
 framing beyond the DSSE envelope shape in
-[docs/PROTOCOL.md](./docs/PROTOCOL.md) — any language with an Ed25519
+[docs/PROTOCOL.md](./docs/PROTOCOL.md). Any language with an Ed25519
 library and a canonical-JSON implementation can reproduce it.
 
-Open an issue labeled `second-runtime` before starting, so effort isn't
-duplicated — this is exactly the kind of `good_first_issue`-adjacent,
-high-impact seed this project needs before calling itself Stable.
+Open an issue labeled `second-runtime` before starting, so effort isn't duplicated.
 
 ## Dev setup
 
@@ -83,12 +90,12 @@ npm run skill -- --help
 ## Spec changes (RFCs)
 
 1. Open an issue with label `rfc` describing motivation, schema diff, migration, fixtures
-2. Discuss before a maintainer adds it to the [wiki](https://github.com/dot-skill/skillerr/wiki/RFCs)
+2. Discuss before a maintainer adds it to [docs/rfcs/](./docs/rfcs/) as a pull request (RFCs live in-repo, versioned and PR-reviewable, not on the wiki)
 3. Discuss before merging breaks
 
 
 ## License
 
-- Code: [MIT](./LICENSE) — [docs/LICENSING.md](./docs/LICENSING.md)
+- Code: [MIT](./LICENSE), [docs/LICENSING.md](./docs/LICENSING.md)
 - Conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
 - Security: [SECURITY.md](./SECURITY.md)

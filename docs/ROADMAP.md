@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: protocol **1.0.0 (Stable)**; reference packages **1.1.0**.
+Status: protocol **1.0.0 (Stable)**; reference packages **1.1.0**. The package number should always match [`packages/skillerr/package.json`](../packages/skillerr/package.json); if this line ever drifts from that file, the file wins. Maturity levels (Stable / Candidate / Preview) are defined in [GOVERNANCE.md](../GOVERNANCE.md). Everything below is Stable except `@skillerr/skill-score` (`skill score`), which is **Preview**, it's real and shipped, but its scoring interface may still change without a major bump.
 
 ## Now (done in this repo)
 
@@ -27,9 +27,10 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.1.0**.
       `skill validate` via `@skillerr/protocol`'s `loadSchema()`
 - [x] Production-grade signing: pluggable Ed25519 issuer signer + local
       trust store (`configured_ed25519`), replacing dev-HMAC-only trust —
-      see [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony)
-- [x] Public [RFCs](https://github.com/dot-skill/skillerr/wiki/RFCs) — six RFCs; PROTO-2 (asymmetric
-      signing) has since shipped as real code, the rest remain spec-only
+      see [Key Ceremony](./KEY-CEREMONY.md)
+- [x] Public [RFCs](./rfcs/): seven RFCs; PROTO-2 (asymmetric signing) and
+      RFC 0007 (subject-bearing anchors) have since shipped as real code,
+      the rest remain spec-only
 - [x] Forward `SKILL.md` -> `.skill` ingest (`skill ingest`), distinct from
       the existing lossy `to-skill-md` export — see
       [examples/ingest-skill-md/](../examples/ingest-skill-md/)
@@ -88,8 +89,19 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.1.0**.
       and `skill score` already exists as a quality signal. No commerce
       code lands in this repo — see Launch Readiness Phase F and
       [TRANSPARENCY.md](./TRANSPARENCY.md)'s "What this is not"
+- [x] Subject-bearing transparency anchors ([RFC 0007](./rfcs/0007-subject-bearing-transparency-anchor.md)):
+      `skill mint --transparency`/`--keyless` now sign a minimal in-toto
+      statement naming the skill (`skill_id` + `package_digest`) instead of
+      a bare digest, so a public Rekor entry is self-describing without
+      already holding the package. `skill verify-trust` re-derives and
+      checks the subject against the package being verified
+      (`anchor_subject_mismatch` on a mismatch); anchors minted before this
+      shipped have no `statement_version` and keep verifying via the exact
+      legacy bare-digest path, forever. See [TRANSPARENCY.md](./TRANSPARENCY.md).
 
 ## Next (great contribution targets)
+
+A curated, verified-against-real-behavior list of smaller contribution targets lives in [GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
 
 - [ ] Resolve `{{input_name}}` permission-path/host placeholders against
       the input's runtime value before matching in
@@ -110,11 +122,21 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.1.0**.
       sharp/libvips PNG encoding isn't byte-stable across OS/architecture,
       so today's job only proves `scripts/build-brand.mjs` runs, not that
       checked-in assets exactly match its output
-- [ ] Second language runtime (Go or Rust) — reproduce the adversarial
+- [ ] Second language runtime (Go or Rust) ⭐: reproduce the adversarial
       corpus and canonicalization vectors byte-for-byte (now also covers
-      Ed25519/PEM signing — see CONTRIBUTING.md). Ecosystem growth, not a
+      Ed25519/PEM signing, see CONTRIBUTING.md). Ecosystem growth, not a
       stability prerequisite: the protocol is versioned 1.0 (Stable)
-      against this reference implementation's own corpus already
+      against this reference implementation's own corpus already. See
+      [CONTRIBUTING.md](../CONTRIBUTING.md)'s "second independent runtime"
+      section for exactly what it needs to reproduce.
+- [ ] Bridge `skill ingest` to an editable workspace: emit the intermediate
+      `source.json` alongside the ingested package, or add a
+      `skill workspace-import` command, so an ingested `SKILL.md` can be
+      authored further, not just re-exported. See
+      [GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
+- [ ] `skill load` materialize a resumable `.skill/` workspace (or be
+      renamed/documented as a read-only handoff view, since it isn't one
+      today). See [GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
 
 ## Later
 

@@ -144,7 +144,7 @@ This is the point of no casual return — minting seals the package with a
 creation attestation. The default seal is public-dev HMAC, which is
 honest, zero-config, and explicitly `trust_state=development` — never
 production trust. For a real production issuer key, see
-[Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony).
+[Key Ceremony](../../docs/KEY-CEREMONY.md).
 
 ## Look at what you made
 

@@ -1,6 +1,6 @@
 # Open `.skill` Protocol
 
-**Status:** 1.0.0 (Stable) — future changes go through the open [RFC process](https://github.com/dot-skill/skillerr/wiki/RFCs), not silent revisions  
+**Status:** 1.0.0 (Stable) — future changes go through the open [RFC process](./rfcs/), not silent revisions  
 **Extension:** `.skill`  
 **Media type:** `application/vnd.dot-skill+zip`
 
@@ -226,7 +226,7 @@ each having to re-derive "is this well-formed" independently.
 - The bundled development HMAC signer is **never** production trust (`issuer_class=public_dev_hmac`)
 - Production signing uses `issuer_class=configured_ed25519` (PROTO-2 / RFC 0001), a real
   asymmetric keypair verified against a local pinned trust store, not a shared secret —
-  see [MINT.md](./MINT.md) and [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony)
+  see [MINT.md](./MINT.md) and [Key Ceremony](./KEY-CEREMONY.md)
 - `SKILL_HOST` alone is self-reported provenance — not proof of authorship (especially for local LLMs)
 - `manifest.license` (SPDX identifier, e.g. `"MIT"`, `"Apache-2.0"`, or `"UNLICENSED"`) and `manifest.license_url` (for terms a bare SPDX id can't capture) — set via `SkillSource.license`/`.license_url`, carried through `compile`. Self-reported like npm's `package.json` `license` field: nothing in this protocol verifies the declared license matches reality or that the declarer has the right to set it — same trust model as every other self-reported field, see [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md)
 - Digests and seals are **inspectable without executing** (`skill inspect --trust`)

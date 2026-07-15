@@ -55,14 +55,14 @@ SEC-tier fixes depend on those staying fixed; RFC for the rest).
 | SEC-K: RFC 8785 canonicalization pinned + cross-impl vectors | Code | `fixtures/canonicalization/vectors.json`, `docs/CANONICALIZATION.md` |
 | SEC-L: consolidated adversarial fixture corpus | Code | `packages/cli/src/adversarial.test.ts` (9 cases, run in CI on all 3 OSes) |
 | PROTO-1: content-addressed `skill_id` | Code | `core.test.ts`, `packages/core/src/compile.ts` `contentAddressedSkillId` |
-| PROTO-2: asymmetric Ed25519 signatures + trust store | Code (Phase 10) | `packages/core/src/signer.ts`, `trust-store.ts`, `core.test.ts` PROTO-2 tests, [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony), [RFC 0001](https://github.com/dot-skill/skillerr/wiki/RFC-0001-Asymmetric-Signatures-Trust-Store) |
-| PROTO-3: independent human-review countersignature | RFC | [RFC 0002](https://github.com/dot-skill/skillerr/wiki/RFC-0002-Human-Review-Countersignature) |
-| PROTO-4: revocation + expiry | RFC | [RFC 0003](https://github.com/dot-skill/skillerr/wiki/RFC-0003-Revocation-Expiry) |
+| PROTO-2: asymmetric Ed25519 signatures + trust store | Code (Phase 10) | `packages/core/src/signer.ts`, `trust-store.ts`, `core.test.ts` PROTO-2 tests, [Key Ceremony](./KEY-CEREMONY.md), [RFC 0001](./rfcs/0001-asymmetric-signatures-trust-store.md) |
+| PROTO-3: independent human-review countersignature | RFC | [RFC 0002](./rfcs/0002-human-review-countersignature.md) |
+| PROTO-4: revocation + expiry | RFC | [RFC 0003](./rfcs/0003-revocation-expiry.md) |
 | PROTO-5: permission grammar (hosts/paths) | Code | `protocol.test.ts` grammar tests, `packages/protocol/src/grammar.ts` |
-| PROTO-6: dangling `subskill`/`delegate` step kinds | RFC | [RFC 0004](https://github.com/dot-skill/skillerr/wiki/RFC-0004-Dangling-Step-Kinds) |
+| PROTO-6: dangling `subskill`/`delegate` step kinds | RFC | [RFC 0004](./rfcs/0004-dangling-step-kinds.md) |
 | PROTO-7: JSON Schemas (draft 2020-12) for every container file | Code | `core.test.ts` schema tests, `packages/protocol/src/schemas.ts` |
-| PROTO-8: media type + magic identification | RFC | [RFC 0005](https://github.com/dot-skill/skillerr/wiki/RFC-0005-Media-Type-Magic-Identification) |
-| PROTO-9: lineage chain | RFC | [RFC 0006](https://github.com/dot-skill/skillerr/wiki/RFC-0006-Lineage-Chain) |
+| PROTO-8: media type + magic identification | RFC | [RFC 0005](./rfcs/0005-media-type-magic-identification.md) |
+| PROTO-9: lineage chain | RFC | [RFC 0006](./rfcs/0006-lineage-chain.md) |
 | PROTO-10: threat model | Code (doc) | [Threat Model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) |
 
 ## Tier 0 / Tier 3 hygiene (not individually coded, for completeness)

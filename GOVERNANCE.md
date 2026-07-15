@@ -6,16 +6,18 @@
 |-------|---------|
 | Draft | May change with notice in CHANGELOG |
 | Candidate | Feature-complete; breaking changes need RFC |
-| Stable | Two independent runtimes pass the same conformance corpus |
+| Stable | Passes the reference conformance corpus (RFC 8785 canonicalization vectors, the adversarial security corpus, and deterministic repacking, all run on every push across three OSes); breaking changes require an RFC |
 
-**0.5.0** is **Draft**.
+Open `.skill` Protocol is **1.0.0 (Stable)**. Reference packages (`skillerr`, `@skillerr/*`) are versioned separately and in lockstep; treat `packages/skillerr/package.json` as the single source of truth for that number rather than any figure restated in prose here.
+
+A second, independent runtime is the highest-leverage contribution toward ecosystem growth and independent validation of the spec, not a prerequisite for Stable status. A single reference implementation passing its own full conformance corpus is sufficient evidence of stability on its own.
 
 ## Project
 
-- **License:** MIT — [LICENSE](./LICENSE) · [docs/LICENSING.md](./docs/LICENSING.md)
+- **License:** MIT, [LICENSE](./LICENSE) · [docs/LICENSING.md](./docs/LICENSING.md)
 - **Maintainer:** Bharat Dudeja
-- **Contributions:** DCO sign-off — [DCO.md](./DCO.md)
-- **Decision process:** protocol changes use public issues and RFCs
+- **Contributions:** DCO sign-off, [DCO.md](./DCO.md)
+- **Decision process:** day-to-day changes land via pull request and maintainer review. Protocol-level changes (schema, wire format, trust semantics) go through the open [RFC process](./docs/rfcs/); additive changes are preferred over breaking ones.
 
 ## Extensions
 

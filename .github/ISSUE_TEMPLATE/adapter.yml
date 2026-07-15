@@ -1,0 +1,24 @@
+name: Host adapter
+description: Propose or report on a host integration (IDE, agent runtime, MCP bridge, etc.)
+labels: ["adapter"]
+body:
+  - type: input
+    id: host
+    attributes:
+      label: Host / integration
+      placeholder: Cursor, Claude Code, Codex, MCP bridge, …
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What does this host need that isn't covered today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What the adapter would do, and which existing commands/APIs it would wrap.
+    validations:
+      required: true

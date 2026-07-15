@@ -58,7 +58,7 @@ requires the signing key to actually be present, live (`not_before`/
 `not_after`), and authorized for that `host` in the verifier's trust
 store — a missing pin refuses (`trust_store_key_not_found` and friends),
 it never silently downgrades to a lesser-but-still-passing label. See
-[Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony) for the full generate → mint → pin
+[Key Ceremony](./KEY-CEREMONY.md) for the full generate → mint → pin
 walkthrough, and [Threat Model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) T3 for why HMAC
 alone could never make `verified_issuer` mean what it says.
 

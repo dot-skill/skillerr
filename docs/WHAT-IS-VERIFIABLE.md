@@ -25,7 +25,7 @@ These are checked by math, not by asking the package what it claims about itself
 
 | Claim | What's actually verified | What is NOT verified |
 |---|---|---|
-| **`verified_issuer` trust state** | The signature is valid *and* the `key_id` is pinned in **your** local trust store (`~/.skillerr/trust-store.json` by default), with a matching, non-expired, host-authorized entry. | Nothing about *who* that key belongs to in the real world. The trust store's `comment` field is a human-written label you (or whoever curates your trust store) chose to trust — see [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony). There is no public identity system (no OIDC binding, no certificate authority) behind this today. Two different people could both call their trust-store entry `"our CI pipeline"` and you'd have no way to independently tell them apart without your own out-of-band verification of the key. |
+| **`verified_issuer` trust state** | The signature is valid *and* the `key_id` is pinned in **your** local trust store (`~/.skillerr/trust-store.json` by default), with a matching, non-expired, host-authorized entry. | Nothing about *who* that key belongs to in the real world. The trust store's `comment` field is a human-written label you (or whoever curates your trust store) chose to trust — see [Key Ceremony](./KEY-CEREMONY.md). There is no public identity system (no OIDC binding, no certificate authority) behind this today. Two different people could both call their trust-store entry `"our CI pipeline"` and you'd have no way to independently tell them apart without your own out-of-band verification of the key. |
 
 This is real cryptography — you're not being lied to about signature validity — but it is **not** the same as a publicly-verifiable identity. If someone hands you a `.skill` file and says "trust key X," and you add key X to your trust store, `verified_issuer` from that point on just means "signed by the key I was told to trust." Garbage in, garbage out.
 
@@ -63,5 +63,5 @@ Optional keyless signing (Fulcio) shipped for the CI-ambient case (`skill mint -
 
 - [TRUST-MODEL.md](./TRUST-MODEL.md) — plain-language explanation of the four `trust_state` values
 - [Threat Model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) — the full threat/mitigation map
-- [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony) — how to actually curate a trust store and mint as `verified_issuer`
+- [Key Ceremony](./KEY-CEREMONY.md) — how to actually curate a trust store and mint as `verified_issuer`
 - [EVAL.md](./EVAL.md) — quality/correctness evidence, a separate concern from trust

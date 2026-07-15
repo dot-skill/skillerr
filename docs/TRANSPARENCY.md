@@ -85,4 +85,4 @@ Same permanence caveat as `--transparency`: the certificate and Rekor entry are 
 
 - [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md) — `log_inclusion`/`log_timestamp` (cryptographic, either anchor kind) and `owner_identity` (identity-bound, `--keyless` only)
 - [TRUST-MODEL.md](./TRUST-MODEL.md) — the four `trust_state` values, unaffected by anchoring
-- [Key Ceremony](https://github.com/dot-skill/skillerr/wiki/Key-Ceremony) — the non-keyless issuer key path `--transparency` builds on
+- [Key Ceremony](./KEY-CEREMONY.md) — the non-keyless issuer key path `--transparency` builds on
