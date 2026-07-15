@@ -23,6 +23,13 @@ import {
   createEd25519Signer,
 } from "@skillerr/core";
 import { inspectTrustView, verifyMintTrust } from "@skillerr/core";
+import {
+  anchorToRekor,
+  verifyRekorAnchor,
+  buildAnchorStatement,
+  assertAnchorStatementPrivacy,
+  type AnchorSubject,
+} from "@skillerr/core";
 import { runSkillArchive } from "@skillerr/runtime";
 import {
   CONTAINER_VERSION,
@@ -353,4 +360,125 @@ test("adversarial: Ed25519-sealed package (issuer_class=configured_ed25519) pres
 
   const inspected = inspectTrustView(packageBytes, { trust_store: { version: 1, keys: [] } });
   assert.equal(inspected.trust_state, "untrusted");
+});
+
+// --- RFC 0007: subject-bearing transparency anchor ------------------------
+//
+// The "legacy bare-digest anchor still verifies" case (also required by
+// this suite's brief) is covered in packages/core/src/transparency.test.ts
+// against a REAL captured Rekor bundle and a captured trusted-root snapshot.
+// Reproducing that here would need importing @sigstore/protobuf-specs,
+// which isn't a declared @skillerr/cli dependency. The four cases below
+// only exercise checkAnchorPayload's pre-crypto short-circuit (see
+// transparency.ts), so a minimal, undeclared-dependency-free witness stub
+// is enough, no trusted-root fixture needed.
+
+/** Matches @sigstore/sign's `Witness` shape structurally, without importing
+ * its exact internal types (@sigstore/sign/@sigstore/bundle aren't declared
+ * @skillerr/cli dependencies, @skillerr/core owns them). The `as any` at
+ * each call site below is a test-only stub of external library internals,
+ * not app code. Includes a full inclusionProof: bundleFromJSON (called
+ * inside verifyRekorAnchor) structurally requires one to accept a v0.3
+ * bundle at all, checked before any of the app-level checks below run. */
+const adversarialStubWitness = {
+  async testify() {
+    return {
+      tlogEntries: [
+        {
+          logIndex: "42",
+          integratedTime: "1700000000",
+          logId: { keyId: Buffer.from("stub-log-id") },
+          kindVersion: { kind: "dsse", version: "0.0.1" },
+          canonicalizedBody: Buffer.from("{}"),
+          inclusionProof: {
+            logIndex: "42",
+            rootHash: Buffer.from("stub-root-hash"),
+            treeSize: "1",
+            hashes: [],
+            checkpoint: { envelope: "stub-checkpoint" },
+          },
+        },
+      ],
+    };
+  },
+};
+
+const adversarialSubject: AnchorSubject = {
+  skill_id: "skl_adversarial0000",
+  skill_version: "1.0.0",
+  package_digest: "sha256:" + "e".repeat(64),
+  issuer_class: "configured_ed25519",
+};
+
+test("adversarial: transparency anchor with a tampered subject name -> anchor_subject_mismatch", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const signer = createEd25519Signer(privateKey as unknown as string, "adversarial-anchor-key-1");
+  const digest = "sha256:" + "f0".repeat(32);
+  // A validly-signed, correctly-logged anchor for adversarialSubject...
+  const { anchor } = await anchorToRekor(digest, signer, publicKey, adversarialSubject, {
+    witness: adversarialStubWitness as never,
+  });
+  // ...presented as if it were about a different skill_id. No signature
+  // tampering needed: re-using a legitimate anchor's receipt to vouch for
+  // the wrong skill is the realistic attack this check exists to catch.
+  const result = await verifyRekorAnchor(
+    { ...anchor, package_digest: digest },
+    digest,
+    publicKey,
+    { skill_id: "skl_not_the_real_skill", package_digest: adversarialSubject.package_digest },
+  );
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "anchor_subject_mismatch");
+});
+
+test("adversarial: transparency anchor with a subject digest that doesn't match the package -> anchor_subject_mismatch", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const signer = createEd25519Signer(privateKey as unknown as string, "adversarial-anchor-key-2");
+  const digest = "sha256:" + "f1".repeat(32);
+  const { anchor } = await anchorToRekor(digest, signer, publicKey, adversarialSubject, {
+    witness: adversarialStubWitness as never,
+  });
+  const result = await verifyRekorAnchor(
+    { ...anchor, package_digest: digest },
+    digest,
+    publicKey,
+    { skill_id: adversarialSubject.skill_id, package_digest: "sha256:" + "99".repeat(32) },
+  );
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "anchor_subject_mismatch");
+});
+
+test("adversarial: transparency anchor verified against the wrong sealed_manifest_digest -> refused, not silently accepted", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const signer = createEd25519Signer(privateKey as unknown as string, "adversarial-anchor-key-3");
+  const digest = "sha256:" + "f2".repeat(32);
+  const { anchor } = await anchorToRekor(digest, signer, publicKey, adversarialSubject, {
+    witness: adversarialStubWitness as never,
+  });
+  const result = await verifyRekorAnchor(
+    { ...anchor, package_digest: digest },
+    "sha256:" + "f3".repeat(32),
+    publicKey,
+  );
+  assert.equal(result.ok, false);
+  assert.match(result.error ?? "", /does not match/);
+});
+
+test("adversarial: an anchor statement predicate leaking a disallowed key is refused before it's ever signed", () => {
+  const digest = "sha256:" + "f4".repeat(32);
+  const statement = buildAnchorStatement(digest, adversarialSubject);
+  // Simulate a future code change accidentally adding a descriptive field
+  // (title, intent, journey text, anything beyond the fixed allowlist) to
+  // the predicate before it's signed and permanently, publicly logged.
+  (statement.predicate as unknown as Record<string, unknown>).skill_title = "Do not log me publicly";
+  assert.throws(() => assertAnchorStatementPrivacy(statement), /disallowed key/);
 });

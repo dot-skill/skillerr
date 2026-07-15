@@ -23,6 +23,7 @@ const SCHEMA_URLS = {
   workflow: new URL("../workflow.schema.json", import.meta.url),
   "knowledge-item": new URL("../knowledge-item.schema.json", import.meta.url),
   "creation-attestation": new URL("../creation-attestation.schema.json", import.meta.url),
+  "anchor-statement": new URL("../skill-anchor-statement.schema.json", import.meta.url),
 } as const;
 
 export type SchemaName = keyof typeof SCHEMA_URLS;

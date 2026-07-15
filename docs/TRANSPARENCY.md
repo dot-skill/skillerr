@@ -8,13 +8,32 @@ An append-only transparency log with inclusion proofs is exactly what [Rekor](ht
 
 ## What gets logged
 
-When you mint with `--transparency`, the **`sealed_manifest_digest`** (the same string `mintSkillPackage` already signs today — see [MINT.md](./MINT.md)) is submitted to Rekor as a `DSSEBundleBuilder` artifact (not `MessageSignatureBundleBuilder` — that path hardcodes a SHA-256 hashedrekord entry, which is incompatible with Rekor's Ed25519ph requirement for Ed25519 signatures; confirmed against the real public instance):
+When you mint with `--transparency`, the anchored payload is a small, signed [in-toto](https://in-toto.io) `Statement` (RFC 0007), not a bare digest. Its `subject` names the skill (`skill_id` and `package_digest`), so the resulting public log entry is self-describing and cross-linkable: a stranger can see which skill an entry belongs to without already holding the package. The predicate carries only stable, opaque identifiers, never title, intent, contract, journey, section bodies, endpoints, or any other free text, since the public Rekor log is permanent and world-readable:
 
-1. Our existing issuer signer (`configured_ed25519`, or the public-dev HMAC path — see below) signs the digest exactly as it always has.
-2. `RekorWitness` submits the resulting signature + public key to Rekor, which returns a `TransparencyLogEntry`: `logIndex`, `integratedTime`, `logID`, an `inclusionProof` (Merkle path to the signed tree head), and a `signedEntryTimestamp` (SET).
-3. That entry is stored as a `PermanenceAnchor { kind: "transparency_log" }` inside `signatures/anchors/` — using the container's existing anchor mechanism (`addPermanenceAnchor`), not a new container feature.
+```json
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [{ "name": "<skill_id>", "digest": { "sha256": "<package_digest, hex>" } }],
+  "predicateType": "https://skillerr.com/attestations/skill/v1",
+  "predicate": {
+    "skill_id": "<manifest.id>",
+    "skill_version": "<manifest.version>",
+    "sealed_manifest_digest": "<the same string mintSkillPackage already signs>",
+    "package_digest": "<sha256:...>",
+    "issuer_class": "<configured_ed25519 | public_dev_hmac | ...>"
+  }
+}
+```
 
-Nothing about `mintSkillPackage`'s core signing path changes. Transparency is a witness *added on top of* an already-valid signature, never a replacement for one — a mint with no network access still succeeds exactly as before, just without an anchor.
+Submitted to Rekor as a `DSSEBundleBuilder` artifact (not `MessageSignatureBundleBuilder`, which hardcodes a SHA-256 hashedrekord entry incompatible with Rekor's Ed25519ph requirement for Ed25519 signatures, confirmed against the real public instance):
+
+1. The statement is RFC 8785 (JCS) canonicalized (see [CANONICALIZATION.md](./CANONICALIZATION.md)), then our existing issuer signer (`configured_ed25519`, or the public-dev HMAC path, see below) signs it exactly as it always signed the bare digest.
+2. `RekorWitness` submits the resulting signature and public key to Rekor, which returns a `TransparencyLogEntry`: `logIndex`, `integratedTime`, `logID`, an `inclusionProof` (Merkle path to the signed tree head), and a `signedEntryTimestamp` (SET).
+3. That entry is stored as a `PermanenceAnchor { kind: "transparency_log", statement_version: "1" }` inside `signatures/anchors/`, using the container's existing anchor mechanism (`addPermanenceAnchor`), not a new container feature.
+
+Nothing about `mintSkillPackage`'s core signing path changes. Transparency is a witness *added on top of* an already-valid signature, never a replacement for one, so a mint with no network access still succeeds exactly as before, just without an anchor.
+
+**Backward compatible.** Anchors minted before RFC 0007 have no `statement_version` and signed the bare digest directly; they keep verifying exactly as they always have, forever. `skill verify-trust` detects the absence of `statement_version` and takes that legacy path automatically. On a subject-bearing anchor, verification re-derives `skill_id` and `package_digest` from the package being checked and compares them against the anchored `subject`, the same way `--keyless` re-derives `owner_identity` from the certificate: a mismatch refuses with `anchor_subject_mismatch`, never a silent accept.
 
 ## What Rekor inclusion proves (and what it doesn't)
 

@@ -4,7 +4,7 @@ This is the single most important page in this repo's docs if you're deciding wh
 
 ## The one-sentence guarantee
 
-**As of protocol 1.0.0 / reference packages 1.0.0:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest — those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
+**As of protocol 1.0.0 / reference packages 1.1.0:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest. Those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
 
 If a package was minted with `--transparency` (see [TRANSPARENCY.md](./TRANSPARENCY.md)), that guarantee extends further: a public, independently-checkable Rekor transparency log entry means a third party — not just you — can confirm *when* it was first registered, without trusting your local trust store alone. Anchoring is opt-in, not automatic — a package without an anchor is exactly as verifiable as described above (verifiable by you, using your own pinned trust store), which is still the common case today.
 
@@ -19,6 +19,7 @@ These are checked by math, not by asking the package what it claims about itself
 | **Content integrity** — the bytes you're inspecting are exactly the bytes that were sealed, unaltered | `package_digest` (content-only) and `manifest_digest` (permissions/capabilities/policy) are recomputed from the actual archive and compared against the sealed values. Any post-seal edit — even one byte — changes the digest. |
 | **Signature validity** — a specific private key produced a signature over the sealed manifest digest | `verifyMintTrust` recomputes and checks the signature (HMAC or Ed25519 depending on `sig_alg`) against the claimed `key_id`/algorithm. An invalid or missing signature is `trust_state: untrusted`. |
 | **Which key signed it** — the `key_id` that produced a valid signature | Part of the same signature check above — this is a fact about the bytes, not a claim the package makes about itself. |
+| **Anchor subject (skill_id + package_digest)**, on a `--transparency`/`--keyless` anchor minted with RFC 0007's subject-bearing statement | `skill_id` and `package_digest` are re-derived from the package being verified and compared against the anchored in-toto `subject`, never trusted from the anchor's own claim. A mismatch refuses with `anchor_subject_mismatch`. Legacy (pre-RFC-0007) anchors have no subject to check and verify via the same bare-digest comparison they always have. See [TRANSPARENCY.md](./TRANSPARENCY.md). |
 
 ## What's key-bound, but requires you to already trust the key
 

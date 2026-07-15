@@ -52,7 +52,7 @@ import {
   verifyKeylessAnchor,
   assessClaims,
 } from "@skillerr/core";
-import type { AnchorVerification, KeylessVerification } from "@skillerr/core";
+import type { AnchorVerification, KeylessVerification, AnchorSubject } from "@skillerr/core";
 import type { GradeOverride } from "@skillerr/core";
 import { buildSkillAssessment } from "./score-adapter.js";
 import { runSkillArchive } from "@skillerr/runtime";
@@ -726,6 +726,14 @@ async function main() {
           : undefined,
       });
       let packageBytes = mintedBytes;
+      // Named once, reused by both anchor kinds below. This is what makes
+      // a Rekor entry self-describing instead of a naked digest (RFC 0007).
+      const anchorSubject: AnchorSubject = {
+        skill_id: files.manifest.id,
+        skill_version: files.manifest.version,
+        package_digest: files.manifest.package_digest,
+        issuer_class: attestation.issuer_class,
+      };
       let transparency: Record<string, unknown> | undefined;
       if (flag(rest, "--transparency")) {
         if (!signer) {
@@ -733,9 +741,13 @@ async function main() {
         } else {
           try {
             const publicKeyPem = derivePublicKeyPem(signerKeyPem!);
-            const { anchor, log_index } = await anchorToRekor(attestation.sealed_manifest_digest, signer, publicKeyPem, {
-              rekorUrl: opt(rest, "--rekor-url"),
-            });
+            const { anchor, log_index } = await anchorToRekor(
+              attestation.sealed_manifest_digest,
+              signer,
+              publicKeyPem,
+              anchorSubject,
+              { rekorUrl: opt(rest, "--rekor-url") },
+            );
             packageBytes = addPermanenceAnchor(packageBytes, {
               ...anchor,
               package_digest: files.manifest.package_digest,
@@ -762,10 +774,11 @@ async function main() {
         // separately-checkable claim: an OIDC identity (not our own key)
         // attesting to this digest via Fulcio + Rekor. See docs/TRANSPARENCY.md.
         try {
-          const { anchor, log_index, owner_identity } = await mintKeylessAnchor(attestation.sealed_manifest_digest, {
-            rekorUrl: opt(rest, "--rekor-url"),
-            fulcioUrl: opt(rest, "--fulcio-url"),
-          });
+          const { anchor, log_index, owner_identity } = await mintKeylessAnchor(
+            attestation.sealed_manifest_digest,
+            anchorSubject,
+            { rekorUrl: opt(rest, "--rekor-url"), fulcioUrl: opt(rest, "--fulcio-url") },
+          );
           packageBytes = addPermanenceAnchor(packageBytes, {
             ...anchor,
             package_digest: files.manifest.package_digest,
@@ -1171,7 +1184,13 @@ async function main() {
       // Transparency anchors are optional and orthogonal to trust_state
       // (see docs/TRANSPARENCY.md) — checked here, additively, never
       // replacing the mint trust check above.
-      const anchors = unpackSkill(bytes).manifest.anchors ?? [];
+      const manifest = unpackSkill(bytes).manifest;
+      const anchors = manifest.anchors ?? [];
+      // The subject a statement_version anchor claims to be about is
+      // re-derived from THIS package, then checked, never trusted from the
+      // anchor's own words, same pattern as --keyless re-deriving
+      // owner_identity from the cert (RFC 0007).
+      const expectedSubject = { skill_id: manifest.id, package_digest: manifest.package_digest };
       const tlogAnchor = anchors.find((a) => a.kind === "transparency_log");
       let transparency: unknown;
       let transparencyOffline: AnchorVerification | undefined;
@@ -1184,6 +1203,7 @@ async function main() {
             tlogAnchor,
             result.attestation.sealed_manifest_digest,
             pinnedKey.public_key_pem,
+            expectedSubject,
           );
           transparencyOffline = offline;
           // Independently checkable on sigstore's own UI — don't just take
@@ -1207,7 +1227,11 @@ async function main() {
       let keyless: unknown;
       let keylessOffline: KeylessVerification | undefined;
       if (keylessAnchor && result.attestation?.sealed_manifest_digest) {
-        const offline = await verifyKeylessAnchor(keylessAnchor, result.attestation.sealed_manifest_digest);
+        const offline = await verifyKeylessAnchor(
+          keylessAnchor,
+          result.attestation.sealed_manifest_digest,
+          expectedSubject,
+        );
         keylessOffline = offline;
         const withUrl = offline.ok
           ? { ...offline, rekor_url: rekorSearchUrl(keylessAnchor, offline.log_index) }

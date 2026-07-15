@@ -66,6 +66,11 @@ export {
   rekorSearchUrl,
   mintKeylessAnchor,
   verifyKeylessAnchor,
+  buildAnchorStatement,
+  assertAnchorStatementPrivacy,
+  ANCHOR_STATEMENT_TYPE,
+  ANCHOR_PREDICATE_TYPE,
+  ANCHOR_STATEMENT_VERSION,
 } from "./transparency.js";
 export type {
   TransparencyOptions,
@@ -75,6 +80,9 @@ export type {
   KeylessIdentityOptions,
   KeylessAnchorResult,
   KeylessVerification,
+  AnchorSubject,
+  ExpectedAnchorSubject,
+  SkillAnchorStatement,
 } from "./transparency.js";
 export { assessClaims } from "./claims.js";
 export type { VerifiedClaim, SelfReportedClaim, ClaimsAssurance, AssessClaimsOptions } from "./claims.js";

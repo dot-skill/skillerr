@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/protocol",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Types, schemas, and completeness rules for portable .skill packages",
   "license": "MIT",
   "author": {
@@ -40,6 +40,7 @@
     "workflow.schema.json",
     "knowledge-item.schema.json",
     "creation-attestation.schema.json",
+    "skill-anchor-statement.schema.json",
     "README.md",
     "LICENSE"
   ],
@@ -52,7 +53,8 @@
     "./skill-manifest.schema.json": "./skill-manifest.schema.json",
     "./workflow.schema.json": "./workflow.schema.json",
     "./knowledge-item.schema.json": "./knowledge-item.schema.json",
-    "./creation-attestation.schema.json": "./creation-attestation.schema.json"
+    "./creation-attestation.schema.json": "./creation-attestation.schema.json",
+    "./skill-anchor-statement.schema.json": "./skill-anchor-statement.schema.json"
   },
   "scripts": {
     "build": "rimraf dist && tsc",

@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.1.0 (2026-07-15)
+
+**Subject-bearing transparency anchors (RFC 0007).** `skill mint --transparency`/`--keyless`
+now sign a minimal in-toto `Statement` naming the skill (`skill_id` and
+`package_digest`), instead of a bare digest. The resulting public Rekor
+entry is self-describing and cross-linkable: a stranger can see which
+skill an entry belongs to without already holding the package, while the
+predicate still carries only stable, opaque identifiers, never title,
+intent, contract, journey, or any other free text.
+
+- New `PermanenceAnchor.statement_version`/`.predicate_type` fields
+  (both optional, additive).
+- `skill verify-trust` re-derives `skill_id`/`package_digest` from the
+  package being checked and compares them against the anchored subject.
+  A mismatch refuses with the new `anchor_subject_mismatch` code, never a
+  silent accept, the same way `--keyless` re-derives `owner_identity`
+  from the certificate.
+- `skill verify-trust --claims`/`skill inspect --trust --claims` surface a
+  new `transparency_log.anchor_subject`/`keyless_identity.anchor_subject`
+  verified claim once the subject checks out.
+- New `skill-anchor-statement.schema.json`, checked before an anchor's
+  payload is trusted.
+- Fully backward compatible: anchors minted before this release have no
+  `statement_version` and keep verifying exactly as they always have, via
+  the same bare-digest comparison, forever. `checkAnchorPayload` in
+  `@skillerr/core`'s `transparency.ts` decides the path solely on the
+  absence or presence of `statement_version`.
+- Verified against the real public Rekor log end to end (both mint and
+  verify), not just unit tests: https://search.sigstore.dev/?logIndex=2173022811
+
+See [RFC 0007](./docs/rfcs/0007-subject-bearing-transparency-anchor.md) for
+the full design.
+
 ## 1.0.3 — 2026-07-15
 
 Key Ceremony, Naming, Threat Model, and all six RFCs moved from `docs/` to

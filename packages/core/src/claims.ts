@@ -164,9 +164,23 @@ export function assessClaims(view: TrustView, opts: AssessClaimsOptions = {}): C
         method: "the log's own integratedTime — not a self-claimed timestamp",
       });
     }
+    if (opts.transparency.subject) {
+      verified.push({
+        field: "transparency_log.anchor_subject",
+        value: `${opts.transparency.subject.skill_id}:${opts.transparency.subject.package_digest}`,
+        method: "re-derived from the package and matched against the anchored in-toto subject",
+      });
+    }
   }
 
   if (opts.keyless?.ok) {
+    if (opts.keyless.subject) {
+      verified.push({
+        field: "keyless_identity.anchor_subject",
+        value: `${opts.keyless.subject.skill_id}:${opts.keyless.subject.package_digest}`,
+        method: "re-derived from the package and matched against the anchored in-toto subject",
+      });
+    }
     if (opts.keyless.owner_identity) {
       verified.push({
         field: "owner_identity",

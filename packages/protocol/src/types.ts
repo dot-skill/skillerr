@@ -406,6 +406,17 @@ export interface PermanenceAnchor {
   issuer: string;
   receipt?: unknown;
   extensions?: Record<string, unknown>;
+  /**
+   * Version of the signed anchor payload shape. Absent on anchors minted
+   * before subject-bearing statements existed: those signed a bare
+   * `sealed_manifest_digest` string as the DSSE payload and verify via that
+   * legacy path forever. Present (currently `"1"`) means the payload is a
+   * canonicalized in-toto Statement naming the skill, see
+   * `buildAnchorStatement` in `@skillerr/core`'s `transparency.ts`.
+   */
+  statement_version?: string;
+  /** The signed statement's `predicateType`, recorded alongside `statement_version` for the same detection purpose. */
+  predicate_type?: string;
 }
 
 /**

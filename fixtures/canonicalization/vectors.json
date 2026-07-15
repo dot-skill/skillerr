@@ -115,5 +115,29 @@
     },
     "canonical": "{\"id\":\"skl_abc123\",\"permissions\":[{\"hosts\":[\"example.com\"],\"requires_consent\":true,\"side_effect_class\":\"network\"},{\"paths\":[\"/data\"],\"requires_consent\":false,\"side_effect_class\":\"read\"}],\"policy\":{\"allow_network\":true,\"consent_for\":[\"network\",\"write\"]},\"title\":\"Example\"}",
     "sha256": "sha256:70f0a0d62ff4b5869fc349406e43b06021d1d1895b1e65a39e107964a611a890"
+  },
+  {
+    "name": "skill_anchor_statement_example",
+    "input": {
+      "_type": "https://in-toto.io/Statement/v1",
+      "subject": [
+        {
+          "name": "skl_example00000000",
+          "digest": {
+            "sha256": "abababababababababababababababababababababababababababababababab"
+          }
+        }
+      ],
+      "predicateType": "https://skillerr.com/attestations/skill/v1",
+      "predicate": {
+        "skill_id": "skl_example00000000",
+        "skill_version": "1.0.0",
+        "sealed_manifest_digest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "package_digest": "sha256:abababababababababababababababababababababababababababababababab",
+        "issuer_class": "configured_ed25519"
+      }
+    },
+    "canonical": "{\"_type\":\"https://in-toto.io/Statement/v1\",\"predicate\":{\"issuer_class\":\"configured_ed25519\",\"package_digest\":\"sha256:abababababababababababababababababababababababababababababababab\",\"sealed_manifest_digest\":\"sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\",\"skill_id\":\"skl_example00000000\",\"skill_version\":\"1.0.0\"},\"predicateType\":\"https://skillerr.com/attestations/skill/v1\",\"subject\":[{\"digest\":{\"sha256\":\"abababababababababababababababababababababababababababababababab\"},\"name\":\"skl_example00000000\"}]}",
+    "sha256": "sha256:816a83a99c889f5783c1ef3fd021a7cb7ffb8ade5063f3bb7c6ec6b4064c1063"
   }
 ]

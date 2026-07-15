@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skillerr.com/schema/1.0/skill-anchor-statement.schema.json",
+  "title": "Open .skill 1.0 transparency anchor statement (signed in-toto Statement payload)",
+  "description": "The DSSE payload signed and logged to Rekor by `skill mint --transparency`/`--keyless` (statement_version \"1\"+). Deliberately minimal: only stable, opaque identifiers may appear in `predicate`, never title, intent, contract, journey, section bodies, endpoints, or any free text. `additionalProperties: false` on `predicate` enforces the privacy allowlist at the schema level, mirroring the runtime `assertAnchorStatementPrivacy` check in @skillerr/core.",
+  "type": "object",
+  "required": ["_type", "subject", "predicateType", "predicate"],
+  "additionalProperties": false,
+  "properties": {
+    "_type": { "const": "https://in-toto.io/Statement/v1" },
+    "subject": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "digest"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "digest": {
+            "type": "object",
+            "required": ["sha256"],
+            "additionalProperties": false,
+            "properties": {
+              "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          }
+        }
+      }
+    },
+    "predicateType": { "const": "https://skillerr.com/attestations/skill/v1" },
+    "predicate": {
+      "type": "object",
+      "required": ["skill_id", "skill_version", "sealed_manifest_digest", "package_digest", "issuer_class"],
+      "additionalProperties": false,
+      "properties": {
+        "skill_id": { "type": "string", "minLength": 1 },
+        "skill_version": { "type": "string", "minLength": 1 },
+        "sealed_manifest_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "package_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "issuer_class": { "enum": ["public_dev_hmac", "configured_hmac", "configured_ed25519"] }
+      }
+    }
+  }
+}

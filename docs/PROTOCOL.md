@@ -122,6 +122,8 @@ example.skill
 └── signatures/          # attestation + optional anchors
 ```
 
+Entries under `signatures/anchors/` may carry a `statement_version` (currently `"1"`, RFC 0007): the signed payload is a small in-toto statement naming the skill, not a bare digest. Absent `statement_version` means the legacy bare-digest anchor shape, which verifies exactly as it always has. See [TRANSPARENCY.md](./TRANSPARENCY.md).
+
 ### Format icon slot
 
 `assets/icon.svg` or `assets/icon.png` is an **optional** reserved path a
