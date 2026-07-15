@@ -1,7 +1,7 @@
 {
   "name": "skillerr",
   "version": "1.0.3",
-  "description": "Easily create, inspect, and run portable .skill packages for AI agents. Bin: skill.",
+  "description": "Create, inspect, and run portable .skill packages for AI agents — typed, sealed, and verifiable before anyone runs them.",
   "license": "MIT",
   "author": {
     "name": "Bharat Dudeja",

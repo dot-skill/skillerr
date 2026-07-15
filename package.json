@@ -2,7 +2,7 @@
   "name": "skillerr-monorepo",
   "version": "1.0.3",
   "private": true,
-  "description": "Easily create, inspect, and run portable .skill packages for AI agents",
+  "description": "Create, inspect, and run portable .skill packages for AI agents — typed, sealed, and verifiable before anyone runs them.",
   "license": "MIT",
   "author": {
     "name": "Bharat Dudeja",

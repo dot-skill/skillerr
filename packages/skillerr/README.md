@@ -8,9 +8,9 @@
 
 <p align="center"><em>Sealed <code>.skill</code> packages for AI agents</em></p>
 
-**The integrity + evaluation layer for AI skills.** Your `SKILL.md` still works — `.skill` seals it, scores it, and makes it portable and inspectable before anyone runs it.
+**Create, inspect, and run portable `.skill` packages for AI agents — typed, sealed, and verifiable before anyone runs them.** Your `SKILL.md` still works — `.skill` seals it, scores it, and makes it portable and inspectable before anyone runs it.
 
-**Site:** [skillerr.com](https://www.skillerr.com/docs/) · **Artifact:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`) · **Repo:** [dot-skill/skillerr](https://github.com/dot-skill/skillerr)
+**Site:** [skillerr.com](https://www.skillerr.com/docs/) · **Format:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`) · **Repo:** [dot-skill/skillerr](https://github.com/dot-skill/skillerr)
 
 [![npm](https://img.shields.io/npm/v/skillerr.svg)](https://www.npmjs.com/package/skillerr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/LICENSE)
@@ -183,7 +183,7 @@ example.skill
 └── signatures/        # mint attestation, optional anchors
 ```
 
-Full container spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md#container).
+Full package layout spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md#container).
 
 ---
 
@@ -195,7 +195,7 @@ Independent conforming implementations welcome.
 
 **Why the format doesn't lock you in:**
 
-- The container is protocol-defined, not tied to this CLI — any conforming implementation can read/write it (see [RFCs](https://github.com/dot-skill/skillerr/wiki/RFCs) for how the spec evolves in the open)
+- The format is protocol-defined, not tied to this CLI — any conforming implementation can read/write it (see [RFCs](https://github.com/dot-skill/skillerr/wiki/RFCs) for how the spec evolves in the open)
 - The optional permanence-anchor slot (`skill registry`) is an extension point, not a required dependency — new anchor kinds can be added later without breaking existing packages
 - Trust states are explicit and versioned in the manifest, so a package minted today stays verifiable under future trust-store/issuer changes instead of silently degrading
 
