@@ -1,13 +1,20 @@
 name: Publish
 
-# Tag-based releases only. Merge to main runs CI, not publish.
-# Docs site deploys from dot-skill/skillerr-com — not this repo.
+# Runs on every push to main, and on tag pushes. Docs site deploys from
+# dot-skill/skillerr-com — not this repo.
 #
-# Flow: merge → CI green → git tag vX.Y.Z → this workflow (test + publish).
-# We do not publish on every push to main — tags prevent accidental releases.
+# Flow: merge to main -> this workflow runs test/build gates, then attempts
+# to publish every package. Safe on every merge, not just version-bump
+# merges: publish_one below skips any package whose current version is
+# already on npm, so a docs-only merge (unchanged version) is a no-op here,
+# not an error. A manual `git tag vX.Y.Z && git push origin vX.Y.Z` (or
+# workflow_dispatch) still works too, e.g. to publish a ref other than the
+# tip of main, or to force a GitHub Release (still tag-gated, see below).
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
