@@ -262,7 +262,7 @@ Full package layout spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skille
 ## Status
 
 Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)) — future changes go through the open [RFC process](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/), not silent revisions.  
-Reference CLI: `skillerr` @ **1.1.0**, a stable public API backed by 189 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
+Reference CLI: `skillerr` @ **1.2.0**, a stable public API backed by 189 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the foundation is future-proof:**

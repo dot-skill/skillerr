@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.2.0 (2026-07-16)
+
+**Agent Skills ecosystem compatibility (RFC 0008).** `skill ingest` now maps the
+full [Agent Skills](https://agentskills.io/specification) frontmatter, not just
+name/description: `license`, `compatibility`, nested/dotted `metadata`, and
+`allowed-tools` (recorded as proposed permissions requiring explicit human
+consent, never auto-authorized, the same deny-by-default posture as bundled
+scripts). Multi-skill folders are recognized via the same plugin-manifest and
+`skills/<name>/` catalog conventions `vercel-labs/skills` itself uses.
+
+- New `skill export-skill <file.skill> -o <dir> [--agent claude|cursor|<host>]`
+  reverses a sealed `.skill` back into a spec-valid, installable Agent Skills
+  folder, restoring license/compatibility/metadata/allowed-tools and
+  materializing `scripts/`/`references/`/`assets/`. `--agent` computes the
+  standard install directory automatically.
+- New `skill verify-skill <dir> [--attestation <file.skill>]` checks a plain,
+  never-ingested Agent Skills folder honestly: content digest and executable
+  surface always, and (if a sealed sidecar exists) that attestation's own
+  signing integrity, never implying more was checked than actually was.
+- Fixed a real bug: a `-m` compile message could silently override a
+  workspace's already-configured title.
+- New `docs/AGENT-SKILLS.md` compatibility matrix; see
+  [RFC 0008](./docs/rfcs/0008-agent-skills-ecosystem-compatibility.md).
+
+**Positioned as the cryptographic trust standard for AI skills.** README and the
+npm listing now lead with identity (content-addressed digests), authorship
+(Ed25519 + Sigstore Fulcio keyless, DSSE), and provenance (Rekor transparency
+log, offline verification, independently-checkable `search.sigstore.dev`
+links), with the trust ladder (Development -> Verified issuer -> Publicly
+anchored) now documented in-repo, not just on the marketing site. New
+[docs/CRYPTO-FOUNDATION.md](./docs/CRYPTO-FOUNDATION.md) also describes,
+with an explicit non-overclaim disclaimer, how these same primitives are a
+foundation a future optional ownership layer could build on: no shipped
+blockchain/token/NFT feature, always optional, never required, not investment
+advice.
+
+**Publish workflow now also triggers on every push to `main`**, not just tag
+pushes, so a merged lockstep version bump ships to npm without a separate
+manual tag-push step. Safe on every merge: publishing skips any package
+whose exact version is already on the registry.
+
 ## 1.1.0 (2026-07-15)
 
 **Subject-bearing transparency anchors (RFC 0007).** `skill mint --transparency`/`--keyless`
