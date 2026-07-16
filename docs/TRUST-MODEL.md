@@ -31,9 +31,22 @@ Every install of this CLI ships the same public development HMAC key (`dot-skill
 
 `skill run --mode execute` (and `resume`) checks exactly one thing to decide whether to refuse by default: is `trust_state === "verified_issuer"`? If not, execute refuses with `Refusing execute: <label>` unless you pass `--allow-untrusted`. This applies uniformly to `untrusted`, `development`, and `self_reported` — there is no partial-trust carve-out where, say, `self_reported` gets a lighter gate than `untrusted`. `dry_run`, `explain`, and `inspect` modes never touch this gate — they're always safe to run regardless of trust state, which is why "inspect before you trust or run" is the standing advice throughout this repo's docs.
 
+## The trust ladder (mint-time provenance, a different axis from `trust_state`)
+
+`trust_state` above answers "does the runtime's execute gate trust this signature." A separate, complementary question is "how much publicly-checkable provenance does this package carry." That's the trust ladder: it describes how a package was sealed and anchored, not whether the runtime will execute it.
+
+| Rung | How it's sealed | What a verifier gets |
+|---|---|---|
+| **Development** | Public dev HMAC key (default, zero setup) | Local iteration only. Forgeable by design, labeled `development` everywhere it appears, never production trust. |
+| **Verified issuer** | Configured Ed25519 key (`skill keygen` + `--signer-key`) | Cryptographic proof of authorship and integrity, once a verifier pins your key in their trust store. |
+| **Publicly anchored** | Rekor transparency log (`--transparency`) and/or Fulcio keyless OIDC (`--keyless`) | A public, independently-checkable record, anyone can confirm the entry on Sigstore's own infrastructure. |
+
+Anchoring is orthogonal to `trust_state` and always additive: an anchored package can still be `development` or `self_reported` trust, the anchor never upgrades or replaces the seal. **Inclusion is not endorsement,** logging a package to Rekor proves auditability, not goodness. See [CRYPTO-FOUNDATION.md](./CRYPTO-FOUNDATION.md) and [TRANSPARENCY.md](./TRANSPARENCY.md).
+
 ## Related
 
 - [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md) — which specific claims (content, timestamp, identity, host, human approval) are cryptographic vs. self-reported, attribute by attribute
+- [CRYPTO-FOUNDATION.md](./CRYPTO-FOUNDATION.md): identity, authorship, provenance, and the trust ladder in one place
 - [Threat Model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) — the full threat/mitigation map this trust model sits inside
 - [SECURITY.md](./SECURITY.md) — practice-level rules ("inspect before run", deny-by-default runtime)
 - [Key Ceremony](./KEY-CEREMONY.md) — what it actually takes to mint as `verified_issuer` in production

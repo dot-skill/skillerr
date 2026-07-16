@@ -75,6 +75,10 @@ Always the identity of whatever environment is actually running `skill mint --ke
 
 Same permanence caveat as `--transparency`: the certificate and Rekor entry are logged to the public instance by default and are **permanent and world-readable** once logged.
 
+## Extensible anchors
+
+`transparency_log` and `keyless_identity` are two `PermanenceAnchor` kinds among several the wire format already defines (`PermanenceAnchorKind` in `packages/protocol/src/types.ts`): the local `registry` log is a third, shipped kind, and `ledger`/`content_addressed_store`/`other` are reserved kinds with no implementation yet. The `PermanenceAnchor` slot is an open extension point, not a fixed list: a future ledger/chain anchor is a documented, unimplemented [roadmap item](./ROADMAP.md#later) ("optional ledger anchors as one permanence kind, never required"), addable the same additive way `keyless_identity` was added after `transparency_log`, without touching any package sealed today. Whatever anchor kinds ship later, the caveats on this page (offline-by-default verification, "inclusion is not endorsement," permanent and world-readable once logged) apply identically, an anchor kind is evidence to check, never a trust upgrade granted for free.
+
 ## What this is not
 
 - Not a marketplace, not a payment rail, not a reputation score. See [ROADMAP.md](./ROADMAP.md) / Launch Readiness Phase F for where publisher identity (built on the same Fulcio OIDC identity) eventually connects to commerce concerns — deliberately kept separate from this transparency layer.

@@ -57,7 +57,7 @@ This is real cryptography — you're not being lied to about signature validity 
 
 ## Roadmap: what's still pending
 
-Optional keyless signing (Fulcio) shipped for the CI-ambient case (`skill mint --keyless` inside GitHub Actions or similar, with no interactive setup needed) — see the `owner_identity` row above and [TRANSPARENCY.md](./TRANSPARENCY.md). What's still pending is an interactive/browser-login OIDC provider for running `--keyless` locally, outside CI — tracked in [ROADMAP.md](./ROADMAP.md).
+Optional keyless signing (Fulcio) shipped for the CI-ambient case (`skill mint --keyless` inside GitHub Actions or similar, with no interactive setup needed) — see the `owner_identity` row above and [TRANSPARENCY.md](./TRANSPARENCY.md). What's still pending is an interactive/browser-login OIDC provider for running `--keyless` locally, outside CI — tracked in [ROADMAP.md](./ROADMAP.md). Future `PermanenceAnchor` kinds (a ledger anchor is the one currently tracked, see [TRANSPARENCY.md](./TRANSPARENCY.md#extensible-anchors)) would be verified through this exact same evidence-based split, cryptographic checks land in `verified`, everything else in `self_reported`, and would never change what a seal itself proves.
 
 ## Related
 

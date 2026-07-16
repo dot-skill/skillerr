@@ -4,9 +4,11 @@
   <img src="./assets/skillerr-mark.png" alt="Skillerr .skill mark" width="128" height="128" />
 </p>
 
-<p align="center"><em>The trust layer for Agent Skills</em></p>
+<p align="center"><em>The cryptographic trust standard for AI skills.</em></p>
 
-**The trust layer for Agent Skills.** Seal, verify, and prove provenance for the skills your agents run.
+**Package a skill once as a sealed `.skill`: content-addressed, cryptographically signed, and independently verifiable before anyone runs it.** A Sigstore-grade trust ladder carries a skill from local development to a publicly anchored proof of authorship, on a neutral foundation built to outlast any single tool, host, or marketplace.
+
+Create, inspect, sign, and run portable `.skill` packages for AI agents, the integrity and provenance layer on top of your `SKILL.md`.
 
 ```bash
 npm i -g skillerr
@@ -18,9 +20,39 @@ npm i -g skillerr
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 [![Protocol](https://img.shields.io/badge/protocol-1.0.0-blue.svg)](./docs/PROTOCOL.md)
-[![Tests](https://img.shields.io/badge/tests-180%20passing-brightgreen.svg)](./docs/SECURITY.md)
+[![Tests](https://img.shields.io/badge/tests-189%20passing-brightgreen.svg)](./docs/SECURITY.md)
 
 **Contributing:** see [CONTRIBUTING.md](./CONTRIBUTING.md) for the DCO/PR checklist, or jump straight to a scoped task in [docs/GOOD-FIRST-ISSUES.md](./docs/GOOD-FIRST-ISSUES.md).
+
+## Cryptographic foundation
+
+A skill is only as trustworthy as your ability to verify it. `.skill` gives every skill a verifiable identity, provable authorship, and independently checkable provenance, the same guarantees the software supply chain now expects, applied to AI skills.
+
+- **Identity, content-addressed.** Every skill has a content-derived `skill_id` and SHA-256 `package_digest`/`manifest_digest`. Change one byte after sealing and the identity changes; tampering is detectable by math, not trust.
+- **Authorship, cryptographically signed.** Seal with a configured Ed25519 issuer key (`verified_issuer`), or bind the seal to an OIDC identity with Sigstore Fulcio keyless signing (`skill mint --keyless`). Attestations use the standard DSSE envelope, the same primitives `cosign` and npm provenance rely on.
+- **Provenance, publicly anchored.** Anchor the sealed digest to the public Sigstore Rekor transparency log (`skill mint --transparency`). Inclusion is verified against the log's signed tree head offline by default (`--online` re-checks live), and every verified anchor prints a `search.sigstore.dev` link so a third party can confirm it without trusting this tool's word.
+- **Assurance you can't fake.** `skill inspect --trust --claims` / `skill verify-trust --claims` split every field into `verified` (crypto-checked) and `self_reported` (asserted), two separate arrays, so a self-reported claim can never be shown as verified. A seal proves who issued a package and that it hasn't changed, never that a skill is correct, safe, or good. See [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md).
+
+### The trust ladder
+
+| Rung | How it's sealed | What a verifier gets |
+|---|---|---|
+| **Development** | Public dev HMAC key (default, zero setup) | Local iteration only. Forgeable by design, labeled `development` everywhere it appears, never production trust. |
+| **Verified issuer** | Configured Ed25519 key (`skill keygen` + `--signer-key`) | Cryptographic proof of authorship and integrity, once a verifier pins your key in their trust store. |
+| **Publicly anchored** | Rekor transparency log (`--transparency`) and/or Fulcio keyless OIDC (`--keyless`) | A public, independently-checkable record, anyone can confirm the entry on Sigstore's own infrastructure. |
+
+Anchoring is orthogonal to trust state and always additive, an anchored package can still be `development` or `self_reported`; the anchor never replaces the seal. **Inclusion is not endorsement:** logging a package proves auditability, not goodness. See [docs/TRUST-MODEL.md](./docs/TRUST-MODEL.md).
+
+## Built to be verified today, and owned tomorrow
+
+The primitives that make a `.skill` verifiable are, by design, a foundation a future ownership layer could build on: on-chain provenance, programmable royalties for skill authors, decentralized skill marketplaces. This is deliberate architecture, not a promise of features:
+
+- **Content-addressed identity.** A skill already has a unique, tamper-evident id and digest, the same reference primitive on-chain assets use to point at off-chain content.
+- **Cryptographic authorship.** Skills are already signed by Ed25519 issuer keys and, optionally, bound to an OIDC identity via Sigstore Fulcio, key-based identity that maps cleanly onto wallet-based identity.
+- **Pluggable anchors.** `PermanenceAnchor` is an open extension point. The wire format already reserves `kind: "ledger"` as a valid anchor kind alongside the shipped `transparency_log`/`keyless_identity`/`registry` kinds; no ledger-anchoring implementation exists yet, it's a tracked [roadmap item](./docs/ROADMAP.md), addable without breaking a single existing package.
+- **A neutral core.** Economics live above the protocol, never inside it. The spec has no marketplace, no token, and no commerce code, so any ownership or settlement layer could build on the verifiable foundation without the standard picking winners.
+
+**What this is not, today:** skillerr does not mint tokens, issue NFTs, or move value. "Minting" a `.skill` creates a cryptographic attestation, not a financial instrument. On-chain ownership is a roadmap extension point, not a shipped feature, and it will always be optional, never required to author, verify, or run a skill. Nothing here is investment advice or a claim of future value. See [docs/CRYPTO-FOUNDATION.md](./docs/CRYPTO-FOUNDATION.md) for the full breakdown.
 
 ## Where skillerr fits
 
@@ -165,7 +197,9 @@ Commands below are what the **agent** runs — not a human homework list.
 | Convert an existing SKILL.md | `skill ingest <path>` |
 | Mid-work handoff | `skill checkpoint` |
 | Release when complete | `skill compile -m "…" --approve --mint` |
-| Trust before run | `skill inspect --trust` → `validate` → `run` (dry-run) |
+| Production issuer identity | `skill keygen` → `skill mint --signer-key …` for `verified_issuer` trust |
+| Publicly anchor authorship | `skill mint --transparency` (Rekor) and/or `--keyless` (Fulcio OIDC) |
+| Trust before run | `skill inspect --trust --claims` → `validate` → `verify-trust --claims` → `run` (dry-run) |
 | Resume handoff | `skill load ./file.skill` |
 
 Creation requires a declared agent host (`SKILL_HOST=cursor|ollama|claude|…`). Humans review and approve releases. Declared host/model fields are self-reported provenance, not cryptographic proof of authorship.
@@ -226,14 +260,14 @@ Full package layout spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 ## Status
 
 Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](./docs/PROTOCOL.md)) — future changes go through the open [RFC process](./docs/rfcs/), not silent revisions.  
-Reference CLI: `skillerr` @ **1.1.0**, a stable public API backed by 180 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](./docs/TRANSPARENCY.md).  
+Reference CLI: `skillerr` @ **1.1.0**, a stable public API backed by 189 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](./docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
-**Why the format doesn't lock you in:**
+**Why the foundation is future-proof:**
 
 - The format is protocol-defined, not tied to this CLI — any conforming implementation can read/write it (see [RFCs](./docs/rfcs/) for how the spec evolves in the open)
-- The optional permanence-anchor slot (`skill registry`) is an extension point, not a required dependency — new anchor kinds can be added later without breaking existing packages
-- Trust states are explicit and versioned in the manifest, so a package minted today stays verifiable under future trust-store/issuer changes instead of silently degrading
+- The `PermanenceAnchor` slot (`skill registry`, `--transparency`, `--keyless`) is an open extension point, not a required dependency: the wire format already reserves a `ledger` anchor kind alongside the shipped ones, so new anchor kinds can be added later without breaking existing packages
+- Trust states are explicit and versioned in the manifest, so a package minted today stays verifiable under future trust-store/issuer/anchor changes instead of silently degrading
 
 ---
 
@@ -261,7 +295,7 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 - [Why structured packages](./docs/WHY.md) · [Continuity](./docs/CONTINUITY.md) · [Privacy](./docs/PRIVACY.md)
 - [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md) · [Naming](https://github.com/dot-skill/skillerr/wiki/Naming)
 - [Ingest a SKILL.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [From skill-creator](./docs/FROM-SKILL-CREATOR.md) · [Eval / benchmark](./docs/EVAL.md) · [Bundled scripts / resources](./docs/RESOURCES.md)
-- [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md) · [Trust model](./docs/TRUST-MODEL.md) · [Transparency](./docs/TRANSPARENCY.md) · [Security](./docs/SECURITY.md) · [Threat model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
+- [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md) · [Trust model](./docs/TRUST-MODEL.md) · [Cryptographic foundation](./docs/CRYPTO-FOUNDATION.md) · [Transparency](./docs/TRANSPARENCY.md) · [Security](./docs/SECURITY.md) · [Threat model](https://github.com/dot-skill/skillerr/wiki/Threat-Model) · [Key ceremony](./docs/KEY-CEREMONY.md) · [Canonicalization (RFC 8785)](./docs/CANONICALIZATION.md)
 - [Mint](./docs/MINT.md) · [Runtime](./docs/RUNTIME.md) · [Workspace](./docs/WORKSPACE.md) · [File type / OS registration](./docs/FILE-TYPE.md)
 - [RFCs](./docs/rfcs/) — protocol design proposals, spec-only and implemented
 - Site guides: [skillerr.com](https://www.skillerr.com/docs/)

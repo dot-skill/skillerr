@@ -54,7 +54,7 @@ Share the `.skill` file directly. An optional local transparency log is included
 
 ## Do I need a blockchain?
 
-**No.**
+**No.** skillerr does not mint tokens, issue NFTs, or move value, and none of that is required to author, verify, or run a skill today. The content-addressed identity and cryptographic authorship `.skill` already has are, by design, a foundation a future optional ownership layer could build on; see [docs/CRYPTO-FOUNDATION.md](./CRYPTO-FOUNDATION.md) for exactly what that does and doesn't mean.
 
 ## Is npm free for these packages?
 

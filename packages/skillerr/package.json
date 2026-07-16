@@ -1,7 +1,7 @@
 {
   "name": "skillerr",
   "version": "1.1.0",
-  "description": "Create, inspect, and run portable .skill packages for AI agents — typed, sealed, and verifiable before anyone runs them.",
+  "description": "Create, sign, verify, and run portable .skill packages for AI agents: content-addressed identity, Ed25519 + Sigstore provenance, and inspect-before-run trust. Bin: skill.",
   "license": "MIT",
   "author": {
     "name": "Bharat Dudeja",
@@ -16,7 +16,17 @@
     "cli",
     "protocol",
     "portable",
-    "inspectable"
+    "inspectable",
+    "provenance",
+    "signing",
+    "ed25519",
+    "sigstore",
+    "attestation",
+    "transparency-log",
+    "content-addressed",
+    "supply-chain",
+    "verifiable",
+    "trust"
   ],
   "type": "module",
   "bin": {
