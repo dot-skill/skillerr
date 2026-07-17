@@ -66,13 +66,29 @@ alone could never make `verified_issuer` mean what it says.
 
 Mint refuses denylisted hosts (`human`, `cli`, `shell`, `manual`, …). Exporting `SKILL_HOST=cursor` (or any host id) alone never yields `verified_issuer` — that requires a configured issuer secret and verified host binding. Agent runtime markers strengthen the mint path but remain **locally spoofable**; env claims stay `self_reported` / `development` under the public-dev key. Workspace compile may still record a declared host; TrustView distinguishes self-reported vs verified issuer.
 
+## Publish a public provenance URL (frictionless)
+
+`skill publish <file.skill>` is the one-shot happy path: it seals a release
+and anchors its digest to the **public** Sigstore Rekor transparency log,
+then prints an independently-verifiable `search.sigstore.dev` URL. The public
+log needs a signing key but **no login** (that is only the `--keyless`/Fulcio
+path), so on first run a per-user Ed25519 issuer key is generated at
+`~/.skillerr/issuer-key.pem` and its public half is pinned in your own trust
+store. No `skill keygen`, no `--signer-key`, no OIDC. Rekor entries are
+**permanent and world-readable**, never publish a secret skill.
+
+`skill publish` is a public provenance anchor, **not** a marketplace or hosted
+registry (those remain out of scope). It's equivalent to `skill mint
+--transparency` with the key auto-provisioned; `--no-transparency` seals
+without anchoring.
+
 ## Anchors (optional)
 
 Three independent, additive ways to anchor a mint — none required, none replacing the seal above:
 
 - `skill registry …` — an optional **local** transparency log of package digests, useful offline or before deciding to anchor publicly.
-- `skill mint --transparency` — logs the sealed digest to the **public** Rekor transparency log using the mint's own configured Ed25519 key, so a third party can independently confirm *when* it was first registered. See [TRANSPARENCY.md](./TRANSPARENCY.md).
-- `skill mint --keyless` — adds a second, independent anchor bound to an OIDC identity via Fulcio (e.g. a specific CI workflow) instead of a pinned key. Combines with any signer choice above, or none. CI-ambient only today (no interactive login yet) — see [TRANSPARENCY.md](./TRANSPARENCY.md).
+- `skill mint --transparency` (or `skill publish`): logs the sealed digest to the **public** Rekor transparency log, signed with your Ed25519 issuer key. If no key is configured, one is auto-provisioned on first use (the public log needs a key but no login), so a public URL works with zero setup. See [TRANSPARENCY.md](./TRANSPARENCY.md).
+- `skill mint --keyless`: adds a second, independent anchor bound to an OIDC identity via Fulcio (e.g. a specific CI workflow) instead of a pinned key. This is the one anchor that **does** need an ambient OIDC token: CI-ambient only today (no interactive login yet), see [TRANSPARENCY.md](./TRANSPARENCY.md).
 
 `skill verify-trust --claims` (or `skill inspect --trust --claims`) reports every claim — mint's own seal and any anchors — split into two structurally separate lists, `verified` and `self_reported`, so nothing here can be mistaken for the other. See [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md).
 

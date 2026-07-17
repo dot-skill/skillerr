@@ -23,6 +23,24 @@ These are asymmetric by design: an issuer key compromise lets an attacker
 forge new seals, but a verifier's trust store leaking teaches an attacker
 nothing usable (a public key is, definitionally, public).
 
+## Two keygen modes: default per-user key vs named production key
+
+`skill keygen` has two modes:
+
+- **`skill keygen` (no `-o`)** provisions your **default per-user issuer key**
+  at `~/.skillerr/issuer-key.pem` and pins its public half in your own trust
+  store. This is the key `skill publish` / `skill mint --transparency`
+  auto-use, so a public provenance URL works with zero setup (you don't even
+  have to run this first: the publish path provisions it on demand). It's a
+  real Ed25519 key and your own identity, but self-generated: others earn
+  `verified_issuer` for your packages only once they pin its `key_id`.
+- **`skill keygen -o <dir> --key-id <id>`** (below) writes a **named production
+  keypair** you manage yourself: for an org identity, an offline/rotated key,
+  or a key with a meaningful public `key_id` you publish for verifiers. It does
+  not touch the default key or your trust store.
+
+The rest of this page is the named production path.
+
 ## 1. Generate a key
 
 ```bash

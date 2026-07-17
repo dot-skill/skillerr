@@ -195,12 +195,13 @@ Commands below are what the **agent** runs — not a human homework list.
 |------|---------------------|
 | Create workspace | `skill init` → `journey` → `propose` → `status` |
 | Convert an existing SKILL.md | `skill ingest <path>` |
+| Take an ingested skill to a workspace | `skill load <file.skill> --into <dir>` (stages sections + writes the contract) |
 | Mid-work handoff | `skill checkpoint` |
 | Release when complete | `skill compile -m "…" --approve --mint` |
+| Public provenance URL, zero setup | `skill publish <file.skill>` (auto-keys, anchors to Rekor, prints the `search.sigstore.dev` link) |
 | Production issuer identity | `skill keygen` → `skill mint --signer-key …` for `verified_issuer` trust |
-| Publicly anchor authorship | `skill mint --transparency` (Rekor) and/or `--keyless` (Fulcio OIDC) |
 | Trust before run | `skill inspect --trust --claims` → `validate` → `verify-trust --claims` → `run` (dry-run) |
-| Resume handoff | `skill load ./file.skill` |
+| Read-only handoff preview | `skill load ./file.skill` |
 
 Creation requires a declared agent host (`SKILL_HOST=cursor|ollama|claude|…`). Humans review and approve releases. Declared host/model fields are self-reported provenance, not cryptographic proof of authorship.
 
@@ -213,6 +214,7 @@ Creation requires a declared agent host (`SKILL_HOST=cursor|ollama|claude|…`).
 - **Dry-run** before execute
 - Continuity drafts may be incomplete; **release** compile refuses incomplete contracts (`compile_refused`)
 - **Real cryptographic identity in production:** `skill keygen` + `--signer-key` mints with a configured Ed25519 issuer key as `verified_issuer` — the bundled zero-setup key (used when no `--signer-key` is given) is for trying the CLI, not for shipping. See [Key Ceremony](./docs/KEY-CEREMONY.md)
+- **Public provenance, zero setup:** `skill publish <file.skill>` seals a release and anchors its digest to the public Sigstore Rekor log, printing an independently-verifiable `search.sigstore.dev` link. The public log needs a signing key but **no login**, so a per-user key is auto-generated on first run. Rekor entries are permanent and world-readable. See [Transparency](./docs/TRANSPARENCY.md)
 
 See [docs/SECURITY.md](./docs/SECURITY.md).
 

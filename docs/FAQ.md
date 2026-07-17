@@ -52,6 +52,10 @@ Creation requires a declared agent host (`SKILL_HOST`). Humans review, stage, an
 
 Share the `.skill` file directly. An optional local transparency log is included (`skill registry …`). Hosted registries are out of scope for this protocol.
 
+## How do I get a public, verifiable provenance URL?
+
+Run `skill publish <file.skill>`. It seals a release and anchors the digest to the public [Sigstore](https://www.sigstore.dev) Rekor transparency log, then prints an independently-checkable `search.sigstore.dev` URL. It works with **zero setup**: the public log needs a signing key but **no login/account/OIDC**, so a per-user Ed25519 key is auto-generated on first run (at `~/.skillerr/issuer-key.pem`) and reused after. Only the digest and skill id are logged, never your content. Rekor entries are **permanent and world-readable**, so never publish a secret skill. This is a public provenance record, not a marketplace. See [Transparency](./TRANSPARENCY.md) and [Mint](./MINT.md).
+
 ## Do I need a blockchain?
 
 **No.** skillerr does not mint tokens, issue NFTs, or move value, and none of that is required to author, verify, or run a skill today. The content-addressed identity and cryptographic authorship `.skill` already has are, by design, a foundation a future optional ownership layer could build on; see [docs/CRYPTO-FOUNDATION.md](./CRYPTO-FOUNDATION.md) for exactly what that does and doesn't mean.

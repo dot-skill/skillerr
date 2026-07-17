@@ -44,7 +44,8 @@ Optional: `generation_usage` (tokens).
 | **extract / segment** | Agent-identified candidates → incomplete contract scaffolds + missing reports |
 | **compile** | Source → `.skill` package (continuity or release) |
 | **mint** | Seal a complete release with creation attestation |
-| **load** | Resume continuity context in another agent |
+| **publish** | Seal a release + anchor to a public transparency log; prints an independently-verifiable URL (auto-provisions a signing key, no login) |
+| **load** | Read a `.skill`; with `--into <dir>` (or inside a workspace) materializes it into an editable workspace, otherwise a read-only handoff preview |
 
 Multi-skill create path for agents: `skill agent-guide` → identify candidates →
 `skill extract` → one workspace per skill → `contract-check` / `status` →

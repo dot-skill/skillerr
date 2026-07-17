@@ -6,6 +6,14 @@ Status: implemented in `@skillerr/core` (`transparency.ts`), opt-in, additive on
 
 An append-only transparency log with inclusion proofs is exactly what [Rekor](https://docs.sigstore.dev) already is: a public Merkle-tree log, maintained by the Sigstore project (part of the Linux Foundation / OpenSSF), with a well-audited reference implementation and official TypeScript client libraries (`@sigstore/sign`, `@sigstore/verify`, `@sigstore/bundle`). Re-implementing Merkle inclusion proof verification from scratch is exactly the kind of security-critical cryptographic code that's easy to get subtly wrong — using the same library the rest of the software supply-chain ecosystem (npm provenance, sigstore-python, cosign) already relies on is the safer choice. This repo's own npm publishes already depend on the same stack (`npm publish --provenance` uses sigstore under the hood).
 
+## Zero-setup public URL: no login required
+
+The key-based transparency path needs a signing key but **no account, no OIDC, no login**. The public Rekor log is an anonymous, append-only log: anyone can add an entry signed by any key. So `skill publish <file.skill>` (and `skill mint --transparency`) produce a public `search.sigstore.dev` URL with zero setup: if no signing key is configured, a per-user Ed25519 issuer key is generated on first use at `~/.skillerr/issuer-key.pem` and pinned in your own trust store. This key is your own identity, reused across mints; third parties who pin it get `verified_issuer`, and until they do, a self-generated key is not a publicly-known identity (exactly as documented for `verified_issuer` below and in [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md)).
+
+The **only** anchor that requires an identity provider is `--keyless` (Fulcio, below): it binds to an OIDC token and is CI-ambient only. Everything else here is login-free.
+
+Auto-provisioning a key does not, by itself, earn `verified_issuer` trust: without real agent-runtime evidence the seal binds `self_reported`, honestly (the public anchor still works). See [TRUST-MODEL.md](./TRUST-MODEL.md).
+
 ## What gets logged
 
 When you mint with `--transparency`, the anchored payload is a small, signed [in-toto](https://in-toto.io) `Statement` (RFC 0007), not a bare digest. Its `subject` names the skill (`skill_id` and `package_digest`), so the resulting public log entry is self-describing and cross-linkable: a stranger can see which skill an entry belongs to without already holding the package. The predicate carries only stable, opaque identifiers, never title, intent, contract, journey, section bodies, endpoints, or any other free text, since the public Rekor log is permanent and world-readable:

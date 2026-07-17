@@ -43,6 +43,8 @@ Every install of this CLI ships the same public development HMAC key (`dot-skill
 
 Anchoring is orthogonal to `trust_state` and always additive: an anchored package can still be `development` or `self_reported` trust, the anchor never upgrades or replaces the seal. **Inclusion is not endorsement,** logging a package to Rekor proves auditability, not goodness. See [CRYPTO-FOUNDATION.md](./CRYPTO-FOUNDATION.md) and [TRANSPARENCY.md](./TRANSPARENCY.md).
 
+**The auto-provisioned publish key does not shortcut this.** `skill publish` / `skill mint --transparency` generate a per-user signing key on first use so the public URL works with zero setup, but a signing key alone is not `verified_issuer`: without real agent-runtime evidence the seal binds `self_reported`, and third parties earn `verified_issuer` for your packages only once they pin your key's `key_id`. The public anchor works regardless; it just never inflates what the seal itself claims.
+
 ## Related
 
 - [WHAT-IS-VERIFIABLE.md](./WHAT-IS-VERIFIABLE.md) — which specific claims (content, timestamp, identity, host, human approval) are cryptographic vs. self-reported, attribute by attribute

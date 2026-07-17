@@ -100,7 +100,9 @@ alone (what `skill ingest` does automatically) is not authorization. See
 skill inspect ./file.skill --trust         # TrustView: seal, issuer, digests
 skill validate ./file.skill
 skill verify-trust ./file.skill --allow-development-issuer
-skill load ./file.skill                    # resume continuity context
+skill load ./file.skill                    # read-only handoff preview
+skill load ./file.skill --into ./ws        # materialize an editable workspace
+skill publish ./file.skill                 # seal + public provenance URL (auto-keys, no login)
 skill run ./file.skill                     # dry-run by default
 skill run ./file.skill --mode execute --allow-untrusted   # explicit unsafe
 ```
