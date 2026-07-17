@@ -57,8 +57,18 @@ export {
 export type { MintOptions, VerifyMintTrustOptions } from "./mint.js";
 export { createEd25519Signer, verifyEd25519Signature, derivePublicKeyPem } from "./signer.js";
 export type { IssuerSigner } from "./signer.js";
-export { loadTrustStore, defaultTrustStorePath } from "./trust-store.js";
+export { loadTrustStore, saveTrustStore, pinKeyToTrustStore, defaultTrustStorePath } from "./trust-store.js";
 export type { TrustStore, TrustStoreKey } from "./trust-store.js";
+export {
+  skillerrHomeDir,
+  defaultIssuerKeyPath,
+  issuerKeyIdFor,
+  generateEd25519KeyPair,
+  loadDefaultIssuer,
+  loadOrCreateDefaultIssuer,
+  signerFromIssuer,
+} from "./default-issuer.js";
+export type { ResolvedIssuer } from "./default-issuer.js";
 export {
   compileSkillSource,
   compileRecipeToSkill,

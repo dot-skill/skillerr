@@ -109,6 +109,14 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.2.0**. The package n
       computes the standard install dir). `skill verify-skill` checks a
       plain, never-ingested folder honestly, with or without a sealed
       sidecar. See [docs/AGENT-SKILLS.md](./AGENT-SKILLS.md).
+- [x] Ingest -> signed-release bridge: `skill load <file.skill> --into <dir>`
+      (or plain `skill load` inside a workspace) now materializes a package
+      into an editable workspace, staging its knowledge as sections and
+      writing `.skill/contract.json`, so an ingested continuity package can
+      be taken forward to a release. It never fabricates
+      `provenance.human_review` (a human still records that in the contract).
+      With no workspace and no `--into`, `skill load` stays a read-only
+      preview. See [docs/FROM-SKILL-CREATOR.md](./FROM-SKILL-CREATOR.md).
 
 ## Next (great contribution targets)
 
@@ -140,14 +148,6 @@ A curated, verified-against-real-behavior list of smaller contribution targets l
       against this reference implementation's own corpus already. See
       [CONTRIBUTING.md](../CONTRIBUTING.md)'s "second independent runtime"
       section for exactly what it needs to reproduce.
-- [ ] Bridge `skill ingest` to an editable workspace: emit the intermediate
-      `source.json` alongside the ingested package, or add a
-      `skill workspace-import` command, so an ingested `SKILL.md` can be
-      authored further, not just re-exported. See
-      [GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
-- [ ] `skill load` materialize a resumable `.skill/` workspace (or be
-      renamed/documented as a read-only handoff view, since it isn't one
-      today). See [GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
 - [ ] Round-trip `evals/evals.json` and unrecognized frontmatter keys on
       `skill export-skill`, not just `skill ingest`, both currently map
       forward into the contract/`extensions.agentskills.*` but aren't

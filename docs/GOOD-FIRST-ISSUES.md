@@ -23,12 +23,6 @@ A fresh `npm i -g skillerr` on a stable (non-bleeding-edge) Node release prints 
 
 ## `adapter` (medium)
 
-**`skill ingest` has no path back into an editable workspace.**
-`skill ingest` converts a `SKILL.md`/skill-creator folder straight into a continuity `.skill` package, but there's no way to open that back up as an editable `.skill/` workspace (to run `skill add`/`skill propose`/`skill compile` against it) or to get the intermediate `SkillSource`/`source.json` it was built from. Fix: either have `ingest` also emit the intermediate `source.json` alongside the package, or add a `skill workspace-import <file.skill>` command.
-
-**`skill load` returns a read-only handoff summary, not a resumable workspace.**
-`loadSkillHandoff` (`packages/workspace/src/index.ts`) unpacks a continuity/release package and returns a curated summary (journey, knowledge titles, completeness), but doesn't materialize a `.skill/` working tree a receiving agent could actually `skill add`/`skill propose` into. Today "resume" means "read the handoff and re-author from scratch." Fix: either add real workspace materialization, or rename the command/its docs to be explicit that it's a read-only handoff view, not a resume.
-
 **`skill export-skill` doesn't round-trip `evals/evals.json` or unrecognized frontmatter keys.**
 `skill ingest` maps `evals/evals.json` assertions into `contract.verification.items`, and passes unrecognized frontmatter keys (`context`, `hooks`, ...) through to `extensions.agentskills.<key>` verbatim. `exportAgentSkillFolder` (`packages/core/src/export.ts`) restores `license`/`compatibility`/`metadata`/`allowed-tools` from `extensions.agentskills.*`, but doesn't currently regenerate `evals/evals.json` from `contract.verification.items`, or re-emit the passthrough keys as frontmatter. Fix: extend `exportAgentSkillFolder` to write `evals/evals.json` when `contract.evals`/verification items with an eval-sourced provenance ref exist, and to emit any `extensions.agentskills.<key>` entries not already handled by a named field back into the frontmatter block.
 

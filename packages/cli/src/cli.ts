@@ -38,6 +38,10 @@ import {
   derivePublicKeyPem,
   loadTrustStore,
   defaultTrustStorePath,
+  loadOrCreateDefaultIssuer,
+  signerFromIssuer,
+  type IssuerSigner,
+  type ResolvedIssuer,
   ingestSkillMd,
   discoverSkillMdCandidates,
   exportAgentSkillFolder,
@@ -72,6 +76,7 @@ import {
   formatAgentGuide,
   isValidAgentHost,
   scaffoldSkillContract,
+  detectAgentRuntimeMarkers,
 } from "@skillerr/protocol";
 import {
   initWorkspace,
@@ -86,6 +91,8 @@ import {
   discardSection,
   loadHead,
   loadSkillHandoff,
+  materializeSkillIntoWorkspace,
+  findWorkspaceRoot,
   loadWorkspaceContract,
   saveWorkspaceContract,
   setJourney,
@@ -141,7 +148,19 @@ Create:
   skill checkpoint [-m msg]            Continuity handoff (partial OK)
   skill compile -m "msg" [--approve] [--mint] [--profile release|continuity]
                                        Release refuses if incomplete
-  skill load <file.skill>              Resume continuity in another AI
+  skill load <file.skill> [--into dir] [--host name] [--force]
+                                       Resume a .skill. Inside a workspace (or
+                                       with --into <dir>) it MATERIALIZES the
+                                       package into an editable workspace:
+                                       stages its knowledge as sections and
+                                       writes .skill/contract.json, so an
+                                       ingested continuity package can be taken
+                                       forward to a signed release (record
+                                       provenance.human_review in the contract,
+                                       then skill compile --profile release
+                                       --mint). Never fabricates human review.
+                                       With no workspace and no --into, it's a
+                                       read-only preview (nothing written).
   skill mint [file.skill] [--host name] [--signer-key <pem>] [--key-id id]
              [--transparency] [--rekor-url <url>] [--keyless] [--fulcio-url <url>]
                                        Seal release (host required). No file arg
@@ -298,6 +317,193 @@ function opt(args: string[], name: string): string | undefined {
   return i >= 0 ? args[i + 1] : undefined;
 }
 
+/** True when a real agent runtime is attested (session id or runtime markers), not just SKILL_HOST. */
+function hasAgentEvidence(): boolean {
+  return (
+    !!process.env.SKILL_SESSION_ID?.trim() || detectAgentRuntimeMarkers().length > 0
+  );
+}
+
+interface ResolvedMintSigner {
+  signer?: IssuerSigner;
+  signerKeyPem?: string;
+  /** Set when a key was auto-provisioned/reused, for a loud, honest notice in output. */
+  issuer_key?: {
+    key_id: string;
+    key_path: string;
+    created: boolean;
+    pinned: boolean;
+    note: string;
+  };
+}
+
+/**
+ * Resolve the signing key for a mint/publish.
+ * - `--signer-key <pem>` always wins (explicit configured issuer).
+ * - Otherwise, only when a key is actually required (transparency/publish),
+ *   use the per-user default issuer key, creating it on first use. The public
+ *   Rekor log needs a key but no login, so this is enough to produce a public
+ *   URL with zero setup.
+ * - Otherwise (plain `skill mint` with no key): no signer, the unchanged
+ *   public-dev HMAC path (development trust). Kept identical so plain mint's
+ *   behavior and tests are untouched.
+ */
+async function resolveMintSigner(
+  rest: string[],
+  opts: { requireKey: boolean },
+): Promise<ResolvedMintSigner> {
+  const signerKeyPath = opt(rest, "--signer-key");
+  if (signerKeyPath) {
+    const signerKeyPem = await readFile(resolve(signerKeyPath), "utf8");
+    return {
+      signer: createEd25519Signer(signerKeyPem, opt(rest, "--key-id") ?? "configured-issuer"),
+      signerKeyPem,
+    };
+  }
+  if (opts.requireKey) {
+    const issuer: ResolvedIssuer = loadOrCreateDefaultIssuer();
+    return {
+      signer: signerFromIssuer(issuer),
+      signerKeyPem: issuer.private_key_pem,
+      issuer_key: {
+        key_id: issuer.key_id,
+        key_path: issuer.key_path,
+        created: issuer.created,
+        pinned: issuer.pinned,
+        note: issuer.created
+          ? `No signing key was configured, so a per-user skillerr issuer key was generated at ${issuer.key_path} and pinned in your own trust store. It signs your mints and public anchors. To let others verify you as verified_issuer, share this key id (${issuer.key_id}) and its public key so they can pin it. Keep the private key file secret.`
+          : `Using your existing skillerr issuer key (${issuer.key_id}) at ${issuer.key_path}.`,
+      },
+    };
+  }
+  return {};
+}
+
+/**
+ * Mint `rawPkg` and, if requested, anchor it to a public/keyless transparency
+ * log. Shared by `skill mint` and `skill publish`. Returns the (possibly
+ * anchored) bytes plus a structured result the caller renders.
+ */
+async function mintAndAnchor(
+  rawPkg: import("@skillerr/core").UnpackResult["raw"],
+  opts: {
+    host: string;
+    signer?: IssuerSigner;
+    signerKeyPem?: string;
+    transparency: boolean;
+    keyless: boolean;
+    rekorUrl?: string;
+    fulcioUrl?: string;
+  },
+): Promise<{
+  packageBytes: Uint8Array;
+  mint_status?: string;
+  content_id?: string;
+  package_digest: string;
+  generation_usage?: unknown;
+  transparency?: Record<string, unknown>;
+  keyless?: Record<string, unknown>;
+}> {
+  const { signer } = opts;
+  // A configured/auto key earns verified_issuer only with real agent-runtime
+  // evidence; without it we bind self_reported rather than throwing, so the
+  // public anchor still works and the seal stays honest about the host claim.
+  const evidence = hasAgentEvidence();
+  const { packageBytes: mintedBytes, files, attestation } = mintSkillPackage(rawPkg, {
+    host: opts.host,
+    provider: process.env.SKILL_PROVIDER,
+    model: process.env.SKILL_MODEL,
+    deployment:
+      (process.env.SKILL_DEPLOYMENT as "local" | "hosted" | "hybrid" | "unknown" | undefined) ??
+      "unknown",
+    endpoint: process.env.SKILL_ENDPOINT ? redactSecrets(process.env.SKILL_ENDPOINT) : undefined,
+    agent_runtime: process.env.SKILL_AGENT_RUNTIME ?? "@skillerr/cli",
+    agent_version:
+      process.env.SKILL_AGENT_VERSION ?? (process.env.SKILL_AGENT_RUNTIME ? "unknown" : VERSION),
+    signer,
+    host_claim_binding: signer ? (evidence ? "verified_issuer" : "self_reported") : undefined,
+    agent_runtime_evidence: signer ? { session_id: process.env.SKILL_SESSION_ID } : undefined,
+  });
+  let packageBytes = mintedBytes;
+  const anchorSubject: AnchorSubject = {
+    skill_id: files.manifest.id,
+    skill_version: files.manifest.version,
+    package_digest: files.manifest.package_digest,
+    issuer_class: attestation.issuer_class,
+  };
+
+  let transparency: Record<string, unknown> | undefined;
+  if (opts.transparency) {
+    if (!signer) {
+      transparency = {
+        ok: false,
+        error: "transparency anchoring needs a signing key, none was resolved",
+      };
+    } else {
+      try {
+        const publicKeyPem = derivePublicKeyPem(opts.signerKeyPem!);
+        const { anchor, log_index } = await anchorToRekor(
+          attestation.sealed_manifest_digest,
+          signer,
+          publicKeyPem,
+          anchorSubject,
+          { rekorUrl: opts.rekorUrl },
+        );
+        packageBytes = addPermanenceAnchor(packageBytes, {
+          ...anchor,
+          package_digest: files.manifest.package_digest,
+        });
+        transparency = {
+          ok: true,
+          located_at: anchor.located_at,
+          anchored_at: anchor.anchored_at,
+          log_index,
+          rekor_url: rekorSearchUrl(anchor, log_index),
+        };
+      } catch (e) {
+        // Anchoring is additive: a network/Rekor failure never discards an
+        // already-valid mint, it's reported honestly.
+        transparency = { ok: false, error: e instanceof Error ? e.message : String(e) };
+      }
+    }
+  }
+
+  let keyless: Record<string, unknown> | undefined;
+  if (opts.keyless) {
+    try {
+      const { anchor, log_index, owner_identity } = await mintKeylessAnchor(
+        attestation.sealed_manifest_digest,
+        anchorSubject,
+        { rekorUrl: opts.rekorUrl, fulcioUrl: opts.fulcioUrl },
+      );
+      packageBytes = addPermanenceAnchor(packageBytes, {
+        ...anchor,
+        package_digest: files.manifest.package_digest,
+      });
+      keyless = {
+        ok: true,
+        owner_identity,
+        located_at: anchor.located_at,
+        anchored_at: anchor.anchored_at,
+        log_index,
+        rekor_url: rekorSearchUrl(anchor, log_index),
+      };
+    } catch (e) {
+      keyless = { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  return {
+    packageBytes,
+    mint_status: files.manifest.mint?.mint_status,
+    content_id: files.manifest.mint?.content_id,
+    package_digest: files.manifest.package_digest,
+    generation_usage: attestation.generation_usage,
+    ...(transparency ? { transparency } : {}),
+    ...(keyless ? { keyless } : {}),
+  };
+}
+
 async function main() {
   const argv = process.argv.slice(2);
   const cmd = argv[0];
@@ -307,6 +513,10 @@ async function main() {
     console.log(VERSION);
     return;
   }
+  // `skill <cmd> --help` must print help, not treat `--help` as a file arg or
+  // trip over requireWorkspace() first. Per-command help isn't structured, so
+  // the full usage is the honest answer.
+  if (rest.includes("-h") || rest.includes("--help")) usage(0);
 
   switch (cmd) {
     case "agent-guide": {
@@ -692,16 +902,60 @@ async function main() {
     }
 
     case "load": {
-      const file = rest[0];
+      const file = rest.find((a) => !a.startsWith("-"));
       if (!file) usage();
-      const handoff = await loadSkillHandoff(resolve(file!));
+      const resolvedFile = resolve(file);
+      const handoff = await loadSkillHandoff(resolvedFile);
+
+      // Materialize into an editable workspace when one is in scope: an
+      // explicit --into <dir>, or the current workspace. Otherwise stay a
+      // read-only preview (back-compat), and say so plainly.
+      const into = opt(rest, "--into");
+      const targetRoot = into ? resolve(into) : findWorkspaceRoot();
+
+      if (!targetRoot) {
+        console.log(
+          JSON.stringify(
+            {
+              ok: true,
+              mode: "read_only_preview",
+              handoff,
+              agent_prompt:
+                "Preview of a .skill continuity package. Nothing was written to disk. To take this package forward to a release, resume it into an editable workspace: `skill load <file.skill> --into <dir>` (or run `skill init` in a folder, then `skill load <file.skill>`).",
+            },
+            null,
+            2,
+          ),
+        );
+        break;
+      }
+
+      const result = await materializeSkillIntoWorkspace(targetRoot, resolvedFile, {
+        host: requireAgentHost(opt(rest, "--host")),
+        force: flag(rest, "--force"),
+      });
+      const nextSteps = result.needs_human_review
+        ? [
+            `Review the staged sections: skill review`,
+            `Record human review in ${join(targetRoot, ".skill", "contract.json")}: set provenance.human_review to {"status":"reviewed","actor":"<you>","at":"<ISO timestamp>","scope":["contract","knowledge"]}. A CLI flag can never create this evidence, a human has to actually review the mapped contract.`,
+            `Then compile a signed release: skill compile -m "reviewed" --approve --mint --profile release`,
+          ]
+        : [
+            `Contract already records human review. Compile a signed release: skill compile -m "reviewed" --approve --mint --profile release`,
+          ];
       console.log(
         JSON.stringify(
           {
             ok: true,
+            mode: "materialized",
+            root: result.root,
+            skill_id: result.skill_id,
+            title: result.title,
+            sections_staged: result.sections,
+            contract_written: result.contract_written,
+            needs_human_review: result.needs_human_review,
             handoff,
-            agent_prompt:
-              "Resume from this .skill continuity package. Honor journey, knowledge, open_questions, and typed inputs. Do not invent missing private data.",
+            next_steps: nextSteps,
           },
           null,
           2,
@@ -721,127 +975,37 @@ async function main() {
       const explicitFile = rest.find((a) => a.endsWith(".skill"));
       const file = explicitFile ?? (await loadHead(requireWorkspace())).package_path;
       if (!file) throw new Error("No package to mint. Run skill compile first.");
-      const bytes = new Uint8Array(await readFile(resolve(file)));
-      const unpacked = unpackSkill(bytes);
+      const unpacked = unpackSkill(new Uint8Array(await readFile(resolve(file))));
       if (unpacked.raw.manifest.compile_profile === "continuity") {
         throw new Error("Cannot mint continuity draft. Recompile with --profile release first.");
       }
-      const signerKeyPath = opt(rest, "--signer-key");
-      const signerKeyPem = signerKeyPath ? await readFile(resolve(signerKeyPath), "utf8") : undefined;
-      const signer = signerKeyPem
-        ? createEd25519Signer(signerKeyPem, opt(rest, "--key-id") ?? "configured-issuer")
-        : undefined;
-      const { packageBytes: mintedBytes, files, attestation } = mintSkillPackage(unpacked.raw, {
-        host: requireAgentHost(opt(rest, "--host")),
-        provider: process.env.SKILL_PROVIDER,
-        model: process.env.SKILL_MODEL,
-        deployment: (process.env.SKILL_DEPLOYMENT as
-          | "local"
-          | "hosted"
-          | "hybrid"
-          | "unknown"
-          | undefined) ?? "unknown",
-        endpoint: process.env.SKILL_ENDPOINT
-          ? redactSecrets(process.env.SKILL_ENDPOINT)
-          : undefined,
-        agent_runtime: process.env.SKILL_AGENT_RUNTIME ?? "@skillerr/cli",
-        agent_version:
-          process.env.SKILL_AGENT_VERSION ??
-          (process.env.SKILL_AGENT_RUNTIME ? "unknown" : VERSION),
-        signer,
-        // A configured signer only ever earns verified_issuer trust when the
-        // mint call also carries real agent-runtime evidence (session id /
-        // markers) — see resolveHostClaimBinding in @skillerr/core/mint.
-        // Without evidence this throws a clear, actionable error rather than
-        // silently minting as self_reported.
-        host_claim_binding: signer ? "verified_issuer" : undefined,
-        agent_runtime_evidence: signer
-          ? { session_id: process.env.SKILL_SESSION_ID }
-          : undefined,
+      const transparency = flag(rest, "--transparency");
+      const { signer, signerKeyPem, issuer_key } = await resolveMintSigner(rest, {
+        requireKey: transparency,
       });
-      let packageBytes = mintedBytes;
-      // Named once, reused by both anchor kinds below. This is what makes
-      // a Rekor entry self-describing instead of a naked digest (RFC 0007).
-      const anchorSubject: AnchorSubject = {
-        skill_id: files.manifest.id,
-        skill_version: files.manifest.version,
-        package_digest: files.manifest.package_digest,
-        issuer_class: attestation.issuer_class,
-      };
-      let transparency: Record<string, unknown> | undefined;
-      if (flag(rest, "--transparency")) {
-        if (!signer) {
-          transparency = { ok: false, error: "--transparency requires --signer-key (public-dev HMAC isn't anchored)" };
-        } else {
-          try {
-            const publicKeyPem = derivePublicKeyPem(signerKeyPem!);
-            const { anchor, log_index } = await anchorToRekor(
-              attestation.sealed_manifest_digest,
-              signer,
-              publicKeyPem,
-              anchorSubject,
-              { rekorUrl: opt(rest, "--rekor-url") },
-            );
-            packageBytes = addPermanenceAnchor(packageBytes, {
-              ...anchor,
-              package_digest: files.manifest.package_digest,
-            });
-            transparency = {
-              ok: true,
-              located_at: anchor.located_at,
-              anchored_at: anchor.anchored_at,
-              log_index,
-              // Independently checkable on sigstore's own UI — don't just take our word for it.
-              rekor_url: rekorSearchUrl(anchor, log_index),
-            };
-          } catch (e) {
-            // Anchoring is additive — a network/Rekor failure never discards
-            // an already-valid mint, it's just reported honestly.
-            transparency = { ok: false, error: e instanceof Error ? e.message : String(e) };
-          }
-        }
-      }
-      let keyless: Record<string, unknown> | undefined;
-      if (flag(rest, "--keyless")) {
-        // Independent of --transparency/--signer-key entirely — this
-        // doesn't touch the container's own seal, it adds a second,
-        // separately-checkable claim: an OIDC identity (not our own key)
-        // attesting to this digest via Fulcio + Rekor. See docs/TRANSPARENCY.md.
-        try {
-          const { anchor, log_index, owner_identity } = await mintKeylessAnchor(
-            attestation.sealed_manifest_digest,
-            anchorSubject,
-            { rekorUrl: opt(rest, "--rekor-url"), fulcioUrl: opt(rest, "--fulcio-url") },
-          );
-          packageBytes = addPermanenceAnchor(packageBytes, {
-            ...anchor,
-            package_digest: files.manifest.package_digest,
-          });
-          keyless = {
-            ok: true,
-            owner_identity,
-            located_at: anchor.located_at,
-            anchored_at: anchor.anchored_at,
-            log_index,
-            rekor_url: rekorSearchUrl(anchor, log_index),
-          };
-        } catch (e) {
-          keyless = { ok: false, error: e instanceof Error ? e.message : String(e) };
-        }
-      }
+      const result = await mintAndAnchor(unpacked.raw, {
+        host: requireAgentHost(opt(rest, "--host")),
+        signer,
+        signerKeyPem,
+        transparency,
+        keyless: flag(rest, "--keyless"),
+        rekorUrl: opt(rest, "--rekor-url"),
+        fulcioUrl: opt(rest, "--fulcio-url"),
+      });
       const out = opt(rest, "-o") ?? file;
-      await writeFile(resolve(out!), packageBytes);
+      await writeFile(resolve(out!), result.packageBytes);
       console.log(
         JSON.stringify(
           {
             ok: true,
             out,
-            mint_status: files.manifest.mint?.mint_status,
-            content_id: files.manifest.mint?.content_id,
-            package_digest: files.manifest.package_digest,
-            generation_usage: attestation.generation_usage,
-            ...(transparency ? { transparency } : {}),
-            ...(keyless ? { keyless } : {}),
+            mint_status: result.mint_status,
+            content_id: result.content_id,
+            package_digest: result.package_digest,
+            generation_usage: result.generation_usage,
+            ...(issuer_key ? { issuer_key } : {}),
+            ...(result.transparency ? { transparency: result.transparency } : {}),
+            ...(result.keyless ? { keyless: result.keyless } : {}),
           },
           null,
           2,
@@ -851,12 +1015,71 @@ async function main() {
     }
 
     case "publish": {
-      console.error(
-        "Publish is not part of the open .skill happy path.\n" +
-          "Share the .skill file (git, chat, drive). Optional local log: skill registry publish <file>\n" +
-          "Hosted registries are product concerns, not this protocol.",
+      // One-shot: seal a release and publish a public, independently-checkable
+      // provenance record (a Sigstore Rekor transparency-log entry), printing
+      // the search.sigstore.dev URL. This is NOT a marketplace/hosted registry
+      // (still out of scope), it's the public provenance anchor, made
+      // frictionless: a per-user signing key is auto-provisioned on first use
+      // (the public log needs a key but no login), so `skill publish` works
+      // with zero setup. Rekor entries are PERMANENT and WORLD-READABLE.
+      const host = requireAgentHost(opt(rest, "--host"));
+      const explicitFile = rest.find((a) => a.endsWith(".skill"));
+      const file = explicitFile ?? (await loadHead(requireWorkspace())).package_path;
+      if (!file) {
+        throw new Error(
+          "No package to publish. Compile a release first (skill compile --profile release), or pass a <file.skill>.",
+        );
+      }
+      const unpacked = unpackSkill(new Uint8Array(await readFile(resolve(file))));
+      if (unpacked.raw.manifest.compile_profile === "continuity") {
+        throw new Error(
+          "Cannot publish a continuity draft. Take it to a release first: record provenance.human_review, then skill compile --profile release. See docs/FROM-SKILL-CREATOR.md.",
+        );
+      }
+      const noTransparency = flag(rest, "--no-transparency");
+      const keyless = flag(rest, "--keyless");
+      const { signer, signerKeyPem, issuer_key } = await resolveMintSigner(rest, {
+        requireKey: !noTransparency,
+      });
+      const result = await mintAndAnchor(unpacked.raw, {
+        host,
+        signer,
+        signerKeyPem,
+        transparency: !noTransparency,
+        keyless,
+        rekorUrl: opt(rest, "--rekor-url"),
+        fulcioUrl: opt(rest, "--fulcio-url"),
+      });
+      const out = opt(rest, "-o") ?? file;
+      await writeFile(resolve(out!), result.packageBytes);
+      const publicUrl =
+        (result.transparency?.ok && (result.transparency.rekor_url as string)) ||
+        (result.keyless?.ok && (result.keyless.rekor_url as string)) ||
+        undefined;
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            out,
+            mint_status: result.mint_status,
+            package_digest: result.package_digest,
+            public_url: publicUrl,
+            ...(publicUrl
+              ? {
+                  message: `Published. Anyone can verify this record independently at ${publicUrl} (Sigstore's own log, not this tool's word). The entry is PERMANENT and WORLD-READABLE.`,
+                }
+              : {
+                  message:
+                    "Sealed, but the public anchor did not complete (see transparency/keyless below). The .skill itself is still valid; re-run to retry anchoring.",
+                }),
+            ...(issuer_key ? { issuer_key } : {}),
+            ...(result.transparency ? { transparency: result.transparency } : {}),
+            ...(result.keyless ? { keyless: result.keyless } : {}),
+          },
+          null,
+          2,
+        ),
       );
-      process.exit(2);
       break;
     }
 
@@ -973,8 +1196,8 @@ async function main() {
               fix: i.fix,
             })),
             next: releaseAssessment.complete
-              ? `Release-ready as authored. Review, then: skill pack <source> --approve --profile release, or promote this workspace and skill compile --mint.`
-              : `Continuity draft written to ${out}. Fill the fields listed in missing_for_release (start with provenance.human_review — ingest can never fabricate that), then re-assess before a release compile.`,
+              ? `Continuity draft written to ${out}. To seal a signed release: skill load ${out} --into <dir> to materialize an editable workspace, then skill compile -m "reviewed" --approve --mint --profile release.`
+              : `Continuity draft written to ${out}. To take it to a release: (1) skill load ${out} --into <dir> to materialize an editable workspace; (2) fill the fields in missing_for_release by editing <dir>/.skill/contract.json, starting with provenance.human_review, which ingest can never fabricate; (3) skill compile -m "reviewed" --approve --mint --profile release; (4) optional public URL: skill publish <dir>/.skill/objects/<id>.skill.`,
           },
           null,
           2,
@@ -1328,11 +1551,42 @@ async function main() {
       break;
     }
     case "keygen": {
+      // Default (no -o): provision the per-user default issuer key at
+      // ~/.skillerr/issuer-key.pem and pin its public half in your own trust
+      // store. This is the key `skill mint --transparency`/`skill publish`
+      // auto-use, so a public provenance URL works with zero further setup.
+      if (!opt(rest, "-o")) {
+        const issuer = loadOrCreateDefaultIssuer();
+        console.log(
+          JSON.stringify(
+            {
+              ok: true,
+              key_id: issuer.key_id,
+              private_key: issuer.key_path,
+              created: issuer.created,
+              is_default_issuer: true,
+              next_steps: [
+                issuer.created
+                  ? `Generated your default skillerr issuer key and pinned its public key in your own trust store.`
+                  : `Your default skillerr issuer key already exists; pinned in your own trust store.`,
+                `skill publish <file.skill> (or skill mint --transparency) now signs with it and prints a public search.sigstore.dev URL, no more setup.`,
+                `Keep ${issuer.key_path} secret (mode 0600). To let OTHERS verify you as verified_issuer, share this key_id (${issuer.key_id}) + its public key so they can pin it. See docs/KEY-CEREMONY.md.`,
+              ],
+            },
+            null,
+            2,
+          ),
+        );
+        break;
+      }
+      // -o <dir>: the named production key-ceremony path. Writes a named
+      // keypair you manage yourself; does not touch the default issuer or
+      // your trust store.
       const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
         privateKeyEncoding: { type: "pkcs8", format: "pem" },
         publicKeyEncoding: { type: "spki", format: "pem" },
       });
-      const outDir = opt(rest, "-o") ?? ".";
+      const outDir = opt(rest, "-o")!;
       const keyId = opt(rest, "--key-id") ?? `issuer-${new Date().toISOString().slice(0, 10)}`;
       await mkdir(resolve(outDir), { recursive: true });
       const privPath = resolve(outDir, `${keyId}.pem`);

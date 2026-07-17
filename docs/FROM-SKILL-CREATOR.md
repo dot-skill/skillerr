@@ -57,12 +57,16 @@ The rest of the Agent Skills spec's frontmatter is mapped too, not dropped:
 
 This is intentional, not a gap to work around. No amount of re-running `ingest` or passing a flag can manufacture this — a human (or, per the agent-first model throughout this repo, an agent acting with a human's explicit review) has to actually look at the mapped contract and record that review before `skill compile --profile release` will succeed. `skill compile` on an ingested draft without this **refuses** (`compile_refused`), it does not silently downgrade or fake completeness.
 
-## After ingest
+## After ingest: taking the draft to a signed release
 
-1. Review the output path's completeness report (`missing_for_release` in the JSON output, or `skill inspect ./out.skill` any time after).
-2. Fix each named field — usually just recording human review, occasionally a `semantic_contract` gap if the source was too sparse to infer structure from.
-3. Re-assess: `skill contract-check ./out.skill` (or re-run `skill compile --profile release --approve --mint` once ready).
-4. If the bundled `scripts/*` need to actually execute, author real permissions for the stub capabilities ingest created — they start deny-by-default and stay that way until you explicitly scope them.
+`skill ingest` writes a sealed **continuity** `out.skill`, not a workspace. To take it forward to a release you materialize it into an editable workspace, record the review it's missing, then compile:
+
+1. **Review** the completeness report (`missing_for_release` in the ingest JSON, or `skill inspect ./out.skill` any time after).
+2. **Materialize an editable workspace:** `skill load ./out.skill --into ./my-skill` writes `./my-skill/.skill/contract.json` and stages the mapped knowledge as sections. (Inside an existing workspace, plain `skill load ./out.skill` materializes into it; with no workspace and no `--into`, `skill load` is a read-only preview that writes nothing.)
+3. **Fix each named field** by editing `./my-skill/.skill/contract.json` (usually just recording human review: set `provenance.human_review` to `{"status":"reviewed","actor":"<you>","at":"<ISO timestamp>","scope":["contract","knowledge"]}`), occasionally a `semantic_contract` gap if the source was too sparse. No CLI flag can set `human_review`, that's the point.
+4. **Compile the signed release** from the workspace: `cd ./my-skill && skill compile -m "reviewed" --approve --mint --profile release`. It **refuses** (`compile_refused`) until the review is recorded; it never fakes completeness. For `verified_issuer` trust (not the zero-setup development seal), add `--signer-key`, see [KEY-CEREMONY.md](./KEY-CEREMONY.md).
+5. **Publish a public provenance URL (optional):** `skill publish ./my-skill/.skill/objects/<id>.skill` seals + anchors the digest to the public Sigstore Rekor log and prints an independently-verifiable `search.sigstore.dev` link. On first run it auto-generates a per-user signing key (no login needed); the entry is permanent and world-readable.
+6. If the bundled `scripts/*` need to actually execute, author real permissions for the stub capabilities ingest created; they start deny-by-default and stay that way until you explicitly scope them.
 
 ## Related
 

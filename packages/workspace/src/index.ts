@@ -761,3 +761,120 @@ export async function loadSkillHandoff(packagePath: string): Promise<{
     mint_status: u.manifest.mint?.mint_status,
   };
 }
+
+/**
+ * Knowledge items carry a `KnowledgeItemType`; workspace sections carry a
+ * `SectionType`. The two vocabularies overlap but aren't identical, so map
+ * the ones that differ and fall back to `reference` (what ingest itself
+ * uses) for knowledge-only kinds with no section equivalent.
+ */
+const KNOWLEDGE_TO_SECTION_TYPE: Record<string, SectionType> = {
+  decision: "decision",
+  tradeoff: "tradeoff",
+  lesson: "lesson",
+  reference: "reference",
+  correction: "correction_note",
+  rule: "reference",
+  principle: "reference",
+  constraint: "reference",
+};
+
+export interface MaterializeResult {
+  root: string;
+  skill_id: string;
+  title: string;
+  /** Number of knowledge items materialized as staged workspace sections. */
+  sections: number;
+  contract_written: boolean;
+  /**
+   * True when the materialized contract still needs a human to record
+   * `provenance.human_review` before a release compile will succeed. This
+   * is never set for you: materialize deliberately preserves the loaded
+   * contract's review status verbatim, so a bridge into an editable
+   * workspace can never fabricate the one piece of evidence a release
+   * requires a human to record.
+   */
+  needs_human_review: boolean;
+}
+
+/**
+ * Materialize a `.skill` package into an editable workspace: write its
+ * contract to `.skill/contract.json`, stage its knowledge as workspace
+ * sections, and carry its journey over, so a continuity package (e.g. one
+ * `skill ingest` produced) can actually be taken forward to a release.
+ *
+ * This is the bridge that was missing: `loadSkillHandoff` above is a
+ * read-only preview that writes nothing, so an ingested package had no
+ * path into a workspace where a human could record review and recompile.
+ *
+ * Deliberately does NOT set `provenance.human_review`. The loaded
+ * contract's review status is written verbatim; recording review remains a
+ * human edit of `.skill/contract.json`, so the release gate stays honest
+ * (a tool/agent can never fabricate it, see docs/WHAT-IS-VERIFIABLE.md).
+ */
+export async function materializeSkillIntoWorkspace(
+  root: string,
+  packagePath: string,
+  opts: { host?: string; force?: boolean } = {},
+): Promise<MaterializeResult> {
+  requireAgentHost(opts.host);
+  await initWorkspace(root);
+
+  const existingSections = await listSections(root);
+  const contractExists = existsSync(paths(root).contract);
+  if (existingSections.length > 0 || contractExists) {
+    if (!opts.force) {
+      throw new Error(
+        "Workspace already has authored content (sections or a contract). Load into a fresh directory (`skill load <file> --into <new-dir>`), or pass --force to overwrite.",
+      );
+    }
+    // --force is a real overwrite, not an append: clear existing sections
+    // (the contract is overwritten below) so the workspace reflects only
+    // the newly loaded package.
+    for (const section of existingSections) {
+      await discardSection(root, section.id);
+    }
+  }
+
+  const { unpackSkill } = await import("@skillerr/core");
+  const bytes = new Uint8Array(await readFile(resolve(packagePath)));
+  const u = unpackSkill(bytes);
+
+  const contract = u.manifest.contract;
+  if (contract) {
+    await saveWorkspaceContract(root, contract);
+    const config = await loadConfig(root);
+    await saveConfig(root, { ...config, title: config.title ?? contract.title });
+  }
+
+  for (const k of u.knowledge) {
+    await proposeSection(root, {
+      title: k.title,
+      body: k.body,
+      type: KNOWLEDGE_TO_SECTION_TYPE[k.type] ?? "reference",
+      fidelity: k.fidelity,
+      host: opts.host,
+    });
+  }
+
+  const journey = u.raw.provenance?.journey as
+    | { summary?: string; open_questions?: string[] }
+    | undefined;
+  if (journey?.summary) {
+    await setJourney(root, {
+      summary: journey.summary,
+      open_questions: journey.open_questions,
+    });
+  }
+
+  return {
+    root,
+    skill_id: u.manifest.id,
+    title: u.manifest.title,
+    sections: u.knowledge.length,
+    contract_written: !!contract,
+    needs_human_review: contract
+      ? contract.provenance.human_review.status !== "reviewed"
+      : true,
+  };
+}
