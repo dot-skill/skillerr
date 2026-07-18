@@ -1,0 +1,31 @@
+name: Enforce branch flow
+
+# main only ever receives merges from release/* or hotfix/* branches — see
+# CONTRIBUTING.md's "Branch flow" section. Feature/task work branches off
+# develop and merges back into develop; only a deliberate release/*
+# (cut from develop) or hotfix/* (cut from main, for an urgent fix)
+# branch is allowed to open a PR against main. This check is what makes
+# that a hard rule, not just a convention — combined with main's branch
+# protection requiring it to pass before merge.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR source branch is release/* or hotfix/*
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [[ ! "${HEAD_REF}" =~ ^(release|hotfix)/ ]]; then
+            echo "::error::PRs into main must come from a release/* or hotfix/* branch (got '${HEAD_REF}'). Feature work merges into develop instead — see CONTRIBUTING.md's Branch flow section."
+            exit 1
+          fi
+          echo "OK: '${HEAD_REF}' matches the required release/*|hotfix/* pattern."

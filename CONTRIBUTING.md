@@ -25,6 +25,26 @@ git commit -s -m "feat: …"
 See [DCO.md](./DCO.md). The DCO sign-off records that you may submit the
 change under the MIT License.
 
+## Branch flow
+
+`main` only ever receives merges from a `release/*` or `hotfix/*` branch,
+enforced by CI (a PR into `main` from anything else fails the
+`enforce-branch-flow` check and can't merge). Everything else works
+through `develop`:
+
+- **Feature/task work**: branch off `develop`, PR back into `develop`.
+- **`release/*`**: cut from `develop` when it's time to ship what's
+  accumulated there. Bump versions on this branch, then PR it into `main`,
+  that merge is the actual release (auto-publishes to npm, see
+  [docs/PUBLISHING.md](./docs/PUBLISHING.md)).
+- **`hotfix/*`**: for an urgent fix that can't wait for the next release.
+  Branch off `main` directly, PR into `main` (ships immediately), then
+  also merge the same fix back into `develop` so it isn't lost on the
+  next release.
+
+`develop` itself isn't published from directly; it's the integration
+branch where day-to-day work accumulates between releases.
+
 ## Ways to contribute
 
 | Kind | Examples | Difficulty |
