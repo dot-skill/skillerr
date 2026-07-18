@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: protocol **1.0.0 (Stable)**; reference packages **1.4.0**. The package number should always match [`packages/skillerr/package.json`](../packages/skillerr/package.json); if this line ever drifts from that file, the file wins. Maturity levels (Stable / Candidate / Preview) are defined in [GOVERNANCE.md](../GOVERNANCE.md). Everything below is Stable except `@skillerr/skill-score` (`skill score`), which is **Preview**, it's real and shipped, but its scoring interface may still change without a major bump.
+Status: protocol **1.0.0 (Stable)**; reference packages **1.5.0**. The package number should always match [`packages/skillerr/package.json`](../packages/skillerr/package.json); if this line ever drifts from that file, the file wins. Maturity levels (Stable / Candidate / Preview) are defined in [GOVERNANCE.md](../GOVERNANCE.md). Everything below is Stable except `@skillerr/skill-score` (`skill score`), which is **Preview**, it's real and shipped, but its scoring interface may still change without a major bump.
 
 ## Now (done in this repo)
 
@@ -137,6 +137,25 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.4.0**. The package n
       package-version mentions that drift from `packages/skillerr/package.json`.
       Wiki cleanup: removed pages superseded by `docs/rfcs/`/`docs/KEY-CEREMONY.md`
       that were still being linked from stale references.
+- [x] External-agent bug sweep: `skill publish`/`mint --transparency` help and
+      runtime messages now lead with exactly what goes public (five opaque
+      fields, never skill content), after a real agent refused to publish out
+      of an inaccurate fear of exposure. Fixed a real gap from [RFC
+      0007](./rfcs/0007-subject-bearing-transparency-anchor.md#errata-found-in-skillerr150-the-payload-wasnt-actually-retrievable):
+      anchors were submitted as Rekor's hash-only `dsse` entry kind, so the
+      subject-bearing statement was never actually retrievable from the
+      public log; now uses `entryType: "intoto"`, verified against a real
+      submission. `inspectTrustView` now surfaces `manifest.anchors` instead
+      of staying silent about a public anchor on an otherwise dev-sealed
+      package. Fixed a real crash + silent-validation-skip bug:
+      `assessSkillContract`'s item validator silently accepted a plain
+      string wherever a structured object was required (permissions,
+      inputs, branches, human_decisions, etc.), so `contract-check` reported
+      "complete" on contracts that then crashed the compiler; it now flags
+      the type mismatch directly. `skill compile --mint` also now runs the
+      same schema/workflow-integrity check `verify-trust` runs before
+      signing, closing the gap that let an invalid package get minted,
+      signed, and permanently published before anyone caught it.
 
 ## Next (great contribution targets)
 

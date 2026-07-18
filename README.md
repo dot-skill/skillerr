@@ -20,7 +20,7 @@ npm i -g skillerr
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 [![Protocol](https://img.shields.io/badge/protocol-1.0.0-blue.svg)](./docs/PROTOCOL.md)
-[![Tests](https://img.shields.io/badge/tests-198%20passing-brightgreen.svg)](./docs/SECURITY.md)
+[![Tests](https://img.shields.io/badge/tests-199%20passing-brightgreen.svg)](./docs/SECURITY.md)
 
 **Contributing:** see [CONTRIBUTING.md](./CONTRIBUTING.md) for the DCO/PR checklist, or jump straight to a scoped task in [docs/GOOD-FIRST-ISSUES.md](./docs/GOOD-FIRST-ISSUES.md).
 
@@ -80,15 +80,10 @@ and it never claims completeness it can't back up. Paste this to your agent —
 it names every command literally, nothing to guess:
 
 ```text
-Run these exact commands in your terminal, in order:
-
-1. npm i -g skillerr          (skip if `skill --version` already works)
-2. export SKILL_HOST=cursor   (replace "cursor" with your actual tool name —
-                                claude-code, codex, ollama, etc.)
-3. skill ingest ./SKILL.md    (adjust the path if your SKILL.md lives elsewhere)
-
-Then show me the output path and exactly what's still missing before it can be
-a release. Don't invent contract fields to make it look more complete than it is.
+Using skillerr (npmjs.com/package/skillerr), convert ./SKILL.md into a sealed
+.skill package. Set yourself up and ask me for anything you need. Show me the
+output path and exactly what's still missing before it can be a release. Don't
+invent contract fields to make it look more complete than it is.
 ```
 
 See [docs/FAQ.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd).
@@ -121,11 +116,10 @@ Node ≥ 20. One-shot: `npx -y skillerr --help`. After that, you do not drive a 
 ## Talk to your AI
 
 Paste prompts like these into Cursor, ChatGPT, Claude, Codex, or any agent
-that can run shell tools. The two prompts above (convert / create) spell out
-the install + `SKILL_HOST` steps explicitly since they're usually the first
-thing you paste. The prompts below assume you already ran those two steps
-once in this environment — if `skill --version` fails, run `npm i -g
-skillerr` and `export SKILL_HOST=<your-tool-name>` first.
+that can run shell tools. None of them spell out install steps or
+`SKILL_HOST`: a competent agent checks `skill --version`, installs skillerr,
+and picks the right host value on its own; it'll ask you if it needs
+anything else.
 
 New to the vocabulary the prompts use? "Journey" is the redacted record of
 what you and the agent did; "checkpoint" is a partial, in-progress save
@@ -136,16 +130,10 @@ way is a sealed `.skill` file, not a chat export.
 ### Create a skill from this chat
 
 ```text
-Run these exact commands in your terminal, in order:
-
-1. npm i -g skillerr          (skip if `skill --version` already works)
-2. export SKILL_HOST=cursor   (replace "cursor" with your actual tool name —
-                                claude-code, codex, ollama, etc.)
-
-Then, from this conversation, create a portable .skill: redacted journey, exact
-sections I approved (secrets only as {{refs}}), then either checkpoint for
-handoff or compile --approve --mint when release-complete. Do not invent filler.
-Show me status and the output path.
+Using skillerr (npmjs.com/package/skillerr), create a sealed .skill from this
+conversation: redacted journey, exact sections I approved, nothing invented.
+Set yourself up and ask me for anything you need. Show me status and the
+output path.
 ```
 
 Starting from a blank page instead of a chat you want to seal? Point your
@@ -262,7 +250,7 @@ Full package layout spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 ## Status
 
 Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](./docs/PROTOCOL.md)) — future changes go through the open [RFC process](./docs/rfcs/), not silent revisions.  
-Reference CLI: `skillerr` @ **1.4.0**, a stable public API backed by 198 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](./docs/TRANSPARENCY.md).  
+Reference CLI: `skillerr` @ **1.5.0**, a stable public API backed by 199 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](./docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the foundation is future-proof:**

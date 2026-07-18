@@ -190,3 +190,47 @@ test("PROTO-5: assessSkillContract rejects a malformed host/path permission patt
     assessment.issues.some((i) => i.field === "permissions" && i.message.includes("invalid host pattern")),
   );
 });
+
+test("assessSkillContract: a plain string item is flagged, not silently accepted as complete", () => {
+  // Regression for a real bug: declaration.items' JSON Schema type is
+  // (object | string), but every consumer downstream (compile.ts's
+  // permissions/inputs/branches/human_decisions mapping, hash.ts's sort by
+  // .name) assumes an object. A string item used to pass validateItems
+  // silently (it bailed out on non-object items instead of flagging them),
+  // so contract-check reported "complete" on a contract that then crashed
+  // at compile/mint time. Every field sharing this shape has the same bug;
+  // permissions is the field the crash was originally reported against.
+  const contract = {
+    kind: "skill_contract",
+    contract_version: "1.0",
+    skill_kind: "integration",
+    title: "x",
+    intent: "x",
+    sensitivity: "private",
+    triggers: { status: "none", reason: "none" },
+    inputs: { status: "none", reason: "none" },
+    preconditions: { status: "none", reason: "none" },
+    steps: { status: "none", reason: "none" },
+    branches: { status: "none", reason: "none" },
+    human_decisions: { status: "none", reason: "none" },
+    capabilities: { status: "none", reason: "none" },
+    permissions: { status: "specified", items: ["read files in the project directory"] },
+    forbidden_actions: { status: "none", reason: "none" },
+    outputs: { status: "none", reason: "none" },
+    recovery: { status: "none", reason: "none" },
+    verification: { status: "none", reason: "none" },
+    corrections: { status: "none", reason: "none" },
+    provenance: {
+      evidence: { status: "none", reason: "none" },
+      limitations: { status: "none", reason: "none" },
+      human_review: { status: "not_reviewed" },
+    },
+  };
+  const assessment = assessSkillContract(contract, "continuity");
+  assert.equal(assessment.complete, false);
+  assert.ok(
+    assessment.issues.some(
+      (i) => i.field === "permissions" && i.message.includes("must be an object"),
+    ),
+  );
+});

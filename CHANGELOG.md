@@ -1,5 +1,51 @@
 # Changelog
 
+## 1.5.0 (2026-07-18)
+
+**External-agent bug sweep: fixed real bugs found by a real AI agent testing the CLI end to end, not just documentation nits.**
+
+- Fixed a real gap in [RFC 0007](./docs/rfcs/0007-subject-bearing-transparency-anchor.md#errata-found-in-skillerr150-the-payload-wasnt-actually-retrievable):
+  `anchorToRekor`/`mintKeylessAnchor` submitted through Rekor's hash-only
+  `dsse` entry kind, so the subject-bearing statement (`skill_id` etc.) was
+  signed correctly but never actually retrievable from the public log, only
+  its hash was. Now uses `entryType: "intoto"`. Verified against a real
+  throwaway-key submission to the public Rekor log: the old kind has no
+  `attestation` field under any endpoint; the new kind's `attestation.data`
+  decodes straight to the statement.
+- `skill publish`/`skill mint --transparency` help text and runtime
+  messages now lead with exactly what goes public (`skill_id`,
+  `skill_version`, `issuer_class`, two SHA-256 digests, nothing else) and
+  what never does (the `.skill` file, its title, intent, knowledge,
+  journey, assets). A real agent had refused to run `skill publish` out of
+  an inaccurate fear that it would expose skill content.
+- `inspectTrustView`/`TrustView` now surface `manifest.anchors`. A package
+  that was `skill publish`ed but still carries the default dev seal used to
+  read as flatly "DEVELOPMENT seal, not production trust" with zero mention
+  that a public, independently-checkable anchor also exists on it.
+- Fixed a real crash + silent-validation-skip bug: `assessSkillContract`'s
+  item validator silently accepted a plain string wherever a structured
+  object was required (`permissions`, `inputs`, `branches`,
+  `human_decisions`, `capabilities`, `outputs`, `steps`, etc.), so
+  `contract-check` reported a contract "complete" when it actually crashed
+  the compiler downstream (`undefined.localeCompare` sorting by a `.name`
+  that didn't exist). Now flags the type mismatch directly, at the earliest
+  possible point.
+- `skill compile --mint` now runs the same schema/workflow-integrity check
+  `verify-trust` runs before signing. Previously it only checked the
+  contract-level completeness report, which never inspected the compiled
+  workflow graph, so a package with a dangling step reference could be
+  minted, signed, and (via `skill publish`) permanently anchored to the
+  public log before `verify-trust` ever caught it.
+- Trust labels (`inspectTrustView`, `inspectSkill`, `assessClaims`) are
+  shorter and no longer read as machine-generated filler ("VERIFIED ISSUER
+  seal, host claims bound by configured issuer" → "Verified issuer");
+  supplementary detail moved into the existing `warnings` array instead of
+  being crammed into the headline label.
+- Simplified the copy-paste "Talk to your AI" prompts in `README.md`: they
+  no longer spell out install/`SKILL_HOST` setup or the `{{refs}}` secrets
+  mechanic. A competent agent reads skillerr's own `--help`/docs and asks
+  for whatever it needs; walking through that in every prompt was noise.
+
 ## 1.4.0 (2026-07-18)
 
 **Consistency sweep: docs, wiki, and agent guidance.**

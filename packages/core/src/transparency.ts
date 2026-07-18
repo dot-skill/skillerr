@@ -195,7 +195,17 @@ function getAnchorStatementValidator(): ValidateFunction {
  *
  * The signed DSSE payload is a subject-bearing in-toto Statement naming
  * `subject`, not the bare digest (see `buildAnchorStatement`); the
- * resulting Rekor entry is self-describing, not just a naked hash.
+ * resulting Rekor entry is self-describing, not just a naked hash, but
+ * only because this submits an `entryType: "intoto"` Rekor entry, which
+ * stores the payload itself (base64) in the public log body. The
+ * `@sigstore/sign` default (`"dsse"`) instead stores only `envelopeHash`/
+ * `payloadHash`, deliberately omitting the payload for callers who don't
+ * want their statement public. Confirmed against a real submitted entry
+ * on rekor.sigstore.dev. That default is wrong for us: `buildAnchorStatement`
+ * already strips the payload down to five opaque fields before it's ever
+ * signed, so there's nothing left to protect by hiding it further, and
+ * hiding it defeats RFC 0007's whole point (a stranger reading the public
+ * record, not just this tool, can see which skill_id an entry names).
  */
 export async function anchorToRekor(
   sealedManifestDigest: string,
@@ -205,7 +215,7 @@ export async function anchorToRekor(
   opts: TransparencyOptions = {},
 ): Promise<TransparencyAnchorResult> {
   const rekorUrl = opts.rekorUrl ?? DEFAULT_REKOR_URL;
-  const witness = opts.witness ?? new RekorWitness({ rekorBaseURL: rekorUrl });
+  const witness = opts.witness ?? new RekorWitness({ rekorBaseURL: rekorUrl, entryType: "intoto" });
   const builder = new DSSEBundleBuilder({
     signer: toSigstoreSigner(issuerSigner, publicKeyPem),
     witnesses: [witness],
@@ -282,6 +292,11 @@ export interface KeylessAnchorResult {
  * store, so this is a fundamentally different trust mechanism from
  * `verified_issuer` — never conflate the two (see the `PermanenceAnchor`
  * doc comment in @skillerr/protocol).
+ *
+ * Same `entryType: "intoto"` reasoning as `anchorToRekor`, see that
+ * function's doc comment. Without it, the payload (the subject-bearing
+ * statement) would be signed and hashed but never actually stored in the
+ * public Rekor entry.
  */
 export async function mintKeylessAnchor(
   sealedManifestDigest: string,
@@ -290,7 +305,7 @@ export async function mintKeylessAnchor(
 ): Promise<KeylessAnchorResult> {
   const rekorUrl = opts.rekorUrl ?? DEFAULT_REKOR_URL;
   const fulcioUrl = opts.fulcioUrl ?? DEFAULT_FULCIO_URL;
-  const witness = opts.witness ?? new RekorWitness({ rekorBaseURL: rekorUrl });
+  const witness = opts.witness ?? new RekorWitness({ rekorBaseURL: rekorUrl, entryType: "intoto" });
   const signer =
     opts.signer ??
     new FulcioSigner({

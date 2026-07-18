@@ -202,6 +202,22 @@ export function mintSkillPackage(
     attestation: undefined,
     anchors: pkg.anchors ?? pkg.manifest.anchors,
   });
+  // Gate on the same schema/workflow-integrity check `skill validate` and
+  // `verify-trust` run. `completeness` above only reflects the CONTRACT-level
+  // assessment (assessSkillContract), which never inspects the compiled
+  // workflow graph, so a dangling step.next/branch.goto/on_fail reference
+  // sailed past it, got signed, and (via `skill publish`) permanently
+  // anchored to the public log before verify-trust ever caught it. Minting
+  // must refuse anything the package would already fail once unpacked.
+  const draftValidation = validatePackageBytes(draftBytes);
+  const draftErrors = draftValidation.issues.filter((issue) => issue.severity === "error");
+  if (draftErrors.length > 0) {
+    throw new Error(
+      `Cannot mint: package fails validation that skill validate/verify-trust would also fail: ${draftErrors
+        .map((issue) => `${issue.code} (${issue.message})`)
+        .join("; ")}`,
+    );
+  }
   const unpacked = unpackSkill(draftBytes);
   const package_digest = unpacked.manifest.package_digest;
 
@@ -719,12 +735,12 @@ export function inspectTrustView(archive: Uint8Array, opts?: { trust_store?: Tru
   const signed = Boolean(envelope?.signatures?.[0]?.sig && attestation);
 
   let trust_state: TrustState = "untrusted";
-  let label = "UNSIGNED / OPEN — untrusted";
+  let label = "Unsigned";
 
   if (mint_status === "draft" || !signed) {
     trust_state = "untrusted";
-    label = "UNSIGNED / OPEN — untrusted (do not execute without --allow-untrusted)";
-    warnings.push("Package has no verified creation seal");
+    label = "Unsigned";
+    warnings.push("Package has no verified creation seal. Do not execute without --allow-untrusted.");
   } else {
     const verify = verifyMintTrust(archive, "minted", {
       allow_development_issuer: true,
@@ -733,22 +749,28 @@ export function inspectTrustView(archive: Uint8Array, opts?: { trust_store?: Tru
     });
     trust_state = verify.trust_state;
     if (trust_state === "development") {
-      label = "DEVELOPMENT seal (public-dev HMAC) — not production trust";
-      warnings.push("Public development HMAC is forgeable; treat as untrusted for production execute");
+      label = "Development seal";
+      warnings.push("Public development HMAC is forgeable. Treat as untrusted for production execute.");
     } else if (trust_state === "self_reported") {
-      label = "SELF-REPORTED agent host claims — signed but not verified_issuer";
-      warnings.push("Host/provider/model are self-asserted; local LLMs can lie about authorship");
+      label = "Self-reported";
+      warnings.push("Host/provider/model are self-asserted; local LLMs can lie about authorship.");
     } else if (trust_state === "verified_issuer") {
-      label = "VERIFIED ISSUER seal — host claims bound by configured issuer";
-      warnings.push(
-        "Issuer key authenticity is established; model honesty (esp. local LLMs) remains a residual risk",
-      );
+      label = "Verified issuer";
+      warnings.push("Model honesty, especially for local LLMs, remains a residual risk.");
     } else {
-      label = "UNTRUSTED — seal present but verification failed";
+      label = "Untrusted";
+      warnings.push("Seal present but verification failed.");
     }
     for (const issue of verify.issues) {
       if (issue.severity === "warning") warnings.push(issue.message);
     }
+  }
+
+  if (m.anchors && m.anchors.length > 0) {
+    const kinds = m.anchors.map((a) => a.kind).join(", ");
+    warnings.push(
+      `${m.anchors.length} public transparency-log anchor(s) present (${kinds}), independent of this seal. Run \`skill verify-trust --online\` to check.`,
+    );
   }
 
   const expectedSealed = sealedManifestDigest(m);
@@ -777,6 +799,7 @@ export function inspectTrustView(archive: Uint8Array, opts?: { trust_store?: Tru
     attestation_digest: m.attestation_digest,
     license: m.license,
     license_url: m.license_url,
+    anchors: m.anchors,
     label,
     warnings,
     issues: base.issues,

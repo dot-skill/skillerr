@@ -451,10 +451,10 @@ export function inspectSkill(archive: Uint8Array): {
   // neither proves a valid signature exists. Label accordingly instead of
   // the confident-sounding "SEALED", which read as verified when it wasn't.
   const claimsSealed = mint_status === "minted" && Boolean(m.attestation_digest);
-  let trust_label = "UNSIGNED / OPEN — untrusted";
+  let trust_label = "Unsigned";
   let trust_state = "untrusted";
   if (claimsSealed) {
-    trust_label = "CLAIMS SEALED (unverified — run `skill inspect --trust` to verify the signature)";
+    trust_label = "Claims sealed (unverified)";
     trust_state = "self_reported";
   }
   return {

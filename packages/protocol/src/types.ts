@@ -380,6 +380,17 @@ export interface TrustView {
   attestation_digest?: string;
   license?: string;
   license_url?: string;
+  /**
+   * Present/absent-only summary of `manifest.anchors`, not re-verified
+   * cryptographically here (that's `verify-trust --online` /
+   * `verifyRekorAnchor`/`verifyKeylessAnchor`). Exists so a consumer of this
+   * seal-only view can tell "no public anchor exists" apart from "an anchor
+   * exists but this call didn't check it," instead of silently dropping
+   * anchor presence entirely: a dev-sealed package that was also `skill
+   * publish`ed still had `label` read as flatly untrusted with no mention
+   * that an independently-checkable public record exists alongside the seal.
+   */
+  anchors?: PermanenceAnchor[];
   label: string;
   warnings: string[];
   issues: Array<{ severity: "error" | "warning"; code: string; message: string }>;

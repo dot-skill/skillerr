@@ -2,6 +2,8 @@
 
 Status: implemented in `@skillerr/core` (`transparency.ts`), opt-in, additive only. This doc explains what it adds and — just as importantly — what it does not claim.
 
+**Before anything else: what actually goes public.** `skill publish` / `skill mint --transparency` log exactly five opaque fields, `skill_id`, `skill_version`, `sealed_manifest_digest`, `package_digest`, `issuer_class`, never the `.skill` file itself, its title, intent, knowledge sections, journey, or assets. The package never leaves your machine because of this command. That small record is permanent and world-readable once logged (see "What gets logged" below for the exact JSON), so a `skill_id` you want to keep unlisted still shouldn't be published, but the record itself carries no skill content.
+
 ## Why sigstore, not a hand-rolled log
 
 An append-only transparency log with inclusion proofs is exactly what [Rekor](https://docs.sigstore.dev) already is: a public Merkle-tree log, maintained by the Sigstore project (part of the Linux Foundation / OpenSSF), with a well-audited reference implementation and official TypeScript client libraries (`@sigstore/sign`, `@sigstore/verify`, `@sigstore/bundle`). Re-implementing Merkle inclusion proof verification from scratch is exactly the kind of security-critical cryptographic code that's easy to get subtly wrong — using the same library the rest of the software supply-chain ecosystem (npm provenance, sigstore-python, cosign) already relies on is the safer choice. This repo's own npm publishes already depend on the same stack (`npm publish --provenance` uses sigstore under the hood).
@@ -16,7 +18,7 @@ Auto-provisioning a key does not, by itself, earn `verified_issuer` trust: witho
 
 ## What gets logged
 
-When you mint with `--transparency`, the anchored payload is a small, signed [in-toto](https://in-toto.io) `Statement` (RFC 0007), not a bare digest. Its `subject` names the skill (`skill_id` and `package_digest`), so the resulting public log entry is self-describing and cross-linkable: a stranger can see which skill an entry belongs to without already holding the package. The predicate carries only stable, opaque identifiers, never title, intent, contract, journey, section bodies, endpoints, or any other free text, since the public Rekor log is permanent and world-readable:
+When you mint with `--transparency`, the anchored payload is a small, signed [in-toto](https://in-toto.io) `Statement` (RFC 0007), not a bare digest. Its `subject` names the skill (`skill_id` and `package_digest`), so the resulting public log entry is self-describing and cross-linkable: a stranger can see which skill an entry belongs to without already holding the package. This requires submitting Rekor's `intoto` entry kind specifically: Rekor's other DSSE-adjacent kind, `dsse`, stores only `envelopeHash`/`payloadHash` and never persists the payload at all, confirmed directly against the real public instance (a `dsse`-kind entry has no `attestation` field, ever, even via `GET /api/v1/log/entries/{uuid}`). `RekorWitness` is configured with `entryType: "intoto"` for exactly this reason; fetch a minted entry by UUID (not the batch `?logIndex=` search, which omits it) and its `attestation.data` decodes straight to this statement. The predicate carries only stable, opaque identifiers, never title, intent, contract, journey, section bodies, endpoints, or any other free text, since the public Rekor log is permanent and world-readable:
 
 ```json
 {
@@ -36,7 +38,7 @@ When you mint with `--transparency`, the anchored payload is a small, signed [in
 Submitted to Rekor as a `DSSEBundleBuilder` artifact (not `MessageSignatureBundleBuilder`, which hardcodes a SHA-256 hashedrekord entry incompatible with Rekor's Ed25519ph requirement for Ed25519 signatures, confirmed against the real public instance):
 
 1. The statement is RFC 8785 (JCS) canonicalized (see [CANONICALIZATION.md](./CANONICALIZATION.md)), then our existing issuer signer (`configured_ed25519`, or the public-dev HMAC path, see below) signs it exactly as it always signed the bare digest.
-2. `RekorWitness` submits the resulting signature and public key to Rekor, which returns a `TransparencyLogEntry`: `logIndex`, `integratedTime`, `logID`, an `inclusionProof` (Merkle path to the signed tree head), and a `signedEntryTimestamp` (SET).
+2. `RekorWitness` (constructed with `entryType: "intoto"`, see above) submits the resulting signature, public key, and payload to Rekor, which returns a `TransparencyLogEntry`: `logIndex`, `integratedTime`, `logID`, an `inclusionProof` (Merkle path to the signed tree head), and a `signedEntryTimestamp` (SET).
 3. That entry is stored as a `PermanenceAnchor { kind: "transparency_log", statement_version: "1" }` inside `signatures/anchors/`, using the container's existing anchor mechanism (`addPermanenceAnchor`), not a new container feature.
 
 Nothing about `mintSkillPackage`'s core signing path changes. Transparency is a witness *added on top of* an already-valid signature, never a replacement for one, so a mint with no network access still succeeds exactly as before, just without an anchor.

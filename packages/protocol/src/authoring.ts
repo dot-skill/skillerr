@@ -152,7 +152,15 @@ export function assessSkillContract(
     const d = declaration as { status?: string; items?: unknown[] } | undefined;
     if (d?.status !== "specified" || !Array.isArray(d.items)) return;
     d.items.forEach((item, index) => {
-      if (!item || typeof item !== "object") return;
+      if (!item || typeof item !== "object") {
+        issues.push({
+          field,
+          code: "invalid",
+          message: `${field}.items[${index}] must be an object with ${requiredKeys.join(", ")}, not a ${item === null ? "null" : typeof item}`,
+          fix: `Replace ${field}.items[${index}] with an object containing ${requiredKeys.join(", ")}.`,
+        });
+        return;
+      }
       const missing = requiredKeys.filter((key) => !(key in item));
       if (missing.length) {
         issues.push({

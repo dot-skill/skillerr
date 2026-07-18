@@ -74,7 +74,7 @@ export function assessClaims(view: TrustView, opts: AssessClaimsOptions = {}): C
   if (view.signed) {
     const method =
       view.trust_state === "development"
-        ? "public-dev HMAC verified structurally — forgeable by design, development trust only"
+        ? "public-dev HMAC, structurally verified only (forgeable by design)"
         : view.issuer_class === "configured_ed25519"
           ? "ed25519 signature verified against the signer's public key"
           : "signature verified";

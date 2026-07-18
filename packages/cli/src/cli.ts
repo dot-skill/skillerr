@@ -163,43 +163,69 @@ Create:
                                        read-only preview (nothing written).
   skill publish [file.skill] [--host name] [--rekor-url <url>] [--keyless]
                                        Seal a release AND publish a public,
-                                       independently-checkable provenance record
-                                       (a Sigstore Rekor transparency-log entry),
-                                       then print the search.sigstore.dev URL.
-                                       Zero setup: a per-user signing key is
-                                       auto-generated on first use (the public
-                                       log needs a key but NO login). This is a
-                                       public provenance anchor, NOT a
-                                       marketplace. Rekor entries are PERMANENT
-                                       and WORLD-READABLE, never publish a secret
-                                       skill. --no-transparency seals without
-                                       anchoring. See docs/TRANSPARENCY.md
+                                       independently-checkable provenance
+                                       record. WHAT ACTUALLY GOES PUBLIC: only
+                                       skill_id, skill_version, issuer_class,
+                                       and two SHA-256 digests (a Sigstore
+                                       Rekor transparency-log entry, RFC 0007).
+                                       NEVER published: the .skill file itself,
+                                       its title, intent, knowledge sections,
+                                       journey, assets, or any other content.
+                                       Nothing is uploaded except that one
+                                       small, opaque JSON record; the package
+                                       stays local, share it yourself if you
+                                       want to. That record IS permanent and
+                                       world-readable once logged (anyone can
+                                       later confirm skill_id/digest pairs
+                                       existed), so still don't run this on a
+                                       skill_id you want to keep unlisted, but
+                                       the record itself carries no skill
+                                       content. Zero setup: a per-user signing
+                                       key is auto-generated on first use (the
+                                       public log needs a key but NO login).
+                                       This is a public provenance anchor, NOT
+                                       a marketplace. --no-transparency seals
+                                       without anchoring, publishing nothing.
+                                       See docs/TRANSPARENCY.md
   skill mint [file.skill] [--host name] [--signer-key <pem>] [--key-id id]
              [--transparency] [--rekor-url <url>] [--keyless] [--fulcio-url <url>]
                                        Seal release (host required). No file arg
                                        uses the current workspace's last compile;
                                        an explicit file works standalone, same as
                                        inspect/validate. Default seal is public-dev
-                                       HMAC (development trust only). Pass
-                                       --signer-key for a configured Ed25519 issuer
-                                       seal (verified_issuer-eligible), see
-                                       skill keygen and docs/KEY-CEREMONY.md.
-                                       --transparency logs the sealed digest to a
-                                       public Rekor transparency log and prints a
-                                       search.sigstore.dev link (independently
-                                       checkable, not just this tool's word). It
-                                       needs a signing key but NO login: if none
-                                       is configured, a per-user key is
-                                       auto-generated on first use (same as
-                                       skill publish). Default log is the public
-                                       rekor.sigstore.dev, PERMANENT and
-                                       WORLD-READABLE once logged.
+                                       HMAC, trust_state=development: real,
+                                       verifiable cryptography, but the signing
+                                       key is public (bundled with every
+                                       install), so it proves structural
+                                       sealing only, never a specific issuer's
+                                       identity. Pass --signer-key for a
+                                       configured Ed25519 issuer seal
+                                       (verified_issuer-eligible, a private key
+                                       only you hold), see skill keygen and
+                                       docs/KEY-CEREMONY.md.
+                                       --transparency anchors the sealed digest
+                                       to a public Rekor transparency log and
+                                       prints a search.sigstore.dev link
+                                       (independently checkable, not just this
+                                       tool's word). Publishes only skill_id,
+                                       skill_version, issuer_class, and two
+                                       SHA-256 digests, never the package's
+                                       content, see skill publish above for the
+                                       exact boundary. Needs a signing key but
+                                       NO login: if none is configured, a
+                                       per-user key is auto-generated on first
+                                       use (same as skill publish). Default log
+                                       is the public rekor.sigstore.dev,
+                                       PERMANENT and WORLD-READABLE once
+                                       logged.
                                        --keyless adds a second, independent
                                        anchor via Fulcio + Rekor, bound to your
-                                       OIDC identity instead of a local key. This
-                                       one DOES need an ambient OIDC token (CI,
-                                       e.g. GitHub Actions id-token: write); it
-                                       fails closed with no local login yet.
+                                       OIDC identity instead of a local key.
+                                       Same publish boundary as above (no
+                                       content, ever). This one DOES need an
+                                       ambient OIDC token (CI, e.g. GitHub
+                                       Actions id-token: write); it fails
+                                       closed with no local login yet.
   skill keygen [-o dir] [--key-id id]  With no -o: provision your default
                                        per-user issuer key (~/.skillerr/
                                        issuer-key.pem) and pin its public key in
@@ -1041,7 +1067,19 @@ async function main() {
       // (still out of scope), it's the public provenance anchor, made
       // frictionless: a per-user signing key is auto-provisioned on first use
       // (the public log needs a key but no login), so `skill publish` works
-      // with zero setup. Rekor entries are PERMANENT and WORLD-READABLE.
+      // with zero setup.
+      //
+      // Content-privacy boundary (buildAnchorStatement in
+      // @skillerr/core/transparency.ts, enforced twice: assertAnchorStatementPrivacy
+      // at runtime + additionalProperties:false in the JSON Schema): the
+      // logged predicate is exactly {skill_id, skill_version,
+      // sealed_manifest_digest, package_digest, issuer_class}, opaque
+      // identifiers and SHA-256 digests only. Never title, intent, knowledge,
+      // journey, assets, or any other content, and the .skill file itself is
+      // never uploaded anywhere by this command. That small record IS
+      // permanent and world-readable once logged, so a skill_id you want to
+      // keep unlisted still shouldn't be published, but it carries no skill
+      // content. See docs/TRANSPARENCY.md "What gets logged".
       const host = requireAgentHost(opt(rest, "--host"));
       const explicitFile = rest.find((a) => a.endsWith(".skill"));
       const file = explicitFile ?? (await loadHead(requireWorkspace())).package_path;
@@ -1086,11 +1124,13 @@ async function main() {
             public_url: publicUrl,
             ...(publicUrl
               ? {
-                  message: `Published. Anyone can verify this record independently at ${publicUrl} (Sigstore's own log, not this tool's word). The entry is PERMANENT and WORLD-READABLE.`,
+                  message: `Published. Only skill_id, skill_version, issuer_class, and two SHA-256 digests were logged, never the .skill file, its title, intent, knowledge, or any other content. That small record is permanent and world-readable: anyone can verify it independently at ${publicUrl} (Sigstore's own log, not this tool's word).`,
+                  published_fields: ["skill_id", "skill_version", "sealed_manifest_digest", "package_digest", "issuer_class"],
+                  not_published: "The .skill file itself, and everything in it (title, intent, knowledge, journey, assets), never leaves this machine because of this command.",
                 }
               : {
                   message:
-                    "Sealed, but the public anchor did not complete (see transparency/keyless below). The .skill itself is still valid; re-run to retry anchoring.",
+                    "Sealed, but the public anchor did not complete (see transparency/keyless below). Nothing was published. The .skill itself is still valid; re-run to retry anchoring.",
                 }),
             ...(issuer_key ? { issuer_key } : {}),
             ...(result.transparency ? { transparency: result.transparency } : {}),
