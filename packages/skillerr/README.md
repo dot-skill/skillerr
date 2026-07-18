@@ -264,7 +264,7 @@ Full package layout spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skille
 ## Status
 
 Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)) — future changes go through the open [RFC process](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/), not silent revisions.  
-Reference CLI: `skillerr` @ **1.3.0**, a stable public API backed by 198 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
+Reference CLI: `skillerr` @ **1.4.0**, a stable public API backed by 198 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the foundation is future-proof:**
@@ -295,7 +295,7 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 
 **Before you run someone else's `.skill` file, read [What is verifiable](https://github.com/dot-skill/skillerr/blob/main/docs/WHAT-IS-VERIFIABLE.md).** It states plainly what a signature does and doesn't prove — most trust confusion comes from skipping this.
 
-- [Protocol](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md) · [Agent](https://github.com/dot-skill/skillerr/blob/main/docs/AGENT.md) · [Prompts](https://github.com/dot-skill/skillerr/blob/main/examples/prompts.md)
+- [CLI flow, start to finish](https://github.com/dot-skill/skillerr/blob/main/docs/CLI-FLOW.md) · [Protocol](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md) · [Agent](https://github.com/dot-skill/skillerr/blob/main/docs/AGENT.md) · [Prompts](https://github.com/dot-skill/skillerr/blob/main/examples/prompts.md)
 - [Why structured packages](https://github.com/dot-skill/skillerr/blob/main/docs/WHY.md) · [Continuity](https://github.com/dot-skill/skillerr/blob/main/docs/CONTINUITY.md) · [Privacy](https://github.com/dot-skill/skillerr/blob/main/docs/PRIVACY.md)
 - [FAQ](https://github.com/dot-skill/skillerr/blob/main/docs/FAQ.md) · [Roadmap](https://github.com/dot-skill/skillerr/blob/main/docs/ROADMAP.md) · [Naming](https://github.com/dot-skill/skillerr/wiki/Naming)
 - [Ingest a SKILL.md](https://github.com/dot-skill/skillerr/blob/main/docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [From skill-creator](https://github.com/dot-skill/skillerr/blob/main/docs/FROM-SKILL-CREATOR.md) · [Eval / benchmark](https://github.com/dot-skill/skillerr/blob/main/docs/EVAL.md) · [Bundled scripts / resources](https://github.com/dot-skill/skillerr/blob/main/docs/RESOURCES.md)

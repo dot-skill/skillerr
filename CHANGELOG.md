@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.4.0 (2026-07-18)
+
+**Consistency sweep: docs, wiki, and agent guidance.**
+
+- Fixed a real bug: `skill agent-guide`'s header printed the bare protocol
+  spec version ("v1.0.0") with no qualifier, reading exactly like "the tool
+  is on 1.0.0" even though the CLI itself was already well past that. Now
+  labeled clearly ("spec vX.Y.Z, skillerr CLI vA.B.C"), and the JSON output
+  (`--json`) carries `skillerr_cli_version` alongside `protocol_version`.
+  Fixed two stale "Protocol v0.5" header comments in `@skillerr/protocol`
+  (the spec has been 1.0.0 for a while).
+- `skill agent-guide`'s guidance content was written before the
+  ingest-to-release bridge and `skill publish` shipped, it never mentioned
+  either. Added a full "convert an existing SKILL.md to a signed release +
+  public provenance URL" section, and an explicit reminder to prefer
+  `skill <command> --help` over memorized examples (exact flags drift
+  across releases, `--help` output can't). `docs/AGENT.md` updated to
+  match.
+- New [docs/CLI-FLOW.md](./docs/CLI-FLOW.md): the complete current
+  lifecycle in one page, entry points, sealing a release, publishing a
+  provenance URL, inspecting a package you received, with the same
+  prefer-`--help` guidance throughout.
+- New `scripts/check-doc-versions.mjs`, wired into CI: fails the build if
+  a hardcoded "reference packages X.Y.Z" mention drifts from
+  `packages/skillerr/package.json`, or if the test-count badge and prose
+  in README.md disagree. (The npm-README sync check already existed in
+  CI, verified still working, not duplicated.)
+- Wiki cleanup: removed `Key-Ceremony.md`, `RFCs.md`, and `RFC-0001`
+  through `RFC-0006`, all superseded duplicates left behind when this
+  content moved back into `docs/rfcs/` and `docs/KEY-CEREMONY.md` in an
+  earlier release. The wiki's own RFC index was stale (missing RFC 0007
+  and 0008, both already shipped). `Home.md` and `Threat-Model.md` now
+  point at the real, current repo locations. `Naming.md` kept (real
+  contributor value), its rebrand-history narrative removed.
+- Fixed a real staleness bug this sweep exists to prevent: `docs/ROADMAP.md`
+  still said "seven RFCs... RFC 0007... have since shipped", missing that
+  there are now eight RFCs and RFC 0008 has also shipped.
+
 ## 1.3.0 (2026-07-17)
 
 **Frictionless lifecycle: ingest to signed release to a public provenance URL.**

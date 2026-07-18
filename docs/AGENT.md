@@ -6,6 +6,8 @@ Humans install the reference CLI once and **point you at the work**. You drive c
 
 Two jobs matter: **create** a `.skill`, and **ingest / load / run** one someone else produced.
 
+For exact current flags on any command below, run `skill <command> --help` (or `skill --help` for the full list, or `skill agent-guide` for this same guide from the CLI itself). It always matches the installed binary and costs far less context than a doc, prefer it over memorizing examples here. See also [docs/CLI-FLOW.md](./CLI-FLOW.md) for the complete current flow in one place.
+
 ## Install (reference CLI)
 
 Check first, install only if needed:
@@ -48,19 +50,32 @@ reasoning behind each field explained? Follow
 [examples/skillerr-authoring/SKILL.md](../examples/skillerr-authoring/SKILL.md)
 instead of improvising — it's written for exactly this.
 
-## Convert an existing SKILL.md (what you run)
+## Convert an existing SKILL.md to a signed release (what you run)
 
 ```bash
 skill ingest ./some-skill-folder -o out.skill --host cursor
+skill load out.skill --into ./ws --host cursor    # materialize an editable workspace
+# a human records provenance.human_review in ./ws/.skill/contract.json
+cd ./ws && skill compile -m "reviewed" --approve --mint --profile release
 ```
 
-Reads a `SKILL.md` file or a skill-creator-style folder (`SKILL.md` +
-optional `scripts/`, `references/`, `assets/`, `evals/evals.json`) and
-writes a **continuity** `.skill`. The JSON result's `missing_for_release`
-names exactly what still needs authoring (almost always
-`provenance.human_review` — ingest can never fabricate that a human
-reviewed it) — tell the human what's listed there, do not claim it's
-release-ready until they have.
+`skill ingest` reads a `SKILL.md` file or a skill-creator-style folder
+(`SKILL.md` + optional `scripts/`, `references/`, `assets/`,
+`evals/evals.json`) and writes a **continuity** `.skill`, never a release.
+`skill load <file> --into <dir>` materializes it into an editable
+workspace (stages knowledge as sections, writes `.skill/contract.json`).
+The workspace's `missing_for_release` names exactly what still needs
+authoring, almost always `provenance.human_review`, ingest can never
+fabricate that a human reviewed it. Tell the human what's listed there;
+do not claim it's release-ready until they have actually recorded review
+in the contract. `skill compile --profile release` **refuses**
+(`compile_refused`) until that's done, it never fakes completeness.
+
+Want a public, independently-verifiable provenance URL for the release?
+`skill publish ./ws/.skill/objects/<id>.skill` seals it (if not already
+minted) and anchors the digest to the public Sigstore Rekor log, zero
+setup, a per-user signing key is auto-provisioned on first use (no login
+needed). See [docs/TRANSPARENCY.md](./TRANSPARENCY.md).
 
 ## Eval a skill against its test prompts (what you run)
 

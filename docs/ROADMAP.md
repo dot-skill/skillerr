@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: protocol **1.0.0 (Stable)**; reference packages **1.3.0**. The package number should always match [`packages/skillerr/package.json`](../packages/skillerr/package.json); if this line ever drifts from that file, the file wins. Maturity levels (Stable / Candidate / Preview) are defined in [GOVERNANCE.md](../GOVERNANCE.md). Everything below is Stable except `@skillerr/skill-score` (`skill score`), which is **Preview**, it's real and shipped, but its scoring interface may still change without a major bump.
+Status: protocol **1.0.0 (Stable)**; reference packages **1.4.0**. The package number should always match [`packages/skillerr/package.json`](../packages/skillerr/package.json); if this line ever drifts from that file, the file wins. Maturity levels (Stable / Candidate / Preview) are defined in [GOVERNANCE.md](../GOVERNANCE.md). Everything below is Stable except `@skillerr/skill-score` (`skill score`), which is **Preview**, it's real and shipped, but its scoring interface may still change without a major bump.
 
 ## Now (done in this repo)
 
@@ -28,9 +28,10 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.3.0**. The package n
 - [x] Production-grade signing: pluggable Ed25519 issuer signer + local
       trust store (`configured_ed25519`), replacing dev-HMAC-only trust —
       see [Key Ceremony](./KEY-CEREMONY.md)
-- [x] Public [RFCs](./rfcs/): seven RFCs; PROTO-2 (asymmetric signing) and
-      RFC 0007 (subject-bearing anchors) have since shipped as real code,
-      the rest remain spec-only
+- [x] Public [RFCs](./rfcs/): eight RFCs; PROTO-2 (asymmetric signing),
+      RFC 0007 (subject-bearing anchors), and RFC 0008 (Agent Skills
+      ecosystem compatibility) have since shipped as real code, the rest
+      remain spec-only
 - [x] Forward `SKILL.md` -> `.skill` ingest (`skill ingest`), distinct from
       the existing lossy `to-skill-md` export — see
       [examples/ingest-skill-md/](../examples/ingest-skill-md/)
@@ -126,6 +127,16 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.3.0**. The package n
       anchor is decoupled from the verified_issuer evidence gate, so it works
       without ever fabricating evidence or inflating trust_state. See
       [docs/MINT.md](./MINT.md) and [docs/TRANSPARENCY.md](./TRANSPARENCY.md).
+- [x] Consistency sweep: `skill agent-guide`'s ambiguous "v1.0.0" header
+      (bare protocol spec version, easy to misread as the CLI's own version)
+      now labeled clearly and paired with the actual CLI version; its
+      content updated to cover the ingest-to-release-to-publish flow it
+      previously never mentioned. New [docs/CLI-FLOW.md](./CLI-FLOW.md): the
+      complete current lifecycle in one page. New
+      `scripts/check-doc-versions.mjs` in CI, catching hardcoded
+      package-version mentions that drift from `packages/skillerr/package.json`.
+      Wiki cleanup: removed pages superseded by `docs/rfcs/`/`docs/KEY-CEREMONY.md`
+      that were still being linked from stale references.
 
 ## Next (great contribution targets)
 

@@ -537,9 +537,13 @@ async function main() {
   switch (cmd) {
     case "agent-guide": {
       if (flag(rest, "--json")) {
-        console.log(JSON.stringify(agentCreateGuide(), null, 2));
+        // skillerr_cli_version is added here, not inside agentCreateGuide()
+        // itself: @skillerr/protocol has no dependency on (and shouldn't
+        // hardcode) the skillerr CLI package's own version, only this CLI
+        // caller knows it.
+        console.log(JSON.stringify({ ...agentCreateGuide(), skillerr_cli_version: VERSION }, null, 2));
       } else {
-        console.log(formatAgentGuide());
+        console.log(formatAgentGuide(undefined, VERSION));
       }
       break;
     }
