@@ -9,8 +9,16 @@
  *
  * The protocol spec version (docs/PROTOCOL.md's own "1.0.0 (Stable)") is a
  * deliberately separate axis from the package/CLI version, see
- * docs/PROTOCOL.md's compatibility table, this script never touches
- * protocol-version mentions, only package/CLI-version ones.
+ * docs/PROTOCOL.md's compatibility table, this script never treats a
+ * protocol-version mention as a package-version drift. But a doc that
+ * mentions the protocol version *at all* and never once mentions the
+ * current package version anywhere in the same file reads as stale to a
+ * skimming reader, even though the protocol number is technically correct,
+ * exactly the bug found in docs/PROTOCOL.md's opening "Status:" line and
+ * docs/FAQ.md's "Is this ready to use?" answer (both said only "1.0.0
+ * (Stable)", nothing else, on a project already several package releases
+ * past that). Every doc below that mentions the protocol version must also
+ * mention the current package version somewhere in the file now.
  *
  * Also checks that README.md's test-count badge and prose agree with each
  * other (the two have drifted apart before, see docs/ROADMAP.md's own
@@ -54,6 +62,26 @@ for (const { file, pattern } of versionChecks) {
     fail(
       `${file}: mentions package/CLI version ${m[1]}, but packages/skillerr/package.json is ${pkgVersion}. ` +
         `Update ${file} as part of the lockstep release checklist (docs/ROADMAP.md, CHANGELOG.md, etc).`,
+    );
+  }
+}
+
+const protocolVersionDocs = [
+  "README.md",
+  "GOVERNANCE.md",
+  "CONTRIBUTING.md",
+  "docs/PROTOCOL.md",
+  "docs/FAQ.md",
+  "docs/ROADMAP.md",
+  "docs/WHAT-IS-VERIFIABLE.md",
+];
+for (const file of protocolVersionDocs) {
+  const text = readFileSync(join(root, file), "utf8");
+  if (!/1\.0(\.0)? \(Stable\)/.test(text)) continue;
+  if (!text.includes(pkgVersion)) {
+    fail(
+      `${file}: mentions the protocol version ("1.0.0 (Stable)") but never mentions the current package version (${pkgVersion}) anywhere in the file. ` +
+        `A protocol-version-only mention reads as stale even when it's technically correct. Pair it with the current package version, e.g. "reference packages ${pkgVersion}".`,
     );
   }
 }

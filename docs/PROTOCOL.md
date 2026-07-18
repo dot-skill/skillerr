@@ -1,6 +1,6 @@
 # Open `.skill` Protocol
 
-**Status:** 1.0.0 (Stable) — future changes go through the open [RFC process](./rfcs/), not silent revisions  
+**Status:** 1.0.0 (Stable) — future changes go through the open [RFC process](./rfcs/), not silent revisions. This is the spec version, a deliberately separate axis from the reference implementation's package version (`skillerr` on npm, currently `1.5.1`, see [ROADMAP.md](./ROADMAP.md)), which changes every release.  
 **Extension:** `.skill`  
 **Media type:** `application/vnd.dot-skill+zip`
 

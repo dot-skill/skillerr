@@ -1,6 +1,6 @@
 {
   "name": "skillerr",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Create, sign, verify, and run portable .skill packages for AI agents: content-addressed identity, Ed25519 + Sigstore provenance, and inspect-before-run trust. Bin: skill.",
   "license": "MIT",
   "author": {
@@ -51,7 +51,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@skillerr/cli": "^1.5.0"
+    "@skillerr/cli": "^1.5.1"
   },
   "scripts": {
     "prepack": "node ../../scripts/sync-npm-readme.mjs && node -e \"require('fs').accessSync('bin/skill.js')\""

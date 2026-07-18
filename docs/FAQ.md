@@ -140,6 +140,6 @@ why). See [AGENT-SKILLS.md](./AGENT-SKILLS.md).
 
 ## Is this ready to use?
 
-Yes, for real use today — digests, validation, inspect-before-run, the runtime capability gate, and the adversarial security corpus are all real, tested code, not placeholders. The **protocol spec** is versioned 1.0.0 (Stable) — future changes go through the open [RFC process](./rfcs/), not silent revisions.
+Yes, for real use today — digests, validation, inspect-before-run, the runtime capability gate, and the adversarial security corpus are all real, tested code, not placeholders. The **protocol spec** is versioned 1.0.0 (Stable) — future changes go through the open [RFC process](./rfcs/), not silent revisions. That's a separate axis from the reference `skillerr` CLI's own version (currently **1.5.1**, see [ROADMAP.md](./ROADMAP.md)), which ships new releases regularly.
 
 For production trust, configure a real Ed25519 issuer key (`skill keygen` + `--signer-key`, see [Key Ceremony](./KEY-CEREMONY.md)) so mints earn `verified_issuer` trust — the bundled zero-setup key (used when no `--signer-key` is given) is for trying the CLI, not for shipping. See [What is verifiable](./WHAT-IS-VERIFIABLE.md) for exactly what a signature does and doesn't prove either way.

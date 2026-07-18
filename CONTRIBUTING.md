@@ -12,7 +12,7 @@ Contributions are **welcome**. This protocol only becomes real if independent pe
 | Candidate | Feature-complete; breaking changes need RFC |
 | Preview | Real, shipped, but the interface or scoring may still change without a major version bump |
 
-The protocol is **1.0.0 (Stable)**. `@skillerr/skill-score` (`skill score`) is **Preview**; everything else in the reference packages is Stable. See [GOVERNANCE.md](./GOVERNANCE.md) for the full definition.
+The protocol is **1.0.0 (Stable)**. Reference packages are currently **1.5.1**. `@skillerr/skill-score` (`skill score`) is **Preview**; everything else in the reference packages is Stable. See [GOVERNANCE.md](./GOVERNANCE.md) for the full definition.
 
 ## DCO (required)
 
