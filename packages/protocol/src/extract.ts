@@ -68,10 +68,18 @@ export type AgentGuide = {
   kind: "skill_agent_guide";
   protocol_version: typeof PROTOCOL_VERSION;
   purpose: string;
+  /**
+   * Printed early and often on purpose: the exact flags for any command
+   * below can (and do) change across releases, but `--help` output always
+   * matches the binary actually installed, is far cheaper to load into an
+   * agent's context than a full doc, and needs no network fetch.
+   */
+  help_reminder: string;
   rules: string[];
   identify_multiple_skills: string[];
   create_one_skill: string[];
   ingest: string[];
+  release_and_publish: string[];
   cli: string[];
   refuse: string[];
 };
@@ -333,7 +341,9 @@ export function agentCreateGuide(): AgentGuide {
     kind: "skill_agent_guide",
     protocol_version: PROTOCOL_VERSION,
     purpose:
-      "Create portable .skill packages with SkillContract 1.0. Identify multiple skills from a conversation when warranted; enforce completeness; never fake a release.",
+      "Create portable .skill packages with SkillContract 1.0, or convert an existing SKILL.md via ingest. Identify multiple skills from a conversation when warranted; enforce completeness; never fake a release.",
+    help_reminder:
+      "For exact current flags on any command below, run: skill <command> --help (or skill --help for the full list). It always matches the installed binary and costs far less context than a doc, prefer it over memorizing examples here.",
     rules: PROTOCOL_RULES,
     identify_multiple_skills: [
       "Read the redacted journey / work summary. List distinct transferable skills (separate intents, triggers, or runtimes).",
@@ -358,8 +368,15 @@ export function agentCreateGuide(): AgentGuide {
       "skill inspect ./file.skill",
       "skill validate ./file.skill",
       "skill verify-trust ./file.skill",
-      "skill load ./file.skill   # continuity resume",
+      "skill load ./file.skill   # read-only preview (no workspace/--into): resume continuity context",
       "skill run ./file.skill   # dry-run by default",
+    ],
+    release_and_publish: [
+      "skill ingest <path/to/SKILL.md> -o out.skill   # convert an existing SKILL.md into a continuity draft",
+      "skill load out.skill --into <dir>   # materialize into an editable workspace (stages sections, writes .skill/contract.json)",
+      "A human records provenance.human_review in <dir>/.skill/contract.json (a CLI flag can never create this evidence)",
+      "cd <dir> && skill compile -m \"reviewed\" --approve --mint --profile release   # refuses (compile_refused) until review is recorded",
+      "skill publish <file.skill>   # seal + public search.sigstore.dev provenance URL; auto-provisions a signing key on first use, no login needed",
     ],
     cli: [
       "skill agent-guide [--json]",
@@ -368,6 +385,7 @@ export function agentCreateGuide(): AgentGuide {
       "skill contract-template",
       "skill contract-check <contract-or-source.json> [--profile release|continuity]",
       "skill status",
+      "skill keygen             # provision your default signing key (skill publish does this automatically too)",
     ],
     refuse: [
       "Refuse release compile/mint when contract assessment is incomplete.",
@@ -378,12 +396,26 @@ export function agentCreateGuide(): AgentGuide {
   };
 }
 
-/** Human-readable text form of agentCreateGuide (for terminals / AGENT.md parity). */
-export function formatAgentGuide(guide: AgentGuide = agentCreateGuide()): string {
+/**
+ * Human-readable text form of agentCreateGuide (for terminals / AGENT.md parity).
+ *
+ * `cliVersion` is optional because this module (@skillerr/protocol) has no
+ * dependency on the `skillerr` CLI package's own version, only the CLI
+ * caller knows it. When provided, the header shows both numbers labeled
+ * (protocol spec vs. the actual CLI/package release) so neither is
+ * mistaken for the other, they are two intentionally distinct axes, see
+ * docs/PROTOCOL.md's compatibility table.
+ */
+export function formatAgentGuide(guide: AgentGuide = agentCreateGuide(), cliVersion?: string): string {
+  const header = cliVersion
+    ? `skill agent-guide: Open .skill Protocol (spec v${guide.protocol_version}, skillerr CLI v${cliVersion})`
+    : `skill agent-guide: Open .skill Protocol (spec v${guide.protocol_version})`;
   const lines = [
-    `skill agent-guide — Open .skill Protocol v${guide.protocol_version}`,
+    header,
     "",
     guide.purpose,
+    "",
+    guide.help_reminder,
     "",
     "Rules:",
     ...guide.rules.map((r) => `  - ${r}`),
@@ -394,7 +426,10 @@ export function formatAgentGuide(guide: AgentGuide = agentCreateGuide()): string
     "Create one skill (complete or refuse):",
     ...guide.create_one_skill.map((r) => `  $ ${r}`),
     "",
-    "Ingest / load / run:",
+    "Convert an existing SKILL.md to a signed release + public provenance URL:",
+    ...guide.release_and_publish.map((r) => `  $ ${r}`),
+    "",
+    "Inspect / load / run:",
     ...guide.ingest.map((r) => `  $ ${r}`),
     "",
     "CLI:",

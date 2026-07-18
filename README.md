@@ -262,7 +262,7 @@ Full package layout spec: [docs/PROTOCOL.md](./docs/PROTOCOL.md#container).
 ## Status
 
 Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](./docs/PROTOCOL.md)) — future changes go through the open [RFC process](./docs/rfcs/), not silent revisions.  
-Reference CLI: `skillerr` @ **1.3.0**, a stable public API backed by 198 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](./docs/TRANSPARENCY.md).  
+Reference CLI: `skillerr` @ **1.4.0**, a stable public API backed by 198 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](./docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the foundation is future-proof:**
@@ -293,7 +293,7 @@ Host authors typically integrate the protocol libraries; end users install **`sk
 
 **Before you run someone else's `.skill` file, read [What is verifiable](./docs/WHAT-IS-VERIFIABLE.md).** It states plainly what a signature does and doesn't prove — most trust confusion comes from skipping this.
 
-- [Protocol](./docs/PROTOCOL.md) · [Agent](./docs/AGENT.md) · [Prompts](./examples/prompts.md)
+- [CLI flow, start to finish](./docs/CLI-FLOW.md) · [Protocol](./docs/PROTOCOL.md) · [Agent](./docs/AGENT.md) · [Prompts](./examples/prompts.md)
 - [Why structured packages](./docs/WHY.md) · [Continuity](./docs/CONTINUITY.md) · [Privacy](./docs/PRIVACY.md)
 - [FAQ](./docs/FAQ.md) · [Roadmap](./docs/ROADMAP.md) · [Naming](https://github.com/dot-skill/skillerr/wiki/Naming)
 - [Ingest a SKILL.md](./docs/FAQ.md#how-do-i-convert-an-existing-skillmd) · [From skill-creator](./docs/FROM-SKILL-CREATOR.md) · [Eval / benchmark](./docs/EVAL.md) · [Bundled scripts / resources](./docs/RESOURCES.md)

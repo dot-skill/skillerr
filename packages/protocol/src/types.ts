@@ -1,4 +1,4 @@
-/** Open .skill Protocol v0.5 — semantic types for portable `.skill` packages. */
+/** Open .skill Protocol: semantic types for portable `.skill` packages. See PROTOCOL_VERSION below for the current spec version, never hardcode it in a comment, it drifts. */
 
 import type {
   ContractBranch,

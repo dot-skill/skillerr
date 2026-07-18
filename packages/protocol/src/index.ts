@@ -1,4 +1,4 @@
-/** Open .skill Protocol v0.5 — types, constants, authoring APIs, and schemas. */
+/** Open .skill Protocol: types, constants, authoring APIs, and schemas. See PROTOCOL_VERSION (types.ts) for the current spec version, never hardcode it in a comment, it drifts. */
 
 export {
   PROTOCOL_VERSION,
