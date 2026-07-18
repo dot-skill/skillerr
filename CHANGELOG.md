@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.2 (2026-07-18)
+
+Process change, no functional code change: adopted a git-flow branching model. `main` now only accepts merges from `release/*`/`hotfix/*` branches (enforced by a required `enforce-branch-flow` CI check plus branch protection); day-to-day work now goes through `develop`. See `CONTRIBUTING.md`'s new "Branch flow" section.
+
 ## 1.5.1 (2026-07-18)
 
 Doc fix: several docs (`docs/PROTOCOL.md`'s opening status line, `docs/FAQ.md`, `README.md`, `GOVERNANCE.md`, `CONTRIBUTING.md`) mentioned the protocol spec version ("1.0.0 (Stable)", correct and intentionally static) with no package/CLI version anywhere nearby, reading as if the whole project were stuck at 1.0.0 even though the reference CLI ships releases regularly. Every one now states the current package version alongside it. `scripts/check-doc-versions.mjs` now fails CI if a doc mentions the protocol version without also mentioning the current package version somewhere in the same file, so this can't silently recur.

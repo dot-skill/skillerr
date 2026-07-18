@@ -4,7 +4,7 @@ This is the single most important page in this repo's docs if you're deciding wh
 
 ## The one-sentence guarantee
 
-**As of protocol 1.0.0 / reference packages 1.5.1:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest. Those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
+**As of protocol 1.0.0 / reference packages 1.5.2:** we guarantee that a specific key controlled the signature over this exact, unaltered content. We do not guarantee who or what agent authored it, that any human reviewed it, when it was actually created, or that its declared behavior is honest. Those are separate claims, listed below, that are either self-reported or enforced at runtime rather than proven by the signature.
 
 If a package was minted with `--transparency` (see [TRANSPARENCY.md](./TRANSPARENCY.md)), that guarantee extends further: a public, independently-checkable Rekor transparency log entry means a third party — not just you — can confirm *when* it was first registered, without trusting your local trust store alone. Anchoring is opt-in, not automatic — a package without an anchor is exactly as verifiable as described above (verifiable by you, using your own pinned trust store), which is still the common case today.
 
