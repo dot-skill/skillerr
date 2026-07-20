@@ -4,7 +4,7 @@ Status: **frozen**. This file is the single source of truth for the interface be
 
 ## Dependency direction (hard invariant)
 
-`skillerr-registry` depends on `@skillerr/core`. `@skillerr/core` **never** depends on `skillerr-registry` — no registry URLs hard-coded, no registry types imported, no knowledge that `skillerr.com` exists anywhere in this package. Enforced by CI (`scripts/check-no-registry-coupling.mjs`, run on every `npm test`): fails the build if `packages/core/src/**` references a registry-specific hostname/package, or if `packages/core/package.json` ever gains a dependency on anything registry-named.
+`skillerr-registry` depends on `@skillerr/core`. `@skillerr/core` **never** depends on `skillerr-registry` — no registry URLs hard-coded, no registry types imported, no knowledge that `skillerr.com` exists anywhere in this package. Enforced by CI (`scripts/check-core-registry-independence.mjs`, run on every `npm test`): fails the build if `packages/core/src/**` references a registry-specific hostname/package, or if `packages/core/package.json` ever gains a dependency on anything registry-named.
 
 The only handshake in the other direction is [`INTEGRATION_NOTES.md`](../INTEGRATION_NOTES.md) at the repo root: when a capability here is ready, `@skillerr/core` bumps a minor version and a note goes there with the version + what's newly available. The registry side reads that note and upgrades its pin when ready. This repo never edits registry files to "wire itself in."
 
@@ -49,6 +49,12 @@ toFormat(pkg, fmt): Promise<{ output: Buffer; lossReport: LossReport }>
 
 // profiles
 evaluateReleaseProfile(pkg, profile: ReleaseProfile): GateResult   // pure gate fn; registry enforces at mint
+
+// continuity (Resume Contract 1.0 — RFC 0009, see docs/rfcs/0009-resume-contract.md
+// and docs/CONTINUITY.md; hosted-product lane, never minted/anchored/catalog-listed)
+isContinuity(pkg): boolean
+openContinuity(zip): Promise<ContinuityOpenResult>
+resumePreview(pkg: ContinuityOpenResult): ResumeContract
 ```
 
 ## 3b. Registry HTTP wire protocol (what the CLI/verifier calls)
@@ -83,6 +89,7 @@ Tracks what actually exists in `packages/core` today versus this frozen shape. U
 | `runSandboxed` with declared-vs-actual diff | not started | `assertCapabilityAllowed` (`runtime/src/index.ts`) gates only, never diffs after the fact |
 | `fromFormat` / `toFormat` bridge | not started | `ingestSkillMd` / `exportAgentSkillFolder` hardcoded to one format pair (SKILL.md <-> Agent Skills folder), no `vercel`/`skills.sh` formats, no `LossReport` type |
 | `evaluateReleaseProfile` | shipped (`trust-spine.ts`) | pure pass/fail+reasons mirror of `mintSkillPackage`'s inline throw-based gate (`mint.ts`). Deliberately duplicated, not delegated — refactoring `mintSkillPackage` to call this instead of throwing inline is separate follow-up work |
+| `isContinuity` / `openContinuity` / `resumePreview` | shipped (`continuity.ts`) | built directly on real `provenance.journey` (already-typed `JourneyProvenance`) and `knowledge` — no new file convention or manifest fields. Resume Contract 1.0 ([RFC 0009](../docs/rfcs/0009-resume-contract.md)); `resumeTargets` deliberately uses this repo's own host-agnostic `skill load <path>`, never a product-specific install command, per the independence invariant above |
 
 Follow-up work called out above, not yet scheduled: splitting a pure keyless `sign()` out of `mintKeylessAnchor`; adding `commands` scoping to `SkillPermission` for real `shell` capabilities; refactoring `mintSkillPackage` to call `evaluateReleaseProfile` instead of duplicating its checks inline.
 

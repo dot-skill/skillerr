@@ -49,7 +49,7 @@
     "build": "rimraf dist && tsc",
     "prepack": "npm run build",
     "clean": "rimraf dist",
-    "test": "node --test dist/core.test.js dist/ingest.test.js dist/eval.test.js dist/transparency.test.js dist/claims.test.js dist/default-issuer.test.js dist/scrub.test.js dist/trust-spine.test.js dist/merkle-log.test.js"
+    "test": "node --test dist/core.test.js dist/ingest.test.js dist/eval.test.js dist/transparency.test.js dist/claims.test.js dist/default-issuer.test.js dist/scrub.test.js dist/trust-spine.test.js dist/merkle-log.test.js dist/continuity.test.js"
   },
   "dependencies": {
     "@sigstore/bundle": "^5.0.0",

@@ -151,3 +151,13 @@ export type {
   SignedTreeHead,
   ConsistencyProof,
 } from "./merkle-log.js";
+export { isContinuity, openContinuity, resumePreview } from "./continuity.js";
+export type {
+  Gap,
+  ContinuitySection,
+  ContinuityJourney,
+  AgentContextSummary,
+  ContinuityOpenResult,
+  ResumeTarget,
+  ResumeContract,
+} from "./continuity.js";
