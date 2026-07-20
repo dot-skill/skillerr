@@ -75,10 +75,17 @@ export {
   compileRecipeToSkill,
   approveCompilation,
   assessCompleteness,
-  redactSecrets,
   CompileRefusalError,
 } from "./compile.js";
 export type { CompileOptions, CompileResult } from "./compile.js";
+export { scrub, redactSecrets, rulesDigest, mergeRedactionReports } from "./scrub.js";
+export type {
+  ScrubInput,
+  ScrubUnit,
+  ScrubOptions,
+  ScrubCustomRule,
+  ScrubResult,
+} from "./scrub.js";
 export {
   anchorToRekor,
   verifyRekorAnchor,
