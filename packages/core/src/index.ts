@@ -121,6 +121,8 @@ export {
   RekorAnchor,
   capabilitiesFromPermission,
   evaluateReleaseProfile,
+  verify,
+  generateSBOM,
 } from "./trust-spine.js";
 export type {
   SealInput,
@@ -134,6 +136,12 @@ export type {
   CapabilityKind,
   Capability,
   GateResult,
+  Evidence,
+  VerifyResult,
+  RevocationRecord,
+  SBOM,
+  SBOMComponent,
+  SBOMHash,
 } from "./trust-spine.js";
 export {
   buildLeaf,
