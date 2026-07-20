@@ -1726,15 +1726,20 @@ test("minted verification and runtime reject missing signature", async () => {
 });
 
 test("journey and endpoint provenance are scrubbed", () => {
+  // sk-<20+ chars>: a real-format-shaped key, not the old crude 8-char
+  // sk_/pk_/api_ catch-all this fixture used pre-Phase-1 — the deterministic
+  // scrubber's precise vendor-format rules replaced that generic pattern on
+  // purpose (see docs/SCRUBBING.md), so a fixture needs a value one of the
+  // documented rules actually recognizes.
   const source = recipeToSkillSource(demoRecipe(), {
     agent: {
       host: "ollama",
       provider: "ollama",
       deployment: "local",
-      endpoint: "http://user:sk_supersecret123@example.test/v1",
+      endpoint: "http://user:sk-supersecret1234567890@example.test/v1",
     },
     journey: {
-      summary: "Used token sk_supersecret123 while testing",
+      summary: "Used token sk-supersecret1234567890 while testing",
     },
   });
   const compiled = compileSkillSource(source, {
@@ -1807,7 +1812,7 @@ test("BUG-3: secret redaction skips hex digests (git SHAs, content hashes) but s
   assert.match(body, new RegExp(gitSha), "hex git SHA must survive redaction unchanged");
   assert.match(body, new RegExp(contentDigest), "hex content digest must survive redaction unchanged");
   assert.doesNotMatch(body, /sk-/, "a real secret-shaped token must still be redacted");
-  assert.match(body, /\{\{secret_ref\}\}/);
+  assert.match(body, /\{\{redacted:openai_key#1\}\}/);
 
   const report = compiled.files.provenance?.compilation_report;
   assert.ok(

@@ -62,6 +62,8 @@ import {
   verifyKeylessAnchor,
   assessClaims,
   validateContractSchema,
+  scrub,
+  type ScrubCustomRule,
 } from "@skillerr/core";
 import type { AnchorVerification, KeylessVerification, AnchorSubject } from "@skillerr/core";
 import type { GradeOverride } from "@skillerr/core";
@@ -99,6 +101,8 @@ import {
   setJourney,
   requireAgentHost,
   WORKSPACE_DIR,
+  listSections,
+  loadConfig,
 } from "@skillerr/workspace";
 
 function loadPackageVersion(): string {
@@ -303,6 +307,32 @@ Ingest / run:
                                        anchor is not re-verified here, see
                                        skill verify-trust --claims for that.
   skill validate <file.skill>          Structure + hash integrity
+  skill scrub <path|-> [--secrets-from f...] [--custom rules.json]
+              [--mode auto|report-only] [--report out.json]
+              [--entropy n] [--strict]
+                                       Deterministic, non-AI secret scrubber
+                                       (docs/SCRUBBING.md). <path> may be a
+                                       file, "-" for stdin, or a workspace
+                                       directory (scrubs staged sections +
+                                       journey as one report, read-only:
+                                       never rewrites workspace files).
+                                       Prints a reproducible RedactionReport
+                                       (same rules_digest + input always
+                                       yields the same output). Known-format
+                                       vendor keys are auto-redacted; only
+                                       high-entropy strings are flagged
+                                       needs_review, never auto-removed.
+                                       --secrets-from opts into exact-match
+                                       redaction against real secret values
+                                       loaded from those files (.env, AWS/SSH
+                                       credentials, etc.) — only the matched
+                                       KEY NAME is ever reported, never the
+                                       value. --mode report-only finds
+                                       without rewriting. --strict exits 2 if
+                                       any needs_review finding remains.
+                                       compile/checkpoint/pack already run
+                                       this automatically and seal the result
+                                       to provenance/redaction.json.
   skill unpack <file.skill>
   skill verify-trust <file.skill> [--profile minted] [--allow-development-issuer]
                      [--allow-self-reported] [--trust-store <path>] [--online]
@@ -358,6 +388,21 @@ function flag(args: string[], name: string): boolean {
 function opt(args: string[], name: string): string | undefined {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
+}
+
+/** Collects every occurrence of a repeatable flag, e.g. --secrets-from a --secrets-from b. */
+function optAll(args: string[], name: string): string[] {
+  const values: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === name && i + 1 < args.length) values.push(args[i + 1]!);
+  }
+  return values;
+}
+
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 /** True when a real agent runtime is attested (session id or runtime markers), not just SKILL_HOST. */
@@ -1173,6 +1218,96 @@ async function main() {
       } else {
         console.log(JSON.stringify(inspectSkill(bytes), null, 2));
       }
+      break;
+    }
+    case "scrub": {
+      const target = rest[0];
+      if (!target) usage();
+      const mode = (opt(rest, "--mode") as "auto" | "report-only" | undefined) ?? "auto";
+      const secretsFromArg = optAll(rest, "--secrets-from").map((p) => resolve(p));
+      const entropyArg = opt(rest, "--entropy");
+      const reportOut = opt(rest, "--report");
+      const strict = flag(rest, "--strict");
+
+      let customRules: ScrubCustomRule[] | undefined;
+      const customPath = opt(rest, "--custom");
+      try {
+        if (customPath) {
+          const raw = JSON.parse(await readFile(resolve(customPath), "utf8")) as
+            | ScrubCustomRule[]
+            | { rules: ScrubCustomRule[] };
+          customRules = Array.isArray(raw) ? raw : raw.rules;
+        }
+      } catch (e) {
+        console.log(
+          JSON.stringify(
+            { ok: false, error: `Failed to read/parse --custom rules file: ${e instanceof Error ? e.message : String(e)}` },
+            null,
+            2,
+          ),
+        );
+        process.exit(2);
+      }
+
+      const scrubOpts = {
+        secretsFrom: secretsFromArg.length ? secretsFromArg : undefined,
+        customRules,
+        mode,
+        entropyThreshold: entropyArg ? Number(entropyArg) : undefined,
+      };
+
+      // <path> may be a workspace directory (its own .skill/ working tree) —
+      // scrub every staged section + the journey summary as one document, so
+      // "same value -> same token" holds document-wide, matching how
+      // compile/checkpoint scrub it (see docs/SCRUBBING.md). Never rewrites
+      // workspace files in place either way: staged content only changes via
+      // the normal compile/checkpoint path, which already seals its own
+      // provenance/redaction.json.
+      const workspaceRoot = existsSync(target) && statSync(target).isDirectory()
+        ? findWorkspaceRoot(resolve(target))
+        : undefined;
+      let result: ReturnType<typeof scrub>;
+      if (workspaceRoot) {
+        const sections = await listSections(workspaceRoot);
+        const config = await loadConfig(workspaceRoot);
+        const units = [
+          ...sections.map((s) => ({ id: s.id, text: s.body })),
+          ...(config.journey_summary ? [{ id: "journey_summary", text: config.journey_summary }] : []),
+          ...(config.open_questions ?? []).map((q, i) => ({ id: `open_question_${i}`, text: q })),
+        ];
+        result = scrub(units, { ...scrubOpts, mode: "report-only" });
+      } else {
+        let text: string;
+        try {
+          text = target === "-" ? await readStdin() : await readFile(resolve(target), "utf8");
+        } catch (e) {
+          console.log(
+            JSON.stringify(
+              { ok: false, error: `Failed to read ${target}: ${e instanceof Error ? e.message : String(e)}` },
+              null,
+              2,
+            ),
+          );
+          process.exit(2);
+        }
+        result = scrub(text, scrubOpts);
+      }
+
+      if (reportOut) {
+        await writeFile(resolve(reportOut), JSON.stringify(result.report, null, 2) + "\n", "utf8");
+      }
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            report: result.report,
+            scrubbed: mode === "report-only" ? undefined : result.scrubbed,
+          },
+          null,
+          2,
+        ),
+      );
+      process.exit(strict && result.report.summary.needs_review > 0 ? 2 : 0);
       break;
     }
     case "validate": {

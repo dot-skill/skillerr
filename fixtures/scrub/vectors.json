@@ -1,0 +1,791 @@
+{
+  "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+  "vectors": [
+    {
+      "name": "openai_key",
+      "input": "key: sk-abcdefghijklmnopqrstuvwx end",
+      "mode": "auto",
+      "scrubbed": "key: {{redacted:openai_key#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 36
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "openai_key",
+            "label": "OpenAI-style API key",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                5,
+                32
+              ]
+            },
+            "placeholder": "{{redacted:openai_key#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "openai_key": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "anthropic_key",
+      "input": "key: sk-ant-abcdefghijklmnopqrstuvwx end",
+      "mode": "auto",
+      "scrubbed": "key: {{redacted:anthropic_key#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 40
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "anthropic_key",
+            "label": "Anthropic API key",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                5,
+                36
+              ]
+            },
+            "placeholder": "{{redacted:anthropic_key#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "anthropic_key": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "github_token",
+      "input": "token: ghp_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA end",
+      "mode": "auto",
+      "scrubbed": "token: {{redacted:github_token#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 51
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "github_token",
+            "label": "GitHub token",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                7,
+                47
+              ]
+            },
+            "placeholder": "{{redacted:github_token#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "github_token": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "aws_access_key_id",
+      "input": "id: AKIAABCDEFGHIJ123456 end",
+      "mode": "auto",
+      "scrubbed": "id: {{redacted:aws_access_key_id#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 28
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "aws_access_key_id",
+            "label": "AWS access key ID",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                4,
+                24
+              ]
+            },
+            "placeholder": "{{redacted:aws_access_key_id#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "aws_access_key_id": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "gcp_api_key",
+      "input": "key: AIzaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA end",
+      "mode": "auto",
+      "scrubbed": "key: {{redacted:gcp_api_key#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 48
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "gcp_api_key",
+            "label": "GCP API key",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                5,
+                44
+              ]
+            },
+            "placeholder": "{{redacted:gcp_api_key#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "gcp_api_key": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "slack_token",
+      "input": "token: xoxb-AAAAAAAAAAAA-BBBBBBBBBBBB-abcdefghijklmnopqrstuvwx end",
+      "mode": "auto",
+      "scrubbed": "token: {{redacted:slack_token#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 66
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "slack_token",
+            "label": "Slack token",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                7,
+                62
+              ]
+            },
+            "placeholder": "{{redacted:slack_token#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "slack_token": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "stripe_live_key",
+      "input": "key: sk_live_ABCDEFGHIJKLMNOP1234 end",
+      "mode": "auto",
+      "scrubbed": "key: {{redacted:stripe_live_key#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 37
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "stripe_live_key",
+            "label": "Stripe live secret/restricted key",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                5,
+                33
+              ]
+            },
+            "placeholder": "{{redacted:stripe_live_key#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "stripe_live_key": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "db_uri_credential",
+      "input": "uri: postgres://dbuser:dbpass@host.example.com/mydb end",
+      "mode": "auto",
+      "scrubbed": "uri: {{redacted:db_uri_credential#1}}/mydb end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 55
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "db_uri_credential",
+            "label": "Database/service URI with embedded credentials",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                5,
+                46
+              ]
+            },
+            "placeholder": "{{redacted:db_uri_credential#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "db_uri_credential": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "bearer_token",
+      "input": "Authorization: Bearer abcDEFGHIJKLMNOPqrstuvwxyz0123456789",
+      "mode": "auto",
+      "scrubbed": "Authorization: Bearer {{redacted:bearer_token#1}}",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 58
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "bearer_token",
+            "label": "Bearer token",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                22,
+                58
+              ]
+            },
+            "placeholder": "{{redacted:bearer_token#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "bearer_token": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "env_style_secret_value",
+      "input": "API_KEY=abcdef123456\nother=fine",
+      "mode": "auto",
+      "scrubbed": "API_KEY={{redacted:env_style_secret_value#1}}\nother=fine",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 31
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "env_style_secret_value",
+            "label": ".env-style secret value",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                8,
+                20
+              ]
+            },
+            "placeholder": "{{redacted:env_style_secret_value#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "env_style_secret_value": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "jwt",
+      "input": "auth: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U end",
+      "mode": "auto",
+      "scrubbed": "auth: {{redacted:jwt#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 102
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "jwt",
+            "label": "JSON Web Token",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                6,
+                98
+              ]
+            },
+            "placeholder": "{{redacted:jwt#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "jwt": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "private_key_block",
+      "input": "before\n-----BEGIN PRIVATE KEY-----\nMIIBVQIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7AgEAAkEA\n-----END PRIVATE KEY-----\nafter",
+      "mode": "auto",
+      "scrubbed": "before\n{{redacted:private_key_block#1}}\nafter",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 115
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "private_key_block",
+            "label": "PEM private key block",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                7,
+                109
+              ]
+            },
+            "placeholder": "{{redacted:private_key_block#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "private_key_block": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "entropy_flagged_not_removed",
+      "input": "candidate: Q3xk9zP2vLm8wRtY5jH1nBaFdEuIoKsNzZ7 end",
+      "mode": "auto",
+      "scrubbed": "candidate: Q3xk9zP2vLm8wRtY5jH1nBaFdEuIoKsNzZ7 end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 50
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "high_entropy",
+            "label": "High-entropy token",
+            "source": "entropy",
+            "confidence": "needs_review",
+            "location": {
+              "unit": "input",
+              "span": [
+                11,
+                46
+              ]
+            },
+            "placeholder": null
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 0,
+          "needs_review": 1,
+          "by_rule": {
+            "high_entropy": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "entropy_skips_hex_digest",
+      "input": "digest: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08 end",
+      "mode": "auto",
+      "scrubbed": "digest: 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08 end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 76
+        },
+        "findings": [],
+        "summary": {
+          "total": 0,
+          "high_confidence": 0,
+          "needs_review": 0,
+          "by_rule": {}
+        }
+      }
+    },
+    {
+      "name": "entropy_skips_uuid",
+      "input": "id: 123e4567-e89b-12d3-a456-426614174000 end",
+      "mode": "auto",
+      "scrubbed": "id: 123e4567-e89b-12d3-a456-426614174000 end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 44
+        },
+        "findings": [],
+        "summary": {
+          "total": 0,
+          "high_confidence": 0,
+          "needs_review": 0,
+          "by_rule": {}
+        }
+      }
+    },
+    {
+      "name": "entropy_skips_skl_id",
+      "input": "id: skl_4f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c end",
+      "mode": "auto",
+      "scrubbed": "id: skl_4f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 44
+        },
+        "findings": [],
+        "summary": {
+          "total": 0,
+          "high_confidence": 0,
+          "needs_review": 0,
+          "by_rule": {}
+        }
+      }
+    },
+    {
+      "name": "entropy_skips_sha256_prefixed",
+      "input": "digest: sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a0 end",
+      "mode": "auto",
+      "scrubbed": "digest: sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a0 end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 82
+        },
+        "findings": [],
+        "summary": {
+          "total": 0,
+          "high_confidence": 0,
+          "needs_review": 0,
+          "by_rule": {}
+        }
+      }
+    },
+    {
+      "name": "multi_secret_document",
+      "input": "OpenAI: sk-abcdefghijklmnopqrstuvwx\nAnthropic: sk-ant-abcdefghijklmnopqrstuvwx\nRepeat OpenAI: sk-abcdefghijklmnopqrstuvwx",
+      "mode": "auto",
+      "scrubbed": "OpenAI: {{redacted:openai_key#1}}\nAnthropic: {{redacted:anthropic_key#1}}\nRepeat OpenAI: {{redacted:openai_key#1}}",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 121
+        },
+        "findings": [
+          {
+            "id": "f2",
+            "rule_id": "openai_key",
+            "label": "OpenAI-style API key",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                8,
+                35
+              ]
+            },
+            "placeholder": "{{redacted:openai_key#1}}"
+          },
+          {
+            "id": "f1",
+            "rule_id": "anthropic_key",
+            "label": "Anthropic API key",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                47,
+                78
+              ]
+            },
+            "placeholder": "{{redacted:anthropic_key#1}}"
+          },
+          {
+            "id": "f3",
+            "rule_id": "openai_key",
+            "label": "OpenAI-style API key",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                94,
+                121
+              ]
+            },
+            "placeholder": "{{redacted:openai_key#1}}"
+          }
+        ],
+        "summary": {
+          "total": 3,
+          "high_confidence": 3,
+          "needs_review": 0,
+          "by_rule": {
+            "openai_key": 2,
+            "anthropic_key": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "custom_denylist_literal",
+      "input": "the codeword is xyzzy-plugh-internal end",
+      "mode": "auto",
+      "customRules": [
+        {
+          "id": "internal_codeword",
+          "label": "Internal codeword",
+          "literal": "xyzzy-plugh-internal"
+        }
+      ],
+      "scrubbed": "the codeword is {{redacted:internal_codeword#1}} end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 40
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "internal_codeword",
+            "label": "Internal codeword",
+            "source": "custom",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                16,
+                36
+              ]
+            },
+            "placeholder": "{{redacted:internal_codeword#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "internal_codeword": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "report_only_does_not_rewrite",
+      "input": "key: sk-abcdefghijklmnopqrstuvwx end",
+      "mode": "report-only",
+      "scrubbed": "key: sk-abcdefghijklmnopqrstuvwx end",
+      "report": {
+        "kind": "redaction_report",
+        "scrubber_version": "1",
+        "rules_version": "1",
+        "rules_digest": "sha256:e563737fc47a11b26cbbc020e361ab3dc1e27c6cc49db264917f9aed9ce8eb18",
+        "scanned": {
+          "units": 1,
+          "chars": 36
+        },
+        "findings": [
+          {
+            "id": "f1",
+            "rule_id": "openai_key",
+            "label": "OpenAI-style API key",
+            "source": "pattern",
+            "confidence": "high",
+            "location": {
+              "unit": "input",
+              "span": [
+                5,
+                32
+              ]
+            },
+            "placeholder": "{{redacted:openai_key#1}}"
+          }
+        ],
+        "summary": {
+          "total": 1,
+          "high_confidence": 1,
+          "needs_review": 0,
+          "by_rule": {
+            "openai_key": 1
+          }
+        }
+      }
+    }
+  ]
+}

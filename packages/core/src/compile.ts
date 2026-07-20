@@ -12,6 +12,7 @@ import type {
   KnowledgeItem,
   KnowledgeItemType,
   Recipe,
+  RedactionReport,
   SkillCompileProfile,
   SkillPackageFiles,
   SkillSection,
@@ -30,26 +31,10 @@ import {
 } from "@skillerr/protocol";
 import { canonicalize } from "./hash.js";
 import { packSkill, finalizeManifest, buildFileMap } from "./pack.js";
+import { scrub, mergeRedactionReports } from "./scrub.js";
 
 const PLACEHOLDER_RE =
   /\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}|<([A-Z][A-Z0-9_]+)>|\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
-
-const SECRET_PATTERNS: RegExp[] = [
-  /\b(?:sk|pk|api)[_-][A-Za-z0-9]{8,}\b/g,
-  /\bBearer\s+[A-Za-z0-9\-._~+/]+=*/gi,
-  /\b[A-Za-z0-9+/]{40,}={0,2}\b/g,
-];
-
-/**
- * Pure hex runs (git SHAs, sha256/sha1 content digests, …) match the broad
- * 40+ char base64-alphabet pattern above but are not secrets — redacting
- * them corrupts knowledge bodies that legitimately reference a commit or
- * digest. Any real secret candidate uses at least one non-hex character
- * (mixed case beyond a-f, digits mixed with `+`/`/`/`=`, …).
- */
-function looksLikeHexDigestNotSecret(match: string): boolean {
-  return /^[0-9a-fA-F]+$/.test(match);
-}
 
 const GENERALIZABLE_PATTERNS: Array<{
   re: RegExp;
@@ -121,45 +106,33 @@ function slug(name: string): string {
 }
 
 /**
- * Scrub likely secrets from text before packaging.
- * `onRedact` is called for every match actually replaced (not for hex
- * digests skipped as false positives) so callers building a
- * compilation_report can turn a redaction into a loud, inspectable entry
- * instead of a silent content change.
+ * Runs the deterministic scrubber (scrub.ts) over one field, pushes a loud
+ * `secret_redacted` CompilationIssue for any high-confidence match, and
+ * appends the field's full RedactionReport into `reportsAcc` so the caller
+ * can seal one complete provenance/redaction.json for the whole compile
+ * via mergeRedactionReports (scrub.ts) once every field has been
+ * processed — merging whole reports, not just findings, keeps `scanned`
+ * accurate across the merge.
  */
-export function redactSecrets(text: string, onRedact?: (match: string) => void): string {
-  let out = text;
-  for (const re of SECRET_PATTERNS) {
-    re.lastIndex = 0;
-    out = out.replace(re, (match) => {
-      if (looksLikeHexDigestNotSecret(match)) return match;
-      onRedact?.(match);
-      return "{{secret_ref}}";
-    });
-  }
-  return out;
-}
-
-/** redactSecrets(), but pushes a loud `secret_redacted` report entry for any match. */
 function redactSecretsReported(
   text: string,
   issues: CompilationIssue[],
   context: string,
-  relatedId?: string,
+  relatedId: string | undefined,
+  reportsAcc: RedactionReport[],
 ): string {
-  let count = 0;
-  const out = redactSecrets(text, () => {
-    count += 1;
-  });
-  if (count > 0) {
+  const { scrubbed, report } = scrub(text, { mode: "auto" });
+  const highConfidenceCount = report.findings.filter((f) => f.confidence === "high").length;
+  if (highConfidenceCount > 0) {
     issues.push({
       severity: "info",
       code: "secret_redacted",
-      message: `${count} likely secret(s) redacted from ${context}`,
+      message: `${highConfidenceCount} likely secret(s) redacted from ${context}`,
       related: relatedId ? [relatedId] : undefined,
     });
   }
-  return out;
+  reportsAcc.push(report);
+  return scrubbed as string;
 }
 
 export class CompileRefusalError extends Error {
@@ -468,6 +441,7 @@ function compileNativeContract(
   }));
 
   const redactionIssues: CompilationIssue[] = [];
+  const redactionReports: RedactionReport[] = [];
   const knowledge: KnowledgeItem[] = source.sections.map((section) => ({
     kind: "knowledge",
     id: `k_${section.id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 16)}`,
@@ -478,6 +452,7 @@ function compileNativeContract(
       redactionIssues,
       `knowledge section "${section.title}"`,
       section.id,
+      redactionReports,
     ),
     fidelity: "exact",
     pinned: true,
@@ -592,12 +567,12 @@ function compileNativeContract(
   );
   const safeJourney = {
     ...source.journey,
-    summary: redactSecretsReported(source.journey.summary, redactionIssues, "journey summary"),
+    summary: redactSecretsReported(source.journey.summary, redactionIssues, "journey summary", undefined, redactionReports),
     open_questions: source.journey.open_questions?.map((q) =>
-      redactSecretsReported(q, redactionIssues, "journey open question"),
+      redactSecretsReported(q, redactionIssues, "journey open question", undefined, redactionReports),
     ),
     decisions: source.journey.decisions?.map((d) =>
-      redactSecretsReported(d, redactionIssues, "journey decision"),
+      redactSecretsReported(d, redactionIssues, "journey decision", undefined, redactionReports),
     ),
     redacted: true,
   };
@@ -687,7 +662,7 @@ function compileNativeContract(
               agent: {
                 ...source.agent,
                 endpoint: source.agent.endpoint
-                  ? redactSecrets(source.agent.endpoint)
+                  ? redactSecretsReported(source.agent.endpoint, redactionIssues, "agent endpoint", undefined, redactionReports)
                   : undefined,
               },
               section_ids: source.sections.map((section) => `${section.id}@${section.revision}`),
@@ -697,6 +672,7 @@ function compileNativeContract(
       generation_usage: opts.generation_usage ?? source.generation_usage,
       proof: { source_id: source.id, source_hash: source.hash },
       compilation_report: report,
+      redaction: mergeRedactionReports(redactionReports),
     },
   };
   const fileMap = buildFileMap(files);
@@ -740,6 +716,7 @@ export function compileSkillSource(
   const inferredInputs: InputSlot[] = [];
   const inputNames = new Set<string>();
   const constraints: SteeringConstraint[] = [];
+  const redactionReports: RedactionReport[] = [];
 
   if (!isValidAgentHost(source.agent.host)) {
     const completeness = assessCompleteness(source, {
@@ -774,6 +751,7 @@ export function compileSkillSource(
       issues,
       `knowledge section "${section.title}"`,
       section.id,
+      redactionReports,
     );
     PLACEHOLDER_RE.lastIndex = 0;
     let m: RegExpExecArray | null;
@@ -974,11 +952,13 @@ export function compileSkillSource(
     inferredInputs.length > 0 || source.inputs_declared === "none";
   const safeJourney = {
     ...source.journey,
-    summary: redactSecretsReported(source.journey.summary, issues, "journey summary"),
+    summary: redactSecretsReported(source.journey.summary, issues, "journey summary", undefined, redactionReports),
     open_questions: source.journey.open_questions?.map((q) =>
-      redactSecretsReported(q, issues, "journey open question"),
+      redactSecretsReported(q, issues, "journey open question", undefined, redactionReports),
     ),
-    decisions: source.journey.decisions?.map((d) => redactSecretsReported(d, issues, "journey decision")),
+    decisions: source.journey.decisions?.map((d) =>
+      redactSecretsReported(d, issues, "journey decision", undefined, redactionReports),
+    ),
     redacted: true,
   };
 
@@ -1132,7 +1112,7 @@ export function compileSkillSource(
       ? Object.fromEntries(
           source.prompts.map((prompt) => [
             `${prompt.id}.txt`,
-            redactSecretsReported(prompt.body, issues, `prompt "${prompt.id}"`, prompt.id),
+            redactSecretsReported(prompt.body, issues, `prompt "${prompt.id}"`, prompt.id, redactionReports),
           ]),
         )
       : undefined,
@@ -1147,7 +1127,7 @@ export function compileSkillSource(
               agent: {
                 ...source.agent,
                 endpoint: source.agent.endpoint
-                  ? redactSecrets(source.agent.endpoint)
+                  ? redactSecretsReported(source.agent.endpoint, issues, "agent endpoint", undefined, redactionReports)
                   : undefined,
               },
               sensitivity: source.sensitivity,
@@ -1163,6 +1143,7 @@ export function compileSkillSource(
         agent_host: source.agent.host,
       },
       compilation_report: report,
+      redaction: mergeRedactionReports(redactionReports),
     },
   };
 

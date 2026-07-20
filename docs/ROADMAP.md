@@ -161,6 +161,20 @@ Status: protocol **1.0.0 (Stable)**; reference packages **1.5.2**. The package n
       wrong type also passed silently until mint time; new
       `validateContractSchema` closes that too, reported as a separate
       `schema_issues` array in `contract-check`'s output.
+- [x] Deterministic secret scrubber (`skill scrub`, `@skillerr/core`'s
+      `scrub()`): four confidence-ordered layers (known-format vendor-key
+      rules, project custom rules, opt-in exact-match against real secret
+      values from `--secrets-from` files, and Shannon-entropy flagging) with
+      a pinned `rules_version`/`rules_digest`, so the same content and rule
+      table always reproduces the same `RedactionReport` byte for byte
+      (`fixtures/scrub/vectors.json`). No LLM anywhere in the path. Replaces
+      the old crude `redactSecrets()` pattern list under the hood (same
+      function signature still works); `compile`/`checkpoint`/`pack` now
+      seal the merged report to `provenance/redaction.json`, covered by
+      `package_digest` like any other container file. Entropy-flagged
+      strings are surfaced as `needs_review`, never silently deleted — this
+      layer catches secrets only, it does not and cannot judge proprietary
+      or personally-identifying content, see [docs/SCRUBBING.md](./SCRUBBING.md).
 
 ## Next (great contribution targets)
 
@@ -198,6 +212,28 @@ A curated, verified-against-real-behavior list of smaller contribution targets l
       re-emitted on export. See [docs/AGENT-SKILLS.md](./AGENT-SKILLS.md)
       "What's not yet a full round trip" and
       [GOOD-FIRST-ISSUES.md](./GOOD-FIRST-ISSUES.md).
+- [ ] `skill review --open`: a local (no upload, no network) review flow
+      rendering a package's content next to its
+      [docs/SCRUBBING.md](./SCRUBBING.md) `RedactionReport`, letting a human
+      resolve `needs_review` findings and other judgment calls (proprietary/
+      PII/sensitive content the deterministic scrubber never claims to
+      catch) by eye. Confirming records
+      `provenance.human_review = {actor, at, scope, reviewed_digest}` bound
+      to the exact reviewed bytes, distinct from today's unsigned
+      self-reported `human_review` field. Builds on the scrubber's report
+      shape rather than replacing it.
+- [ ] Full-fidelity continuity capture: relax continuity's current
+      summaries-only default so `skill checkpoint` can optionally capture
+      real journey/section/output content at `private` sensitivity, running
+      it through the scrubber before it's ever staged. Promoting a
+      continuity package's sensitivity level would require a scrub pass
+      plus the reviewed/sealed approval above — never an automatic
+      promotion.
+- [ ] Agent-session capture + cross-tool resume: per-tool session adapters
+      (Claude Code, Codex, Gemini CLI, OpenCode, Copilot, and others)
+      normalized into one session schema, scrubbed and sealed as
+      provenance, so `skill load` can materialize a resumable, cross-tool
+      continuity package instead of a single-tool transcript.
 
 ## Later
 
