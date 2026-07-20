@@ -21,9 +21,13 @@ import {
   RekorAnchor,
   capabilitiesFromPermission,
   evaluateReleaseProfile,
+  verify,
+  generateSBOM,
   type Commitment,
+  type RevocationRecord,
 } from "./trust-spine.js";
 import { createEd25519Signer } from "./signer.js";
+import { buildLeaf, generateInclusionProof, buildSignedTreeHead, type LogEvent } from "./merkle-log.js";
 import type { AnchorSubject } from "./transparency.js";
 import {
   DEFAULT_SKILL_POLICY,
@@ -379,4 +383,188 @@ test("evaluateReleaseProfile: release rejects unapproved required inputs", () =>
   const result = evaluateReleaseProfile(pkg, "release");
   assert.equal(result.pass, false);
   assert.ok(result.reasons.some((r) => /unapproved required inputs: api_key/.test(r)));
+});
+
+// ---------------------------------------------------------------------------
+// verify
+// ---------------------------------------------------------------------------
+
+test("verify: no evidence at all is honestly unverified, not defaulted to trusted", async () => {
+  const result = await verify("sha256:" + "a".repeat(64));
+  assert.equal(result.verified, false);
+  assert.equal(result.anchored, false);
+  assert.equal(result.revoked, false);
+  assert.ok(result.reasons.some((r) => /No evidence supplied/.test(r)));
+});
+
+test("verify: a valid signature alone is sufficient to verify", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const digest = "sha256:" + "b".repeat(64);
+  const signature = await sign(digest, {
+    privateKeyPem: privateKey as unknown as string,
+    keyId: "k1",
+    publicKeyPem: publicKey as unknown as string,
+  });
+  const result = await verify(digest, { signature });
+  assert.equal(result.verified, true);
+  assert.ok(result.reasons.includes("Signature verified"));
+});
+
+test("verify: an invalid signature fails verification", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const digest = "sha256:" + "c".repeat(64);
+  const signature = await sign(digest, {
+    privateKeyPem: privateKey as unknown as string,
+    keyId: "k1",
+    publicKeyPem: publicKey as unknown as string,
+  });
+  const result = await verify("sha256:" + "d".repeat(64), { signature });
+  assert.equal(result.verified, false);
+  assert.ok(result.reasons.some((r) => /Signature verification failed/.test(r)));
+});
+
+function buildTestInclusionEvidence(digest: string) {
+  const event: LogEvent = { kind: "publish", digest, timestamp: "2026-01-01T00:00:00.000Z" };
+  const leaves = [buildLeaf(event), buildLeaf({ ...event, kind: "install" }), buildLeaf({ ...event, kind: "revoke" })];
+  const hashes = leaves.map((l) => l.hash);
+  const treeHead = buildSignedTreeHead(hashes);
+  const inclusionProof = generateInclusionProof(hashes, 0);
+  return { leaf: leaves[0]!, inclusionProof, treeHead };
+}
+
+test("verify: a valid inclusion proof alone is sufficient to verify", async () => {
+  const digest = "sha256:" + "e".repeat(64);
+  const { leaf, inclusionProof, treeHead } = buildTestInclusionEvidence(digest);
+  const result = await verify(digest, { leaf, inclusionProof, treeHead });
+  assert.equal(result.verified, true);
+  assert.ok(result.reasons.some((r) => /Inclusion proof verified/.test(r)));
+});
+
+test("verify: a tampered inclusion proof fails verification", async () => {
+  const digest = "sha256:" + "f".repeat(64);
+  const { leaf, inclusionProof, treeHead } = buildTestInclusionEvidence(digest);
+  const tampered = { ...inclusionProof, hashes: [...inclusionProof.hashes] };
+  tampered.hashes[0] = "sha256:" + "0".repeat(64);
+  const result = await verify(digest, { leaf, inclusionProof: tampered, treeHead });
+  assert.equal(result.verified, false);
+  assert.ok(result.reasons.some((r) => /Inclusion proof failed/.test(r)));
+});
+
+test("verify: anchored=true from the caller is sufficient to verify and is reported back", async () => {
+  const result = await verify("sha256:" + "1".repeat(64), { anchored: true });
+  assert.equal(result.verified, true);
+  assert.equal(result.anchored, true);
+  assert.ok(result.reasons.includes("Anchor commitment verified"));
+});
+
+test("verify: anchored=false from the caller fails verification", async () => {
+  const result = await verify("sha256:" + "2".repeat(64), { anchored: false });
+  assert.equal(result.verified, false);
+  assert.equal(result.anchored, false);
+  assert.ok(result.reasons.some((r) => /Anchor commitment failed/.test(r)));
+});
+
+test("verify: a matching revocation record marks revoked and fails verification even with a valid signature", async () => {
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { type: "pkcs8", format: "pem" },
+    publicKeyEncoding: { type: "spki", format: "pem" },
+  });
+  const digest = "sha256:" + "3".repeat(64);
+  const signature = await sign(digest, {
+    privateKeyPem: privateKey as unknown as string,
+    keyId: "k1",
+    publicKeyPem: publicKey as unknown as string,
+  });
+  const revocation: RevocationRecord = {
+    kind: "revocation_record",
+    package_digest: digest,
+    reason: "security",
+    detail: "Leaked credential in an example",
+    revoked_at: "2026-01-01T00:00:00.000Z",
+    issuer_key_id: "dot-skill-org-2026",
+  };
+  const result = await verify(digest, { signature, revocation });
+  assert.equal(result.verified, false, "revocation must not be outweighed by a valid signature");
+  assert.equal(result.revoked, true);
+  assert.ok(result.reasons.some((r) => /Digest revoked: security/.test(r)));
+});
+
+test("verify: a revocation record for a different digest is ignored, not honored", async () => {
+  const digest = "sha256:" + "4".repeat(64);
+  const revocation: RevocationRecord = {
+    kind: "revocation_record",
+    package_digest: "sha256:" + "9".repeat(64),
+    reason: "security",
+    revoked_at: "2026-01-01T00:00:00.000Z",
+    issuer_key_id: "dot-skill-org-2026",
+  };
+  const result = await verify(digest, { revocation, anchored: true });
+  assert.equal(result.revoked, false);
+  assert.equal(result.verified, true, "unrelated revocation record must not affect this digest's verdict");
+  assert.ok(result.reasons.some((r) => /different digest — ignored/.test(r)));
+});
+
+test("verify: one failing piece of evidence fails the whole verdict even when other evidence passes", async () => {
+  const digest = "sha256:" + "5".repeat(64);
+  const { leaf, inclusionProof, treeHead } = buildTestInclusionEvidence(digest);
+  const result = await verify(digest, { leaf, inclusionProof, treeHead, anchored: false });
+  assert.equal(result.verified, false, "a bad anchor check must not be outweighed by a good inclusion proof");
+  assert.ok(result.reasons.some((r) => /Inclusion proof verified/.test(r)));
+  assert.ok(result.reasons.some((r) => /Anchor commitment failed/.test(r)));
+});
+
+// ---------------------------------------------------------------------------
+// generateSBOM
+// ---------------------------------------------------------------------------
+
+test("generateSBOM: root component matches the manifest, no dependencies means an empty components array", () => {
+  const pkg = minimalPackage();
+  pkg.manifest.id = "skl_sbom_unit";
+  pkg.manifest.version = "2.1.0";
+  pkg.manifest.package_digest = "sha256:" + "a1".repeat(32);
+  const sbom = generateSBOM(pkg);
+
+  assert.equal(sbom.bomFormat, "CycloneDX");
+  assert.equal(sbom.specVersion, "1.5");
+  assert.equal(sbom.version, 1);
+  assert.match(sbom.serialNumber, /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.equal(sbom.metadata.component.type, "application");
+  assert.equal(sbom.metadata.component.name, "skl_sbom_unit");
+  assert.equal(sbom.metadata.component.version, "2.1.0");
+  assert.deepEqual(sbom.metadata.component.hashes, [{ alg: "SHA-256", content: "a1".repeat(32) }]);
+  assert.deepEqual(sbom.components, []);
+  assert.equal(sbom.metadata.timestamp, undefined, "no timestamp unless explicitly passed");
+});
+
+test("generateSBOM: declared dependencies become components, digest-pinned when known", () => {
+  const pkg = minimalPackage();
+  pkg.manifest.dependencies = [
+    { skill_id: "skl_dep_one", version: "1.0.0", package_digest: "sha256:" + "b2".repeat(32) },
+    { skill_id: "skl_dep_two", version: "3.0.0" },
+  ];
+  const sbom = generateSBOM(pkg);
+  assert.equal(sbom.components.length, 2);
+  assert.equal(sbom.components[0]!.name, "skl_dep_one");
+  assert.deepEqual(sbom.components[0]!.hashes, [{ alg: "SHA-256", content: "b2".repeat(32) }]);
+  assert.equal(sbom.components[1]!.name, "skl_dep_two");
+  assert.equal(sbom.components[1]!.hashes, undefined, "no digest known for this dependency, so no fabricated hash");
+});
+
+test("generateSBOM: deterministic — the same package produces a byte-identical SBOM every time", () => {
+  const pkg = minimalPackage();
+  pkg.manifest.dependencies = [{ skill_id: "skl_dep", version: "1.0.0", package_digest: "sha256:" + "c3".repeat(32) }];
+  const a = generateSBOM(pkg);
+  const b = generateSBOM(pkg);
+  assert.deepEqual(a, b);
+});
+
+test("generateSBOM: an explicit timestamp is passed through verbatim, never inferred from wall clock", () => {
+  const sbom = generateSBOM(minimalPackage(), { timestamp: "2026-01-01T00:00:00.000Z" });
+  assert.equal(sbom.metadata.timestamp, "2026-01-01T00:00:00.000Z");
 });

@@ -3,11 +3,15 @@
  * sign / anchor / gate primitives, shaped to match spec/CONTRACT.md's
  * frozen `@skillerr/core` API exactly. Nothing here is new cryptography or
  * new gate logic — see each function's doc comment for what it wraps.
- * Where the frozen shape genuinely doesn't exist yet (buildLeaf,
- * verifyInclusion, verifyConsistency, generateSBOM, evaluatePolicy,
- * scoreSignals, runSandboxed's declared-vs-actual diff, fromFormat/
- * toFormat's generic bridge), it's tracked in spec/CONTRACT.md's status
- * table instead of stubbed here.
+ * `verify()` is the one composite: it doesn't wrap a single existing
+ * primitive, it composes `verifySignature`/`verifyInclusion` (this
+ * module/merkle-log.ts) plus caller-supplied pre-checked anchor/revocation
+ * results into one pass/fail verdict — see its own doc comment for why
+ * anchor/revocation aren't re-derived here.
+ * Where the frozen shape genuinely doesn't exist yet (generateSBOM,
+ * evaluatePolicy, scoreSignals, runSandboxed's declared-vs-actual diff,
+ * fromFormat/toFormat's generic bridge), it's tracked in spec/CONTRACT.md's
+ * status table instead of stubbed here.
  */
 import type {
   SkillPackageFiles,
@@ -27,6 +31,7 @@ import {
   type TransparencyOptions,
   type VerifyAnchorOptions,
 } from "./transparency.js";
+import { verifyInclusion as verifyMerkleInclusion, type Leaf, type InclusionProof, type SignedTreeHead } from "./merkle-log.js";
 
 // ---------------------------------------------------------------------------
 // seal / openSealed
@@ -290,4 +295,213 @@ export function evaluateReleaseProfile(pkg: SkillPackageFiles, profile: SkillCom
   }
 
   return { pass: reasons.length === 0, reasons };
+}
+
+// ---------------------------------------------------------------------------
+// verify — unified entry point
+// ---------------------------------------------------------------------------
+
+/**
+ * A signed-off revocation claim for a digest. Matches
+ * docs/rfcs/0003-revocation-expiry.md's `revocation_record` shape (that
+ * RFC is spec-only, not implemented as a checkable log yet — `verify()`
+ * doesn't re-verify this record's own signature, since that needs a
+ * pinned revocation-issuer key this function has no context for; it's
+ * the caller's job to have already checked `sig` against a trusted key
+ * before including a revocation record here at all, same posture as
+ * `anchored` below).
+ */
+export interface RevocationRecord {
+  kind: "revocation_record";
+  package_digest: string;
+  reason: "security" | "policy" | "superseded" | "other";
+  detail?: string;
+  revoked_at: string;
+  issuer_key_id: string;
+}
+
+/**
+ * Evidence a caller has already gathered for a digest. `signature` and
+ * `leaf`+`inclusionProof`+`treeHead` are checked here directly (both are
+ * self-contained: verifying them needs nothing beyond what's in the
+ * evidence itself). `anchored` and `revocation` are caller-supplied
+ * pre-checked results rather than raw commitments/records `verify()`
+ * re-derives: a `Commitment`'s real verification needs the specific
+ * `Anchor` instance that produced it (issuer key, subject metadata —
+ * see `RekorAnchor`'s config), and a `RevocationRecord`'s real
+ * verification needs a pinned revocation-issuer key; neither fits inside
+ * a generic, standalone `verify()` with no key-store access. Matches this
+ * package's registry-independence invariant too: `verify()` has no
+ * revocation *list* of its own to consult, only what's handed to it.
+ */
+export interface Evidence {
+  signature?: Signature;
+  leaf?: Leaf;
+  inclusionProof?: InclusionProof;
+  treeHead?: SignedTreeHead;
+  /** Set once the caller has already run the relevant `Anchor.verify()` (e.g. `RekorAnchor`). */
+  anchored?: boolean;
+  /** A revocation record already matched to this digest and already signature-checked by the caller. */
+  revocation?: RevocationRecord;
+}
+
+export interface VerifyResult {
+  verified: boolean;
+  digest: string;
+  anchored: boolean;
+  revoked: boolean;
+  reasons: string[];
+}
+
+/**
+ * Composes whatever evidence a caller supplies into one pass/fail verdict
+ * with reasons — the keystone both a CLI `verify` command and the
+ * registry's `/api/verify` are meant to sit on top of, per spec/
+ * CONTRACT.md. Never claims `verified: true` without at least one
+ * positive, actually-checked piece of evidence (a bare digest with no
+ * evidence at all reports honestly as unverified, not defaulted to
+ * trusted); never claims `verified: true` if any supplied evidence
+ * fails, even if other evidence passed — a bad signature isn't
+ * outweighed by a good inclusion proof.
+ */
+export async function verify(digest: string, evidence: Evidence = {}): Promise<VerifyResult> {
+  const reasons: string[] = [];
+  let anyChecked = false;
+  let anyFailed = false;
+
+  if (evidence.signature) {
+    anyChecked = true;
+    const ok = await verifySignature(digest, evidence.signature);
+    reasons.push(ok ? "Signature verified" : "Signature verification failed");
+    if (!ok) anyFailed = true;
+  }
+
+  if (evidence.leaf && evidence.inclusionProof && evidence.treeHead) {
+    anyChecked = true;
+    const ok = verifyMerkleInclusion(evidence.leaf, evidence.inclusionProof, evidence.treeHead);
+    reasons.push(ok ? "Inclusion proof verified against signed tree head" : "Inclusion proof failed");
+    if (!ok) anyFailed = true;
+  }
+
+  if (evidence.anchored !== undefined) {
+    anyChecked = true;
+    reasons.push(evidence.anchored ? "Anchor commitment verified" : "Anchor commitment failed verification");
+    if (!evidence.anchored) anyFailed = true;
+  }
+
+  const revoked = Boolean(evidence.revocation && evidence.revocation.package_digest === digest);
+  if (evidence.revocation && evidence.revocation.package_digest !== digest) {
+    // Irrelevant to this digest — noted, but deliberately doesn't count as
+    // "evidence checked" (it isn't evidence about this digest at all) and
+    // doesn't affect anyFailed/revoked either.
+    reasons.push("Supplied revocation record is for a different digest — ignored, not honored");
+  } else if (revoked) {
+    anyChecked = true;
+    reasons.push(`Digest revoked: ${evidence.revocation!.reason}${evidence.revocation!.detail ? ` — ${evidence.revocation!.detail}` : ""}`);
+  }
+
+  if (!anyChecked) {
+    reasons.push("No evidence supplied — digest pin only, nothing cryptographically checked");
+  }
+
+  return {
+    verified: anyChecked && !anyFailed && !revoked,
+    digest,
+    anchored: Boolean(evidence.anchored),
+    revoked,
+    reasons,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// generateSBOM
+// ---------------------------------------------------------------------------
+
+export interface SBOMHash {
+  alg: "SHA-256";
+  content: string;
+}
+
+export interface SBOMComponent {
+  type: "application" | "library";
+  "bom-ref": string;
+  name: string;
+  version: string;
+  hashes?: SBOMHash[];
+}
+
+/** CycloneDX 1.5 (a JSON-object subset — every field here is spec-valid CycloneDX, just not the full schema). */
+export interface SBOM {
+  bomFormat: "CycloneDX";
+  specVersion: "1.5";
+  serialNumber: string;
+  version: 1;
+  metadata: {
+    timestamp?: string;
+    component: SBOMComponent;
+  };
+  components: SBOMComponent[];
+}
+
+function bareHex(digest: string): string {
+  return digest.replace(/^sha256:/, "");
+}
+
+/**
+ * Deterministic UUID (RFC 9562 version 8, "custom") derived from the
+ * package digest — the same package always gets the same
+ * `serialNumber`, so generating an SBOM twice for identical input is
+ * byte-identical, matching this repo's determinism discipline elsewhere
+ * (SEC-J). Not a random/random-seeded UUID (CycloneDX doesn't require
+ * one to be); this is a legitimate, spec-conformant use of a
+ * vendor-defined UUID version specifically for exactly this "derived from
+ * other data" case.
+ */
+function uuidFromDigest(digest: string): string {
+  const hex = bareHex(digest).slice(0, 32).padEnd(32, "0");
+  const bytes = hex.match(/.{2}/g)!.map((b) => parseInt(b, 16));
+  bytes[6] = (bytes[6]! & 0x0f) | 0x80; // version 8
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80; // variant 10
+  const h = bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
+}
+
+/**
+ * A minimal, real CycloneDX 1.5 SBOM: the package itself as the root
+ * `metadata.component`, and its declared `SkillManifest.dependencies`
+ * (other skills, digest-pinned when known) as `components`. Deliberately
+ * doesn't invent a deeper dependency graph — a `.skill` package's only
+ * real declared "supply chain" today is `dependencies: SkillDependency[]`
+ * (protocol/src/types.ts); there's no npm-style transitive package graph
+ * to walk. `opts.timestamp` is optional and omitted by default so the
+ * same package produces a byte-identical SBOM on every call; pass it
+ * explicitly if a wall-clock timestamp is wanted in the output (never
+ * inferred from `Date.now()` here).
+ */
+export function generateSBOM(pkg: SkillPackageFiles, opts: { timestamp?: string } = {}): SBOM {
+  const manifest = pkg.manifest;
+  const components: SBOMComponent[] = (manifest.dependencies ?? []).map((dep) => ({
+    type: "library",
+    "bom-ref": `skill:${dep.skill_id}@${dep.version}`,
+    name: dep.skill_id,
+    version: dep.version,
+    ...(dep.package_digest ? { hashes: [{ alg: "SHA-256" as const, content: bareHex(dep.package_digest) }] } : {}),
+  }));
+  return {
+    bomFormat: "CycloneDX",
+    specVersion: "1.5",
+    serialNumber: `urn:uuid:${uuidFromDigest(manifest.package_digest)}`,
+    version: 1,
+    metadata: {
+      ...(opts.timestamp ? { timestamp: opts.timestamp } : {}),
+      component: {
+        type: "application",
+        "bom-ref": `skill:${manifest.id}@${manifest.version}`,
+        name: manifest.id,
+        version: manifest.version,
+        hashes: [{ alg: "SHA-256", content: bareHex(manifest.package_digest) }],
+      },
+    },
+    components,
+  };
 }
