@@ -113,3 +113,41 @@ export type {
 } from "./transparency.js";
 export { assessClaims } from "./claims.js";
 export type { VerifiedClaim, SelfReportedClaim, ClaimsAssurance, AssessClaimsOptions } from "./claims.js";
+export {
+  seal,
+  openSealed,
+  sign,
+  verifySignature,
+  RekorAnchor,
+  capabilitiesFromPermission,
+  evaluateReleaseProfile,
+} from "./trust-spine.js";
+export type {
+  SealInput,
+  SealResult,
+  OpenSealedResult,
+  Signature,
+  SignOpts,
+  Commitment,
+  Anchor,
+  RekorAnchorConfig,
+  CapabilityKind,
+  Capability,
+  GateResult,
+} from "./trust-spine.js";
+export {
+  buildLeaf,
+  treeHash,
+  buildSignedTreeHead,
+  generateInclusionProof,
+  verifyInclusion,
+  generateConsistencyProof,
+  verifyConsistency,
+} from "./merkle-log.js";
+export type {
+  LogEvent,
+  Leaf,
+  InclusionProof,
+  SignedTreeHead,
+  ConsistencyProof,
+} from "./merkle-log.js";

@@ -23,7 +23,7 @@ git commit -s -m "feat: …"
 ```
 
 See [DCO.md](./DCO.md). The DCO sign-off records that you may submit the
-change under the MIT License.
+change under the Apache License 2.0.
 
 ## Branch flow
 
@@ -116,6 +116,6 @@ npm run skill -- --help
 
 ## License
 
-- Code: [MIT](./LICENSE), [docs/LICENSING.md](./docs/LICENSING.md)
+- Code: [Apache-2.0](./LICENSE), [docs/LICENSING.md](./docs/LICENSING.md)
 - Conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
 - Security: [SECURITY.md](./SECURITY.md)

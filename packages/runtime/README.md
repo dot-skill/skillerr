@@ -33,4 +33,4 @@ Docs: [RUNTIME.md](https://github.com/dot-skill/skillerr/blob/main/docs/RUNTIME.
 
 ## License
 
-MIT
+Apache-2.0

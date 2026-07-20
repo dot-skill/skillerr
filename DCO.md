@@ -3,7 +3,7 @@
 This project uses the [Developer Certificate of Origin, Version 1.1](https://developercertificate.org/).
 
 Every commit carries a `Signed-off-by` line certifying that the contributor
-has the right to submit the work under the MIT License.
+has the right to submit the work under the Apache License 2.0.
 
 ## How to sign off
 
@@ -22,5 +22,5 @@ The name/email should match your git identity.
 ## Why
 
 The sign-off records contributor authorization without a separate contributor
-agreement. Contributors keep copyright in their work and license it under MIT
-for this project.
+agreement. Contributors keep copyright in their work and license it under
+Apache License 2.0 for this project.

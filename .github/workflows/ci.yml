@@ -32,6 +32,8 @@ jobs:
       - run: npm run pack:check
       - name: Verify hardcoded package-version mentions match packages/skillerr/package.json
         run: node scripts/check-doc-versions.mjs
+      - name: Verify @skillerr/core has no dependency on the registry (spec/CONTRACT.md)
+        run: node scripts/check-core-registry-independence.mjs
       - name: Verify npm README is in sync with the root README
         # Unlike the brand job's PNGs, this is pure text transformation —
         # fully deterministic across OS, so a strict byte-diff is safe here.

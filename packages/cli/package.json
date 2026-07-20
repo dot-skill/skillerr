@@ -2,7 +2,7 @@
   "name": "@skillerr/cli",
   "version": "1.5.2",
   "description": "CLI implementation for portable .skill packages (install skillerr for the skill bin)",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": {
     "name": "Bharat Dudeja",
     "url": "https://github.com/bharatdudeja13-cmd"

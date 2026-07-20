@@ -27,4 +27,4 @@ Docs: [REGISTRY.md](https://github.com/dot-skill/skillerr/blob/main/docs/REGISTR
 
 ## License
 
-MIT
+Apache-2.0

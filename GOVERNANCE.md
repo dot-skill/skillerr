@@ -14,7 +14,7 @@ A second, independent runtime is the highest-leverage contribution toward ecosys
 
 ## Project
 
-- **License:** MIT, [LICENSE](./LICENSE) · [docs/LICENSING.md](./docs/LICENSING.md)
+- **License:** Apache-2.0, [LICENSE](./LICENSE) · [docs/LICENSING.md](./docs/LICENSING.md)
 - **Maintainer:** Bharat Dudeja
 - **Contributions:** DCO sign-off, [DCO.md](./DCO.md)
 - **Decision process:** day-to-day changes land via pull request and maintainer review. Protocol-level changes (schema, wire format, trust semantics) go through the open [RFC process](./docs/rfcs/); additive changes are preferred over breaking ones.
@@ -25,5 +25,5 @@ Vendor fields live under `extensions.<vendor_id>.*`.
 
 ## Neutrality
 
-Anyone may implement `.skill` under the MIT License. The open protocol is
+Anyone may implement `.skill` under the Apache License 2.0. The open protocol is
 independent of any particular product, marketplace, or host.

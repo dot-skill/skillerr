@@ -19,7 +19,7 @@ npm i -g skillerr
 **Site:** [skillerr.com](https://www.skillerr.com/docs/) · **Format:** `.skill` (sealed ZIP) · **Reference CLI:** [`skillerr`](https://www.npmjs.com/package/skillerr) (`skill`) · **Repo:** [dot-skill/skillerr](https://github.com/dot-skill/skillerr)
 
 [![npm](https://img.shields.io/npm/v/skillerr.svg)](https://www.npmjs.com/package/skillerr)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 [![Protocol](https://img.shields.io/badge/protocol-1.0.0-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)
 [![Tests](https://img.shields.io/badge/tests-200%20passing-brightgreen.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/SECURITY.md)
@@ -307,4 +307,4 @@ Independent runtimes, language ports, adapters, and adversarial fixtures make th
 
 ## License
 
-[MIT](https://github.com/dot-skill/skillerr/blob/main/LICENSE) — Copyright (c) 2026 Bharat Dudeja
+[Apache License 2.0](https://github.com/dot-skill/skillerr/blob/main/LICENSE) — Copyright 2026 Bharat Dudeja
