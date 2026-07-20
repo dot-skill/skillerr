@@ -33,4 +33,4 @@ Docs: [PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCO
 
 ## License
 
-MIT
+Apache-2.0

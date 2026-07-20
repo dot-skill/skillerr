@@ -86,6 +86,10 @@ Tracks what actually exists in `packages/core` today versus this frozen shape. U
 
 Follow-up work called out above, not yet scheduled: splitting a pure keyless `sign()` out of `mintKeylessAnchor`; adding `commands` scoping to `SkillPermission` for real `shell` capabilities; refactoring `mintSkillPackage` to call `evaluateReleaseProfile` instead of duplicating its checks inline.
 
-## Licensing note
+## Licensing note (resolved)
 
-This repo's root `LICENSE` and every package's `package.json` currently say **MIT**, not Apache-2.0. Relicensing an already-published package is a decision with real legal consequences (existing MIT-licensed copies stay MIT forever regardless) that hasn't been made yet — this document does not assume it's settled. Code built under this contract is written to be license-agnostic (no MIT-specific or Apache-specific dependencies pulled in), so the relicensing question can be resolved independently of the implementation work.
+Relicensed to **Apache-2.0**: root `LICENSE`, every package's `LICENSE` and `package.json`, and all docs referencing the license (`docs/LICENSING.md`, `GOVERNANCE.md`, `CONTRIBUTING.md`, `DCO.md`, `README.md`, per-package `README.md`s). Sole-author decision (no third-party contributor consent needed to relicense past contributions). Prior MIT-licensed npm releases already published stay MIT under those version numbers forever, as is always true of a relicense — this only governs the code going forward from this change.
+
+## Keyless signing (deferred, not a bug)
+
+`sign()`'s keyless (Fulcio) path is intentionally not implemented — see the `sign` row in the status table above. Splitting a pure sign step out of `mintKeylessAnchor` (which currently signs and anchors atomically) is real, deliberate follow-up work, not something to force through as a shallow adapter.

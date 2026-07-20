@@ -42,4 +42,4 @@ Docs: [WORKSPACE.md](https://github.com/dot-skill/skillerr/blob/main/docs/WORKSP
 
 ## License
 
-MIT
+Apache-2.0

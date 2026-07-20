@@ -2,7 +2,7 @@
   "name": "@skillerr/workspace",
   "version": "1.5.2",
   "description": "Local workspace for sections, stage, compile, checkpoint, and mint",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": {
     "name": "Bharat Dudeja",
     "url": "https://github.com/bharatdudeja13-cmd"

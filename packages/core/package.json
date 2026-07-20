@@ -2,7 +2,7 @@
   "name": "@skillerr/core",
   "version": "1.5.2",
   "description": "Compile, pack, validate, and mint portable .skill packages",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": {
     "name": "Bharat Dudeja",
     "url": "https://github.com/bharatdudeja13-cmd"
