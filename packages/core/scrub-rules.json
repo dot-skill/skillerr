@@ -1,0 +1,77 @@
+{
+  "rules_version": "1",
+  "rules": [
+    {
+      "id": "private_key_block",
+      "label": "PEM private key block",
+      "pattern": "-----BEGIN [A-Z ]*PRIVATE KEY-----[\\s\\S]*?-----END [A-Z ]*PRIVATE KEY-----",
+      "flags": "g"
+    },
+    {
+      "id": "jwt",
+      "label": "JSON Web Token",
+      "pattern": "eyJ[A-Za-z0-9_-]+\\.eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+",
+      "flags": "g"
+    },
+    {
+      "id": "anthropic_key",
+      "label": "Anthropic API key",
+      "pattern": "sk-ant-[A-Za-z0-9_-]{20,}",
+      "flags": "g"
+    },
+    {
+      "id": "openai_key",
+      "label": "OpenAI-style API key",
+      "pattern": "sk-(?!ant-)[A-Za-z0-9]{20,}",
+      "flags": "g"
+    },
+    {
+      "id": "github_token",
+      "label": "GitHub token",
+      "pattern": "gh[pousr]_[A-Za-z0-9]{36,}",
+      "flags": "g"
+    },
+    {
+      "id": "aws_access_key_id",
+      "label": "AWS access key ID",
+      "pattern": "AKIA[0-9A-Z]{16}",
+      "flags": "g"
+    },
+    {
+      "id": "gcp_api_key",
+      "label": "GCP API key",
+      "pattern": "AIza[0-9A-Za-z_-]{35}",
+      "flags": "g"
+    },
+    {
+      "id": "slack_token",
+      "label": "Slack token",
+      "pattern": "xox[baprs]-[0-9A-Za-z-]+",
+      "flags": "g"
+    },
+    {
+      "id": "stripe_live_key",
+      "label": "Stripe live secret/restricted key",
+      "pattern": "(?:sk|rk)_live_[A-Za-z0-9]{16,}",
+      "flags": "g"
+    },
+    {
+      "id": "db_uri_credential",
+      "label": "Database/service URI with embedded credentials",
+      "pattern": "[a-zA-Z][a-zA-Z0-9+.-]*://[^\\s:@/'\"]+:[^\\s:@/'\"]+@[^\\s/'\"]+",
+      "flags": "g"
+    },
+    {
+      "id": "bearer_token",
+      "label": "Bearer token",
+      "pattern": "(?<=[Bb]earer\\s)[A-Za-z0-9\\-._~+/]+=*",
+      "flags": "g"
+    },
+    {
+      "id": "env_style_secret_value",
+      "label": ".env-style secret value",
+      "pattern": "(?<=\\b[A-Z0-9_]*(?:SECRET|TOKEN|KEY|PASSWORD|PASSWD|CREDENTIAL|API)[A-Z0-9_]*\\s*=\\s*[\"']?)[^\\s\"'#]+",
+      "flags": "g"
+    }
+  ]
+}

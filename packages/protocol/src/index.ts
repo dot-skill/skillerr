@@ -76,6 +76,8 @@ export type {
   AssertionResult,
   EvalCaseResult,
   BenchmarkReport,
+  RedactionFinding,
+  RedactionReport,
 } from "./types.js";
 
 export {

@@ -706,6 +706,54 @@ export interface BenchmarkReport {
   };
 }
 
+/**
+ * One deterministic finding from `@skillerr/core`'s scrub(). Never carries
+ * the matched secret value itself, only the rule/source that fired, where
+ * it was found, and the placeholder that replaced it (env-match findings
+ * additionally report the matched key NAME, per the same never-the-value
+ * rule). See docs/SCRUBBING.md.
+ */
+export interface RedactionFinding {
+  id: string;
+  rule_id: string;
+  label: string;
+  source: "pattern" | "entropy" | "env-match" | "custom";
+  /** "high" is always auto-redacted in "auto" mode; "needs_review" is reported but never rewritten. */
+  confidence: "high" | "needs_review";
+  location: {
+    unit: string;
+    line?: number;
+    span?: [number, number];
+  };
+  /** null for needs_review findings, which are never replaced. */
+  placeholder: string | null;
+  /** env-match only — the matched secret's key NAME, never its value. */
+  matched_key?: string;
+}
+
+/**
+ * Sealed into `provenance/redaction.json` like any other container file
+ * (covered by `package_digest` the same way). Reproducibility contract:
+ * identical (content, rules_digest, secretsFrom-values) always produces an
+ * identical report — no timestamps inside `findings`/`summary`; a producer
+ * that wants a timestamp puts it in an outer envelope it controls, never
+ * inside this hashed body.
+ */
+export interface RedactionReport {
+  kind: "redaction_report";
+  scrubber_version: string;
+  rules_version: string;
+  rules_digest: string;
+  scanned: { units: number; chars: number };
+  findings: RedactionFinding[];
+  summary: {
+    total: number;
+    high_confidence: number;
+    needs_review: number;
+    by_rule: Record<string, number>;
+  };
+}
+
 export interface SkillPackageFiles {
   manifest: SkillManifest;
   workflow: Workflow;
@@ -733,6 +781,12 @@ export interface SkillPackageFiles {
      * existing "product-shaped, not protocol-native" convention.
      */
     score?: unknown;
+    /**
+     * Deterministic-scrubber output (`@skillerr/core`'s scrub()), sealed
+     * into `provenance/redaction.json` when compile/checkpoint/pack ran
+     * it over section bodies and journey content. See docs/SCRUBBING.md.
+     */
+    redaction?: RedactionReport;
   };
   signatures?: Record<string, unknown>;
   attestation?: CreationAttestation;
