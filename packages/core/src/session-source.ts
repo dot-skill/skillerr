@@ -18,7 +18,7 @@
 import { existsSync } from "node:fs";
 import { open, readdir, readFile, stat } from "node:fs/promises";
 import { homedir } from "node:os";
-import { basename, join, resolve, sep } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { scrub } from "./scrub.js";
 import type { CaptureContext } from "./capture.js";
 import type { KnowledgeItemType } from "@skillerr/protocol";
@@ -128,7 +128,13 @@ export function sessionSourceFromResumeAgent(agent: ResumeAgentId | string): Ses
 
 /** Claude Code–style project dir key: `/Users/a/b` → `-Users-a-b`. */
 export function claudeProjectSlug(cwd: string): string {
-  return resolve(cwd).replace(/\\/g, "/").replace(/\//g, "-");
+  // Replace path separators with `-`. Also strip characters that are illegal
+  // in directory names on Windows (`:` from `C:\…`, etc.) so scanners and
+  // fixtures stay portable across the CI matrix.
+  return resolve(cwd)
+    .replace(/\\/g, "/")
+    .replace(/\//g, "-")
+    .replace(/[<>:"|?*]/g, "_");
 }
 
 /** Sanitized slug (leading dashes stripped) — some hosts use this form. */
@@ -145,7 +151,9 @@ function projectMatchers(cwd: string): string[] {
 
 function isRelated(filePath: string, cwd: string): boolean {
   const abs = resolve(cwd);
-  if (filePath === abs || filePath.startsWith(abs + sep)) return true;
+  const normFile = filePath.replace(/\\/g, "/");
+  const normAbs = abs.replace(/\\/g, "/");
+  if (normFile === normAbs || normFile.startsWith(normAbs + "/")) return true;
   return projectMatchers(cwd).some((m) => m.length > 0 && filePath.includes(m));
 }
 
