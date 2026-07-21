@@ -1,6 +1,6 @@
 {
   "name": "@skillerr/core",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Compile, pack, validate, and mint portable .skill packages",
   "license": "Apache-2.0",
   "author": {
@@ -57,7 +57,7 @@
     "@sigstore/sign": "^5.0.0",
     "@sigstore/tuf": "^4.0.2",
     "@sigstore/verify": "^4.1.0",
-    "@skillerr/protocol": "^1.6.0",
+    "@skillerr/protocol": "^1.7.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "fflate": "^0.8.2"
