@@ -158,20 +158,19 @@ Create:
   skill unstage [id...] | skill review | skill discard <id>
   skill checkpoint [-m msg]            Continuity handoff (partial OK)
   skill capture [-o file.skill] [-m msg] [--context file.json|-]
+                                       [--from claude-code|codex|cursor]
+                                       [--session <id>]
                                        Capture the current session into a
                                        sealed continuity .skill: git working
                                        set (branch, base/HEAD, redacted diff,
                                        changed files, recent commits, untracked)
-                                       plus, if given, agent context (intent,
-                                       plan, decisions, rejected paths, open
-                                       threads, knowledge, tool results) from a
-                                       JSON file, "-" for stdin, or an
-                                       auto-loaded .skillerr/context.json.
-                                       Environment capture always runs, so a
-                                       dirty repo is never empty; secrets are
-                                       scrubbed from the diff while the code
-                                       changes and file list are kept. Not
-                                       minted, not anchored. See docs/CONTINUITY.md.
+                                       plus optional agent context and optional
+                                       inference-free SessionSource enrichment
+                                       (--from/--session; no model call). Env
+                                       capture always runs — a dirty repo is
+                                       never empty. Secrets scrubbed; code and
+                                       file list kept. Not minted. See
+                                       docs/CONTINUITY.md.
   skill resume <file.skill> [--json]   Print a paste-ready resume briefing
                                        (Resume Contract 1.0) from a continuity
                                        .skill: intent, working-set summary,
@@ -1340,16 +1339,43 @@ async function main() {
     }
     case "capture": {
       // Captures the current session (git working set + optional agent
-      // context) into a sealed continuity .skill. Environment capture always
-      // runs; a dirty repo is never empty. See docs/CONTINUITY.md.
+      // context / SessionSource) into a sealed continuity .skill.
+      // Environment capture always runs; a dirty repo is never empty.
+      // See docs/CONTINUITY.md.
       const out = opt(rest, "-o") ?? opt(rest, "--out");
       const message = opt(rest, "-m") ?? opt(rest, "--message");
       const context: CaptureContext | string | undefined = opt(rest, "--context");
-      const result = await captureSession({
-        cwd: process.cwd(),
-        intent: message,
-        context,
-      });
+      const from = opt(rest, "--from");
+      const sessionId = opt(rest, "--session");
+      let result;
+      try {
+        result = await captureSession({
+          cwd: process.cwd(),
+          intent: message,
+          context,
+          from,
+          sessionId,
+        });
+      } catch (e) {
+        const err = e as Error & { ambiguous?: boolean; candidates?: Array<{ source: string; id: string; path: string }> };
+        console.log(
+          JSON.stringify(
+            {
+              ok: false,
+              error: err.message,
+              ambiguous: err.ambiguous ?? false,
+              candidates: err.candidates?.slice(0, 12).map((c) => ({
+                source: c.source,
+                id: c.id,
+                path: c.path,
+              })),
+            },
+            null,
+            2,
+          ),
+        );
+        process.exit(2);
+      }
       const sealed = await seal(result.pkg);
       if (out) await writeFile(resolve(out), sealed.zip);
       console.log(
@@ -1358,6 +1384,14 @@ async function main() {
             ok: true,
             digest: sealed.digest,
             has_git: result.hasGit,
+            session: result.session
+              ? {
+                  source: result.session.source,
+                  id: result.session.id,
+                  path: result.session.path,
+                }
+              : null,
+            session_note: result.sessionNote,
             working_set: result.workingSet
               ? {
                   branch: result.workingSet.branch,

@@ -4,6 +4,23 @@ This is the only handshake between this repo and the private `skillerr-registry`
 
 Newest first.
 
+## ACTION REQUIRED — SessionSource APIs shipped, drop local `cli/session-sources.mjs`
+
+Inference-free per-agent session intake is now in `@skillerr/core` (on the version below). The registry's temporary `cli/session-sources.mjs` scanners should be replaced with core calls.
+
+**Pin:** `@skillerr/core@^1.7.0` (lockstep siblings).
+
+**Swap to:**
+- `listSessionCandidates({ cwd, from? })`
+- `resolveSession({ cwd, from?, sessionId? })`
+- `loadSessionContext(session)` → redacted `CaptureContext` (+ optional scrubbed `sessionFile` attach for the caller)
+- `captureSession({ cwd, intent, from?, sessionId?, context? })` — when `from` / `sessionId` is set, core resolves + loads + merges under `context`, then always runs the git floor
+- `normalizeSessionSourceId` / `normalizeResumeAgent` / `resumeAgentFromSessionSource` — `claude` ↔ `claude-code` (ResumeTarget still emits legacy `claude`; SessionSource ids are `claude-code` \| `codex` \| `cursor`)
+
+**Drop** local store walkers once parity is proven against `skill capture --from claude-code|codex|cursor [--session <id>]`. Do not reintroduce registry URLs or product assumptions into core.
+
+Also see the prior capture ACTION below if mocks for `captureSession` / resume still linger.
+
 ## ACTION REQUIRED — real session capture shipped, drop the mocks
 
 The hollow `capture → resume` (empty payload, "_preview (Resume Contract pending)_" header) is fixed at the source. `@skillerr/core` now ships the **real** capture + resume surface — replace the mocks in `src/lib/core-adapter.ts` with the real imports.

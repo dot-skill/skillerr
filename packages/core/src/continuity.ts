@@ -160,6 +160,12 @@ export interface ContinuityOpenResult {
 }
 
 export interface ResumeTarget {
+  /**
+   * Legacy short ids from Resume Contract 1.0. SessionSource scanners use
+   * canonical `claude-code` (see `normalizeSessionSourceId` /
+   * `resumeAgentFromSessionSource`). `claude` here means Claude Code —
+   * kept for existing consumers; do not drop without a deprecation path.
+   */
   agent: "cursor" | "claude" | "codex";
   label: string;
   /** `<path>` is a placeholder — the caller substitutes its own file path or download location. */

@@ -18,6 +18,25 @@ skill capture -o handoff.skill --context .skillerr/context.json
 
 See [AGENT.md](./AGENT.md) for the exact `CaptureContext` intake schema an agent supplies.
 
+## SessionSource — inference-free agent store intake
+
+On top of the git floor, `@skillerr/core` can read **local agent session stores** without calling a model:
+
+| Source id | Typical roots (best-effort) |
+|-----------|-----------------------------|
+| `claude-code` (alias: `claude`) | `{cwd}/.claude`, `~/.claude/projects/<slug>/`, `~/.config/claude` |
+| `codex` | `{cwd}/.codex`, `~/.codex/sessions` |
+| `cursor` | `{cwd}/.cursor`, `~/.cursor/projects/<slug>/agent-transcripts` |
+
+```bash
+skill capture -o handoff.skill --from claude-code
+skill capture -o handoff.skill --from cursor --session <id>
+```
+
+Programmatic surface: `listSessionCandidates` → `resolveSession` → `loadSessionContext` → merge into `captureSession({ from, sessionId, context })`. Ambiguous dual-source picks (different hosts, close mtimes) fail closed until you pass `from` or `sessionId`. No session found still captures the git floor. Secrets in session lines are scrubbed via protocol `scrub()` (including optional attach bytes).
+
+**ResumeTarget agent ids** in `resumePreview` remain the legacy short forms (`cursor` \| `claude` \| `codex`). SessionSource uses canonical `claude-code`. Use `normalizeSessionSourceId` / `resumeAgentFromSessionSource` at boundaries — do not drop `claude` without a deprecation path.
+
 ## Resume a session
 
 ```bash
@@ -63,4 +82,4 @@ const contract = resumePreview(opened);            // Resume Contract 1.0
 const briefing = renderResumeContract(contract);   // paste-ready markdown, no preview/pending framing
 ```
 
-`captureSession` always runs environment (git) capture and merges any agent context over it (see [AGENT.md](./AGENT.md) for the `CaptureContext` schema); the working set + journey it produces are the substance a resume needs. `openContinuity` reshapes a package's real `provenance.journey`/`provenance.source`/`knowledge` into a stable `ContinuityOpenResult` (intent, agent context, journey, working set, plan, gaps, knowledge, sections). `resumePreview` derives **Resume Contract 1.0**: digest, intent, agent context, working set, plan, next steps, decisions, rejected paths, open threads, gaps, knowledge, file pointers, tool results, and one resume target per agent (`cursor`/`claude`/`codex`) — all using this repo's own host-agnostic `skill load <path> --into .` command, never a product-specific install URL, per the core/registry independence invariant in [spec/CONTRACT.md](../spec/CONTRACT.md). `isContinuity` alone is enough to gate a package before opening it (`compile_profile === "continuity"`, mutually exclusive with being minted).
+`captureSession` always runs environment (git) capture and merges any agent context over it (see [AGENT.md](./AGENT.md) for the `CaptureContext` schema); pass `from` / `sessionId` to also pull inference-free SessionSource enrichment from local agent stores. The working set + journey it produces are the substance a resume needs. `openContinuity` reshapes a package's real `provenance.journey`/`provenance.source`/`knowledge` into a stable `ContinuityOpenResult` (intent, agent context, journey, working set, plan, gaps, knowledge, sections). `resumePreview` derives **Resume Contract 1.0**: digest, intent, agent context, working set, plan, next steps, decisions, rejected paths, open threads, gaps, knowledge, file pointers, tool results, and one resume target per agent (`cursor`/`claude`/`codex`) — all using this repo's own host-agnostic `skill load <path> --into .` command, never a product-specific install URL, per the core/registry independence invariant in [spec/CONTRACT.md](../spec/CONTRACT.md). `isContinuity` alone is enough to gate a package before opening it (`compile_profile === "continuity"`, mutually exclusive with being minted).

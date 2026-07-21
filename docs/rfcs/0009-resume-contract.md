@@ -122,5 +122,5 @@ Nothing to migrate. Existing continuity packages open unchanged (the new `Contin
 ## Open questions
 
 - **Gap severity beyond warn/info**: promoting some open questions to `"block"` would need a new optional field on the payload or a heuristic; not designed yet.
-- **Richer per-agent resume commands**: `resumeTargets` is the same generic `skill load` for every agent because that's genuinely all that exists today; per-tool session adapters (ROADMAP Phase 4: Claude Code, Codex, Gemini CLI, OpenCode, Copilot) are a separate, larger effort.
-- **Journey timeline fidelity**: an agent-run capture can supply a richer action/decision/tool-result timeline than the git-derived work-state timeline; this RFC specifies the intake for it (`CaptureContext.journey`, `toolResults`) but doesn't mandate a particular timeline granularity.
+- **Richer per-agent resume commands**: `resumeTargets` is the same generic `skill load` for every agent because that's genuinely all that exists today. **SessionSource** (`session-source.ts`) now covers inference-free *capture* intake from `claude-code` \| `codex` \| `cursor` local stores; per-tool *resume materialization* adapters remain a separate ROADMAP effort.
+- **Journey timeline fidelity**: an agent-run capture can supply a richer action/decision/tool-result timeline than the git-derived work-state timeline; this RFC specifies the intake for it (`CaptureContext.journey`, `toolResults`) but doesn't mandate a particular timeline granularity. SessionSource heuristics fill a subset from jsonl without a model call.

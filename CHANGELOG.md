@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.0 (2026-07-21)
+
+**SessionSource: inference-free agent session intake for Continuity capture.**
+
+- New `@skillerr/core` APIs: `listSessionCandidates`, `resolveSession`, `loadSessionContext`, plus `normalizeSessionSourceId` / `normalizeResumeAgent` / `resumeAgentFromSessionSource` (`claude` ↔ `claude-code`).
+- Sources: `claude-code` | `codex` | `cursor` — scans local host stores (no model / LLM calls). Ambiguous dual-source picks fail closed; missing session → git-floor-only.
+- `captureSession({ from, sessionId, homeDir? })` resolves + loads + merges enrichment under explicit `context`, then always runs the existing git floor.
+- Redaction via protocol `scrub()` on session lines and optional attach bytes.
+- CLI: `skill capture --from … [--session …]`.
+- CONTRACT / CONTINUITY / INTEGRATION_NOTES updated — registry ACTION to drop temporary `cli/session-sources.mjs`.
+- Test badge **285 → 293**.
+
 ## 1.6.0 (2026-07-21)
 
 **Trust spine, continuity/capture, scrubbing, Merkle log, verify/SBOM, Apache-2.0 relicense.** Everything that had accumulated on `develop` since 1.5.2 — the load-bearing pieces the private registry was mocking — now ships on npm.

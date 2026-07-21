@@ -22,7 +22,7 @@ npm i -g skillerr
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 [![Protocol](https://img.shields.io/badge/protocol-1.0.0-blue.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)
-[![Tests](https://img.shields.io/badge/tests-285%20passing-brightgreen.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/SECURITY.md)
+[![Tests](https://img.shields.io/badge/tests-293%20passing-brightgreen.svg)](https://github.com/dot-skill/skillerr/blob/main/docs/SECURITY.md)
 
 **Contributing:** see [CONTRIBUTING.md](https://github.com/dot-skill/skillerr/blob/main/CONTRIBUTING.md) for the DCO/PR checklist, or jump straight to a scoped task in [docs/GOOD-FIRST-ISSUES.md](https://github.com/dot-skill/skillerr/blob/main/docs/GOOD-FIRST-ISSUES.md).
 
@@ -252,7 +252,7 @@ Full package layout spec: [docs/PROTOCOL.md](https://github.com/dot-skill/skille
 ## Status
 
 Specification: **1.0.0 (Stable)** ([docs/PROTOCOL.md](https://github.com/dot-skill/skillerr/blob/main/docs/PROTOCOL.md)) — future changes go through the open [RFC process](https://github.com/dot-skill/skillerr/blob/main/docs/rfcs/), not silent revisions. Separate axis from the package version directly below, which changes every release.  
-Reference CLI: `skillerr` @ **1.6.0**, a stable public API backed by 285 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
+Reference CLI: `skillerr` @ **1.7.0**, a stable public API backed by 293 tests passing on every push (mac/Linux/Windows × Node 22/24), including an [adversarial security corpus](https://github.com/dot-skill/skillerr/wiki/Threat-Model) and a live-tested [transparency-log integration](https://github.com/dot-skill/skillerr/blob/main/docs/TRANSPARENCY.md).  
 Independent conforming implementations welcome.
 
 **Why the foundation is future-proof:**

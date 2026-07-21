@@ -51,6 +51,12 @@ import type {
   WorkingSetCommit,
   WorkingSetFile,
 } from "./continuity.js";
+import type { SessionCandidate, SessionSourceId } from "./session-source.js";
+import {
+  loadSessionContext,
+  mergeCaptureContexts,
+  resolveSession,
+} from "./session-source.js";
 
 const DEFAULT_MAX_DIFF_BYTES = 200_000;
 const DEFAULT_MAX_COMMITS = 20;
@@ -96,6 +102,19 @@ export interface CaptureOptions {
    * exists). Environment capture always runs regardless.
    */
   context?: CaptureContext | string;
+  /**
+   * SessionSource id (`claude-code` | `codex` | `cursor`, or alias `claude`).
+   * When set (alone or with `sessionId`), runs inference-free store resolve +
+   * load and merges that enrichment under `context` before the git floor.
+   */
+  from?: SessionSourceId | string;
+  /** Exact / suffix session id when resolving a SessionSource store. */
+  sessionId?: string;
+  /**
+   * Override home for SessionSource scanning (`~/.claude` etc.). Tests /
+   * unusual layouts. Ignored unless `from` or `sessionId` is set.
+   */
+  homeDir?: string;
   /** Diff size cap in bytes (default 200000); the diff is truncated and flagged past it. */
   maxDiffBytes?: number;
   /** Recent-commit count (default 20). */
@@ -115,6 +134,12 @@ export interface CaptureResult {
   redaction: RedactionReport;
   /** True when a git working tree was found and read. */
   hasGit: boolean;
+  /** Resolved SessionSource candidate when `from` / `sessionId` was used. */
+  session?: SessionCandidate | null;
+  /** Note from resolve (e.g. git-floor-only when no session files found). */
+  sessionNote?: string;
+  /** Optional session file bytes for the caller to attach; not sealed by default. */
+  sessionFile?: { name: string; bytes: Uint8Array };
 }
 
 function git(args: string[], cwd: string): string | undefined {
@@ -273,12 +298,58 @@ function loadContext(cwd: string, context: CaptureContext | string | undefined):
  * Environment (git) capture always runs; agent context, when supplied,
  * enriches it. Never fabricates content: an empty repo with no context
  * says so honestly, a dirty repo carries its real diff.
+ *
+ * When `from` and/or `sessionId` is set, resolves a local SessionSource
+ * store (inference-free), loads redacted enrichment, and merges it under
+ * any explicit `context` before the git floor. Ambiguous / missing
+ * sessionId throws; no session found continues as git-floor-only.
  */
 export async function captureSession(opts: CaptureOptions = {}): Promise<CaptureResult> {
   const cwd = opts.cwd ?? process.cwd();
   const maxDiffBytes = opts.maxDiffBytes ?? DEFAULT_MAX_DIFF_BYTES;
   const maxCommits = opts.maxCommits ?? DEFAULT_MAX_COMMITS;
-  const context = loadContext(cwd, opts.context);
+
+  let session: SessionCandidate | null | undefined;
+  let sessionNote: string | undefined;
+  let sessionFile: CaptureResult["sessionFile"];
+  let context: CaptureContext;
+
+  const wantsSession = opts.from != null || opts.sessionId != null;
+  if (wantsSession) {
+    const resolved = await resolveSession({
+      cwd,
+      from: opts.from,
+      sessionId: opts.sessionId,
+      homeDir: opts.homeDir,
+    });
+    if (!resolved.ok) {
+      const detail = resolved.candidates?.length
+        ? ` Candidates: ${resolved.candidates.map((c) => `${c.source}:${c.id}`).join(", ")}`
+        : "";
+      const err = new Error(`${resolved.error ?? "Session resolve failed"}.${detail}`);
+      (err as Error & { ambiguous?: boolean; candidates?: SessionCandidate[] }).ambiguous =
+        resolved.ambiguous;
+      (err as Error & { candidates?: SessionCandidate[] }).candidates = resolved.candidates;
+      throw err;
+    }
+    session = resolved.session;
+    sessionNote = resolved.note;
+    const explicit = loadContext(cwd, opts.context);
+    if (session) {
+      const loaded = await loadSessionContext(session);
+      sessionFile = loaded.sessionFile;
+      const {
+        sessionFile: _sf,
+        intentHint: _hint,
+        ...sessionCtx
+      } = loaded;
+      context = mergeCaptureContexts(sessionCtx, explicit);
+    } else {
+      context = explicit;
+    }
+  } else {
+    context = loadContext(cwd, opts.context);
+  }
 
   const captured = captureWorkingSet(cwd, maxDiffBytes, maxCommits);
   const hasGit = captured !== undefined;
@@ -418,5 +489,5 @@ export async function captureSession(opts: CaptureOptions = {}): Promise<Capture
     },
   };
 
-  return { pkg, workingSet, journey, source, redaction, hasGit };
+  return { pkg, workingSet, journey, source, redaction, hasGit, session, sessionNote, sessionFile };
 }

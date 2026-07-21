@@ -44,7 +44,7 @@ Public site rendering lives in **[dot-skill/skillerr-com](https://github.com/dot
 | [docs/ADAPTERS.md](./ADAPTERS.md) | External source → `SkillSource` | `@skillerr/core` |
 | [docs/RESOURCES.md](./RESOURCES.md) | Bundled scripts / progressive disclosure | `@skillerr/core` / runtime |
 | [docs/EVAL.md](./EVAL.md) | Eval / benchmark loop | `@skillerr/core` + CLI score |
-| [docs/CONTINUITY.md](./CONTINUITY.md) | Continuity packages + Resume Contract | `@skillerr/core` capture/continuity |
+| [docs/CONTINUITY.md](./CONTINUITY.md) | Continuity packages, Resume Contract, SessionSource | `@skillerr/core` capture/continuity/session-source |
 | [docs/LOCAL_AGENTS.md](./LOCAL_AGENTS.md) | Offline / local-agent constraints | CLI + runtime |
 | [docs/FILE-TYPE.md](./FILE-TYPE.md) | OS-recognized `.skill` file type (deployment note) | — |
 

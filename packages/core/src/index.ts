@@ -162,6 +162,28 @@ export type {
 export { isContinuity, openContinuity, resumePreview, renderResumeContract } from "./continuity.js";
 export { captureSession } from "./capture.js";
 export type { CaptureOptions, CaptureContext, CaptureResult } from "./capture.js";
+export {
+  SESSION_SOURCES,
+  listSessionCandidates,
+  resolveSession,
+  loadSessionContext,
+  mergeCaptureContexts,
+  normalizeSessionSourceId,
+  normalizeResumeAgent,
+  resumeAgentFromSessionSource,
+  sessionSourceFromResumeAgent,
+  claudeProjectSlug,
+  sanitizedProjectSlug,
+} from "./session-source.js";
+export type {
+  SessionSourceId,
+  SessionCandidate,
+  ListSessionsOptions,
+  ResolveSessionOptions,
+  ResolveSessionResult,
+  SessionContextResult,
+  ResumeAgentId,
+} from "./session-source.js";
 export type {
   Gap,
   ContinuitySection,
