@@ -306,3 +306,5 @@ Independent runtimes, language ports, adapters, and adversarial fixtures make th
 ## License
 
 [Apache License 2.0](./LICENSE) — Copyright 2026 Bharat Dudeja
+
+The names and logos are trademarks: see [TRADEMARKS.md](TRADEMARKS.md).
