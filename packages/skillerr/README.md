@@ -308,3 +308,5 @@ Independent runtimes, language ports, adapters, and adversarial fixtures make th
 ## License
 
 [Apache License 2.0](https://github.com/dot-skill/skillerr/blob/main/LICENSE) — Copyright 2026 Bharat Dudeja
+
+The names and logos are trademarks: see [TRADEMARKS.md](https://github.com/dot-skill/skillerr/blob/main/TRADEMARKS.md).
